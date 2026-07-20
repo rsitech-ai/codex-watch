@@ -9,6 +9,7 @@ import Testing
 
 @Test func watchReachableBindHostRejectsLoopbackAndAcceptsConcreteLANAddresses() {
     #expect(!NetworkBridgeListener.isValidWatchReachableBindHost("127.0.0.1"))
+    #expect(!NetworkBridgeListener.isValidWatchReachableBindHost("127.0.0.2"))
     #expect(!NetworkBridgeListener.isValidWatchReachableBindHost("::1"))
     #expect(NetworkBridgeListener.isValidWatchReachableBindHost("192.168.1.42"))
     #expect(NetworkBridgeListener.isValidWatchReachableBindHost("fd00::42"))
@@ -16,8 +17,10 @@ import Testing
 
 @Test func watchReachableAdvertisedHostRejectsLocalOnlyEndpoints() {
     #expect(!NetworkBridgeListener.isValidWatchReachableAdvertisedHost("127.0.0.1"))
+    #expect(!NetworkBridgeListener.isValidWatchReachableAdvertisedHost("127.0.0.2"))
     #expect(!NetworkBridgeListener.isValidWatchReachableAdvertisedHost("::1"))
     #expect(!NetworkBridgeListener.isValidWatchReachableAdvertisedHost("localhost"))
+    #expect(!NetworkBridgeListener.isValidWatchReachableAdvertisedHost("localhost."))
     #expect(!NetworkBridgeListener.isValidWatchReachableAdvertisedHost("bridge.localhost"))
     #expect(NetworkBridgeListener.isValidWatchReachableAdvertisedHost("192.168.1.42"))
     #expect(NetworkBridgeListener.isValidWatchReachableAdvertisedHost("bridge.local"))

@@ -438,7 +438,7 @@ public final class NetworkBridgeListener: @unchecked Sendable {
         guard isValidConcreteBindHost(value) else { return false }
         switch NWEndpoint.Host(value) {
         case let .ipv4(address):
-            return address != .loopback
+            return !isIPv4Loopback(address)
         case let .ipv6(address):
             return address != .loopback
         case .name:
@@ -452,15 +452,20 @@ public final class NetworkBridgeListener: @unchecked Sendable {
         guard isValidAdvertisedHost(value) else { return false }
         switch NWEndpoint.Host(value) {
         case let .ipv4(address):
-            return address != .loopback
+            return !isIPv4Loopback(address)
         case let .ipv6(address):
             return address != .loopback
         case let .name(name, _):
-            let normalized = name.lowercased()
+            var normalized = name.lowercased()
+            while normalized.hasSuffix(".") { normalized.removeLast() }
             return normalized != "localhost" && !normalized.hasSuffix(".localhost")
         @unknown default:
             return false
         }
+    }
+
+    private static func isIPv4Loopback(_ address: IPv4Address) -> Bool {
+        address.rawValue.first == 127
     }
 
     private static func isValidConcreteBindHost(_ value: String) -> Bool {
