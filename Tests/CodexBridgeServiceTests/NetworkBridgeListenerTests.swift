@@ -14,6 +14,15 @@ import Testing
     #expect(NetworkBridgeListener.isValidWatchReachableBindHost("fd00::42"))
 }
 
+@Test func watchReachableAdvertisedHostRejectsLocalOnlyEndpoints() {
+    #expect(!NetworkBridgeListener.isValidWatchReachableAdvertisedHost("127.0.0.1"))
+    #expect(!NetworkBridgeListener.isValidWatchReachableAdvertisedHost("::1"))
+    #expect(!NetworkBridgeListener.isValidWatchReachableAdvertisedHost("localhost"))
+    #expect(!NetworkBridgeListener.isValidWatchReachableAdvertisedHost("bridge.localhost"))
+    #expect(NetworkBridgeListener.isValidWatchReachableAdvertisedHost("192.168.1.42"))
+    #expect(NetworkBridgeListener.isValidWatchReachableAdvertisedHost("bridge.local"))
+}
+
 private let listenerToken = Data(repeating: 0x44, count: 32)
 
 @Test func productionListenerLoadsInjectedTLSIdentityAndBuildsBonjourAdvertisement() async throws {

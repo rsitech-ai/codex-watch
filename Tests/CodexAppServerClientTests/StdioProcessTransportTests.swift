@@ -27,7 +27,7 @@ import Darwin
     defer { stopStdioFixtureProcess(sentinel) }
     let transport = StdioProcessTransport(
         executable: "/bin/sh",
-        arguments: ["-c", "trap '' TERM; while :; do :; done"],
+        arguments: ["-c", "trap '' TERM; printf 'READY\\n'; while :; do :; done"],
         processFactory: recorder.makeProcess,
         shutdown: OwnedChildShutdown(
             policy: OwnedChildShutdownPolicy(
@@ -42,7 +42,7 @@ import Darwin
     var frames = transport.frames().makeAsyncIterator()
 
     try await transport.connect()
-    try await Task.sleep(for: .milliseconds(20))
+    #expect(try await frames.next() == Data("READY".utf8))
     let firstClose = Task {
         let outcome = await transport.closeWithOutcome()
         await completions.completeFirst(outcome)
@@ -85,7 +85,7 @@ import Darwin
     defer { stopStdioFixtureProcess(sentinel) }
     let transport = StdioProcessTransport(
         executable: "/bin/sh",
-        arguments: ["-c", "trap '' TERM; while :; do :; done"],
+        arguments: ["-c", "trap '' TERM; printf 'READY\\n'; while :; do :; done"],
         processFactory: recorder.makeProcess,
         shutdown: OwnedChildShutdown(
             policy: OwnedChildShutdownPolicy(
@@ -99,7 +99,7 @@ import Darwin
     )
     var frames = transport.frames().makeAsyncIterator()
     try await transport.connect()
-    try await Task.sleep(for: .milliseconds(20))
+    #expect(try await frames.next() == Data("READY".utf8))
     let childPID = try #require(recorder.createdPIDs.first)
 
     let failed = await transport.closeWithOutcome()

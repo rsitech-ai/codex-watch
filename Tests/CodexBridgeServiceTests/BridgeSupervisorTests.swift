@@ -663,7 +663,7 @@ import Testing
     let supervisor = try fixture.makeSupervisor()
     let child = TransportOwnedChild(transport: processFixture.transport)
     try await processFixture.transport.connect()
-    try await Task.sleep(for: .milliseconds(20))
+    try await processFixture.waitUntilReady()
     try await supervisor.start()
     try await supervisor.registerOwnedChild(child)
 
@@ -700,7 +700,7 @@ import Testing
     let supervisor = try fixture.makeSupervisor()
     let child = TransportOwnedChild(transport: processFixture.transport)
     try await processFixture.transport.connect()
-    try await Task.sleep(for: .milliseconds(20))
+    try await processFixture.waitUntilReady()
     try await supervisor.start()
     try await supervisor.registerOwnedChild(child)
 
@@ -1554,7 +1554,7 @@ private final class SupervisorTransportFixture: @unchecked Sendable {
         signaling = SupervisorTransportSignaling(deliverKill: deliverKill)
         transport = StdioProcessTransport(
             executable: "/bin/sh",
-            arguments: ["-c", "trap '' TERM; while :; do :; done"],
+            arguments: ["-c", "trap '' TERM; printf 'READY\\n'; while :; do :; done"],
             processFactory: recorder.makeProcess,
             shutdown: OwnedChildShutdown(
                 policy: OwnedChildShutdownPolicy(
@@ -1572,6 +1572,11 @@ private final class SupervisorTransportFixture: @unchecked Sendable {
         sentinel.standardOutput = FileHandle.nullDevice
         sentinel.standardError = FileHandle.nullDevice
         try sentinel.run()
+    }
+
+    func waitUntilReady() async throws {
+        var frames = transport.frames().makeAsyncIterator()
+        #expect(try await frames.next() == Data("READY".utf8))
     }
 
     func waitUntilTerminate() async throws {

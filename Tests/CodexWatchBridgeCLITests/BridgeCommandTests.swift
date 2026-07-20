@@ -39,6 +39,15 @@ import Testing
             "--advertised-host", "bridge.local",
         ])
     }
+    #expect(throws: BridgeCommandError.usage) {
+        _ = try BridgeCommand.parseLifecycle(arguments: [
+            "install",
+            "--bundle", "/private/tmp/VoiceInboxBridge.app",
+            "--codex", "/usr/bin/true",
+            "--bind-host", "192.168.1.42",
+            "--advertised-host", "127.0.0.1",
+        ])
+    }
 }
 
 @Test func lifecycleRoutingDisablesLegacyStateRootIdentityRotationBypass() throws {

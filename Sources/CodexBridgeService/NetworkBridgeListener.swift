@@ -448,6 +448,21 @@ public final class NetworkBridgeListener: @unchecked Sendable {
         }
     }
 
+    public static func isValidWatchReachableAdvertisedHost(_ value: String) -> Bool {
+        guard isValidAdvertisedHost(value) else { return false }
+        switch NWEndpoint.Host(value) {
+        case let .ipv4(address):
+            return address != .loopback
+        case let .ipv6(address):
+            return address != .loopback
+        case let .name(name, _):
+            let normalized = name.lowercased()
+            return normalized != "localhost" && !normalized.hasSuffix(".localhost")
+        @unknown default:
+            return false
+        }
+    }
+
     private static func isValidConcreteBindHost(_ value: String) -> Bool {
         guard isSyntacticallySafeHost(value) else { return false }
         switch NWEndpoint.Host(value) {
