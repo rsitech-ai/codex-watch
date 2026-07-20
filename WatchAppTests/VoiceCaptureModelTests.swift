@@ -6,7 +6,7 @@ import CryptoKit
 import Darwin
 import Foundation
 import XCTest
-@testable import Codex_Watch
+@testable import CodexWatch
 
 final class VoiceCaptureModelTests: XCTestCase {
     func testQueueStatusVocabularyMapsEveryInternalStateExactly() throws {

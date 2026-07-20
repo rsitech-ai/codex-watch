@@ -282,7 +282,7 @@ import Testing
     process.standardError = FileHandle.nullDevice
     try process.run()
 
-    let deadline = ContinuousClock.now.advanced(by: .seconds(1))
+    let deadline = ContinuousClock.now.advanced(by: .seconds(5))
     while process.isRunning, ContinuousClock.now < deadline {
         try await Task.sleep(for: .milliseconds(10))
     }

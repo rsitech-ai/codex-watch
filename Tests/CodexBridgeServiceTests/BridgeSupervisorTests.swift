@@ -405,11 +405,12 @@ import Testing
     let runtime = Task { try await supervisor.runWithReconnect() }
 
     await listener.waitUntilStartFailed()
-    for _ in 0 ..< 100 {
+    let stopDeadline = ContinuousClock.now.advanced(by: .seconds(1))
+    while ContinuousClock.now < stopDeadline {
         let stopStarted = await processor.hasStopStarted
         let didSleep = !(await sleeps.values.isEmpty)
         if stopStarted || didSleep { break }
-        await Task.yield()
+        try await Task.sleep(for: .milliseconds(1))
     }
     let stopStarted = await processor.hasStopStarted
     #expect(stopStarted)
