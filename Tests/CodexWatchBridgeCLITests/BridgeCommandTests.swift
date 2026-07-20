@@ -613,15 +613,28 @@ private struct BridgeRunProcessFixture {
 
     private static func runOpenSSL(_ arguments: [String]) throws {
         let process = Process()
-        let standardError = Pipe()
+        let standardErrorURL = FileManager.default.temporaryDirectory.appending(
+            path: "voice-inbox-openssl-\(UUID().uuidString).log"
+        )
+        guard FileManager.default.createFile(atPath: standardErrorURL.path, contents: nil) else {
+            throw BridgeRunProcessFixtureError.opensslFailed("could not create stderr capture")
+        }
+        defer { try? FileManager.default.removeItem(at: standardErrorURL) }
+        let standardError = try FileHandle(forWritingTo: standardErrorURL)
+        var didCloseStandardError = false
+        defer {
+            if !didCloseStandardError { try? standardError.close() }
+        }
         process.executableURL = URL(fileURLWithPath: "/usr/bin/openssl")
         process.arguments = arguments
         process.standardOutput = FileHandle.nullDevice
         process.standardError = standardError
         try process.run()
         process.waitUntilExit()
+        try standardError.close()
+        didCloseStandardError = true
         guard process.terminationStatus == 0 else {
-            let output = standardError.fileHandleForReading.readDataToEndOfFile()
+            let output = try Data(contentsOf: standardErrorURL)
             throw BridgeRunProcessFixtureError.opensslFailed(String(decoding: output, as: UTF8.self))
         }
     }
