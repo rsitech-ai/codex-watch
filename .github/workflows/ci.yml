@@ -41,6 +41,16 @@ jobs:
       - name: Bridge production smoke (latest macOS)
         if: matrix.runner == 'macos-26'
         run: Scripts/run-watch-bridge-smoke.sh
+      - name: Build and verify ad-hoc release package (latest macOS)
+        if: matrix.runner == 'macos-26'
+        run: |
+          release_output="$RUNNER_TEMP/voice-inbox-release"
+          Scripts/package-bridge-release.sh \
+            --output "$release_output" \
+            --sign-identity -
+          cd "$release_output"
+          shasum -a 256 -c SHA256SUMS
+          ! unzip -Z1 VoiceInboxBridge-*.zip | grep -q '^__MACOSX/'
 
   watch-build:
     runs-on: macos-26

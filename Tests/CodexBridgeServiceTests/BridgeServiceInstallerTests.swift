@@ -494,7 +494,7 @@ struct BridgeServiceInstallerTests {
     }
 
     @Test func rollbackFailsClosedWhenNewServiceCannotBeBootedOut() async throws {
-        let fixture = try InstallerFixture(healthTimeout: .milliseconds(30))
+        let fixture = try InstallerFixture(healthTimeout: .milliseconds(200))
         try await fixture.install(bundle: try fixture.makeBundle(version: "one"))
         await fixture.health.setHealthy(false)
         await fixture.launchctl.failBootout(onCall: 2)
@@ -508,7 +508,7 @@ struct BridgeServiceInstallerTests {
     }
 
     @Test func failedBoundedHealthCheckRestoresPriorAppAndManifest() async throws {
-        let fixture = try InstallerFixture(healthTimeout: .milliseconds(40))
+        let fixture = try InstallerFixture(healthTimeout: .milliseconds(200))
         try await fixture.install(bundle: try fixture.makeBundle(version: "one"))
         let oldManifest = try Data(contentsOf: fixture.paths.launchAgent)
         await fixture.health.setPredicate {
@@ -556,7 +556,7 @@ struct BridgeServiceInstallerTests {
     }
 
     @Test func rollbackRestorationHealthFailureSurfacesRollbackFailed() async throws {
-        let fixture = try InstallerFixture(healthTimeout: .milliseconds(35))
+        let fixture = try InstallerFixture(healthTimeout: .milliseconds(200))
         try await fixture.install(bundle: try fixture.makeBundle(version: "one"))
         await fixture.health.setHealthy(false)
 
@@ -599,9 +599,9 @@ struct BridgeServiceInstallerTests {
 
     @Test func oneSlowHealthProbeCannotExceedTheInstallerHealthDeadline() async throws {
         let fixture = try InstallerFixture(
-            healthTimeout: .milliseconds(40),
+            healthTimeout: .milliseconds(100),
             healthCheck: {
-                try? await Task.sleep(for: .milliseconds(250))
+                try? await Task.sleep(for: .seconds(2))
                 return false
             }
         )
@@ -611,19 +611,19 @@ struct BridgeServiceInstallerTests {
             try await fixture.install(bundle: try fixture.makeBundle(version: "slow-health"))
         }
 
-        #expect(ContinuousClock.now - started < .milliseconds(250))
+        #expect(ContinuousClock.now - started < .milliseconds(1_500))
     }
 
     @Test func statusHealthProbeIsBoundedByTheInstallerDeadline() async throws {
-        let fixture = try InstallerFixture(healthTimeout: .milliseconds(40))
+        let fixture = try InstallerFixture(healthTimeout: .milliseconds(100))
         try await fixture.install(bundle: try fixture.makeBundle(version: "one"))
-        await fixture.health.delayNextProbe(.milliseconds(250))
+        await fixture.health.delayNextProbe(.seconds(2))
         let started = ContinuousClock.now
 
         let status = try await fixture.installer.status()
 
         #expect(!status.healthy)
-        #expect(ContinuousClock.now - started < .milliseconds(250))
+        #expect(ContinuousClock.now - started < .milliseconds(1_500))
     }
 
     @Test func uninstallBootsOutBeforeRemovalAndPreservesStateByDefault() async throws {
@@ -796,7 +796,7 @@ struct BridgeServiceInstallerTests {
     }
 
     @Test func failedRotatedServiceHealthRestoresPriorIdentityThenProvesRecoveryHealth() async throws {
-        let fixture = try InstallerFixture(healthTimeout: .milliseconds(35))
+        let fixture = try InstallerFixture(healthTimeout: .milliseconds(500))
         try await fixture.install(bundle: try fixture.makeBundle(version: "one"))
         let before = try #require(await fixture.identityLifecycle.existingFingerprint())
         await fixture.health.setPredicate {

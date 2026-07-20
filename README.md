@@ -37,7 +37,8 @@ OpenAI.
 - Apple Watch running watchOS 10 or later.
 - Apple silicon Mac running macOS 15 or later for the downloadable bridge.
 - Xcode 26 and Swift 6.2 or later when building from source.
-- The official Codex app and its local App Server for optional Inbox delivery.
+- The official Codex app and its local App Server. Using the bridge submits each
+  completed transcript through that App Server.
 
 ## Repository layout
 
@@ -106,12 +107,14 @@ per-user application, state, and LaunchAgent paths:
 # Install with the same signed app binary that will serve (Keychain private-key
 # ACLs bind to the creating code signature). Homebrew's `codex` symlink is OK;
 # the installer resolves it to a regular executable for launchd.
+# Replace 192.168.1.42 with this Mac's current Wi-Fi or Ethernet address.
+# Loopback addresses are rejected because an Apple Watch cannot reach them.
 cd /absolute/path/VoiceInboxBridge-0.1.0-macos-arm64
 ./install-bridge.sh \
   --bundle "$PWD/VoiceInboxBridge.app" \
   --codex /opt/homebrew/bin/codex \
-  --bind-host 127.0.0.1 \
-  --advertised-host bridge.local
+  --bind-host 192.168.1.42 \
+  --advertised-host 192.168.1.42
 
 "$HOME/Library/Application Support/VoiceInboxBridge/Service/VoiceInboxBridge.app/Contents/MacOS/codex-watch-bridge" status
 ./uninstall-bridge.sh
@@ -141,9 +144,13 @@ preserves all state; only `--purge-data` removes the installer-owned State root.
    keeps both the selected preference and queued audio for the next lifecycle
    retry. The bridge retains its separate seven-day recovery copy.
 
-The repository-side flow is continuously tested against a fake Inbox. Any live
-Codex compatibility check must use a disposable task, explicit confirmation,
-and the exact installed Codex version.
+The repository-side flow is continuously tested against a fake Inbox. Each
+real delivery starts and waits for a Codex App Server model turn. The turn asks
+for a read-only sandbox with network disabled and approvals set to `never`, but
+read-only sandboxing can still permit filesystem reads. The prompt instructs
+the model not to inspect files or execute the captured idea; that instruction
+is not a technical no-tools boundary. Use the bridge only with a trusted Codex
+installation and review the privacy boundary below.
 
 ## Pairing from the headless bridge
 

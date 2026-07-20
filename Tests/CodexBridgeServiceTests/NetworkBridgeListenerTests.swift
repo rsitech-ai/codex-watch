@@ -7,6 +7,13 @@ import Foundation
 import Network
 import Testing
 
+@Test func watchReachableBindHostRejectsLoopbackAndAcceptsConcreteLANAddresses() {
+    #expect(!NetworkBridgeListener.isValidWatchReachableBindHost("127.0.0.1"))
+    #expect(!NetworkBridgeListener.isValidWatchReachableBindHost("::1"))
+    #expect(NetworkBridgeListener.isValidWatchReachableBindHost("192.168.1.42"))
+    #expect(NetworkBridgeListener.isValidWatchReachableBindHost("fd00::42"))
+}
+
 private let listenerToken = Data(repeating: 0x44, count: 32)
 
 @Test func productionListenerLoadsInjectedTLSIdentityAndBuildsBonjourAdvertisement() async throws {

@@ -16,19 +16,28 @@ import Testing
         "install",
         "--bundle", "/private/tmp/VoiceInboxBridge.app",
         "--codex", "/usr/bin/true",
-        "--bind-host", "127.0.0.1",
-        "--advertised-host", "bridge.local",
+        "--bind-host", "192.168.1.42",
+        "--advertised-host", "192.168.1.42",
     ]) == .install(
         bundle: URL(fileURLWithPath: "/private/tmp/VoiceInboxBridge.app"),
         codexExecutable: URL(fileURLWithPath: "/usr/bin/true"),
-        bindHost: "127.0.0.1",
-        advertisedHost: "bridge.local"
+        bindHost: "192.168.1.42",
+        advertisedHost: "192.168.1.42"
     ))
     #expect(throws: BridgeCommandError.usage) {
         _ = try BridgeCommand.parseLifecycle(arguments: ["uninstall", "--purge-data", "true"])
     }
     #expect(throws: BridgeCommandError.usage) {
         _ = try BridgeCommand.parseLifecycle(arguments: ["install", "--bundle", "relative.app"])
+    }
+    #expect(throws: BridgeCommandError.usage) {
+        _ = try BridgeCommand.parseLifecycle(arguments: [
+            "install",
+            "--bundle", "/private/tmp/VoiceInboxBridge.app",
+            "--codex", "/usr/bin/true",
+            "--bind-host", "127.0.0.1",
+            "--advertised-host", "bridge.local",
+        ])
     }
 }
 

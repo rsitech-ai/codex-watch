@@ -434,6 +434,20 @@ public final class NetworkBridgeListener: @unchecked Sendable {
         _ = try HTTPRequestHeadParser(maxHeaderBytes: configuration.maximumHeaderBytes)
     }
 
+    public static func isValidWatchReachableBindHost(_ value: String) -> Bool {
+        guard isValidConcreteBindHost(value) else { return false }
+        switch NWEndpoint.Host(value) {
+        case let .ipv4(address):
+            return address != .loopback
+        case let .ipv6(address):
+            return address != .loopback
+        case .name:
+            return false
+        @unknown default:
+            return false
+        }
+    }
+
     private static func isValidConcreteBindHost(_ value: String) -> Bool {
         guard isSyntacticallySafeHost(value) else { return false }
         switch NWEndpoint.Host(value) {

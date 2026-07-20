@@ -152,7 +152,8 @@ enum BridgeCommand {
                   let bundle = options["bundle"], bundle.hasPrefix("/"),
                   let codex = options["codex"], codex.hasPrefix("/"),
                   let bindHost = options["bind-host"],
-                  let advertisedHost = options["advertised-host"]
+                  let advertisedHost = options["advertised-host"],
+                  NetworkBridgeListener.isValidWatchReachableBindHost(bindHost)
             else { throw BridgeCommandError.usage }
             return .install(
                 bundle: URL(fileURLWithPath: bundle).standardizedFileURL,

@@ -77,10 +77,14 @@ official Codex app. Its supervisor may stop only the exact App Server child it
 created. Paths accepted at the installation boundary are canonicalized and
 validated before they are persisted or launched.
 
-Inbox delivery is an optional local integration. The bridge persists delivery
+Inbox delivery is intrinsic to using the bridge. The bridge persists delivery
 intent before submission, records only stable non-content identifiers in its
 private journal, and reconciles an ambiguous response before retrying. A
 transport interruption never causes a blind duplicate transcript submission.
+Each submission starts a Codex model turn with a read-only sandbox, network
+disabled, and approvals set to `never`. The message instructs the model not to
+inspect files or execute the idea, but read-only sandboxing can still permit
+filesystem reads and is not a technical no-tools boundary.
 
 ## Reporting a vulnerability
 
