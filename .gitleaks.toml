@@ -1,0 +1,7 @@
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "RFC 6455 published WebSocket handshake test vector"
+paths = ['''Tests/CodexAppServerClientTests/WebSocketCodecTests\.swift''']
+regexes = ['''dGhlIHNhbXBsZSBub25jZQ==''']

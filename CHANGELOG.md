@@ -1,0 +1,14 @@
+# Changelog
+
+All notable public releases are documented here.
+
+## 0.1.0 - 2026-07-20
+
+### Added
+
+- Standalone Apple Watch voice capture with a durable local queue.
+- Authenticated local transfer to a headless macOS bridge.
+- Local Apple Speech transcription with no cloud-audio fallback.
+- Durable, exactly-once-oriented Codex Inbox delivery and recovery boundaries.
+- Transactional per-user bridge installation, pause, status, and uninstall.
+- Apache-2.0 licensing, public CI, and signed bridge release packaging.
