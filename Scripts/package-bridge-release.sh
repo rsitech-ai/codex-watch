@@ -103,8 +103,12 @@ chmod 755 "$release_root/install-bridge.sh" "$release_root/uninstall-bridge.sh"
 
 mkdir -p "$output"
 archive="$output/$release_name.zip"
-/usr/bin/ditto -c -k --sequesterRsrc --keepParent "$release_root" "$archive"
+/usr/bin/ditto -c -k --norsrc --keepParent "$release_root" "$archive"
 archive_sha256="$(shasum -a 256 "$archive" | awk '{print $1}')"
+if /usr/bin/unzip -Z1 "$archive" | /usr/bin/grep -q '^__MACOSX/'; then
+  print -u2 "archive verification failed: Finder metadata is not distributable content"
+  exit 66
+fi
 
 verification_root="$scratch/verification"
 mkdir -p "$verification_root"
