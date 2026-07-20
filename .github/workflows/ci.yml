@@ -53,7 +53,7 @@ jobs:
         run: sudo xcode-select -s /Applications/Xcode_26.5.app
       - name: Run Watch app tests
         run: |
-          destination_id="$(xcrun simctl list devices available | awk -F '[()]' '/Apple Watch/ {print $2; exit}')"
+          destination_id="$(xcrun simctl list devices available | sed -nE '/Apple Watch/ { s/.*\(([0-9A-F-]{36})\).*/\1/p; q; }')"
           test -n "$destination_id"
           xcodebuild \
             -project CodexWatch.xcodeproj \
