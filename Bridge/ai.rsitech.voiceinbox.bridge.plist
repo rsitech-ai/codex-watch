@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>ai.rsitech.voiceinbox.bridge</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>__BRIDGE_EXECUTABLE__</string>
+        <string>run</string>
+        <string>--state-root</string>
+        <string>__STATE_ROOT__</string>
+        <string>--codex</string>
+        <string>__CODEX_EXECUTABLE__</string>
+        <string>--bind-host</string>
+        <string>__BIND_HOST__</string>
+        <string>--advertised-host</string>
+        <string>__ADVERTISED_HOST__</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <dict>
+        <key>SuccessfulExit</key>
+        <false/>
+    </dict>
+    <key>ThrottleInterval</key>
+    <integer>10</integer>
+    <key>ProcessType</key>
+    <string>Background</string>
+    <key>AssociatedBundleIdentifiers</key>
+    <array>
+        <string>ai.rsitech.voiceinbox.bridge</string>
+    </array>
+</dict>
+</plist>

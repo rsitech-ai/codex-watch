@@ -1,0 +1,59 @@
+name: CodexWatch
+options:
+  bundleIdPrefix: ai.rsitech.voiceinbox
+  deploymentTarget:
+    watchOS: "10.0"
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+packages:
+  CodexWatchPackage:
+    path: .
+targets:
+  CodexWatch:
+    type: application
+    platform: watchOS
+    sources:
+      - path: WatchApp
+        excludes:
+          - Info.plist
+    resources:
+      - path: WatchApp/PrivacyInfo.xcprivacy
+    dependencies:
+      - package: CodexWatchPackage
+        product: CodexWatchCore
+      - sdk: AVFAudio.framework
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: ai.rsitech.voiceinbox
+        # Keep the target's internal executable name stable for hosted Watch
+        # tests. CFBundleDisplayName remains the public product name.
+        PRODUCT_NAME: $(TARGET_NAME)
+        INFOPLIST_FILE: WatchApp/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        CODE_SIGN_STYLE: Automatic
+        SDKROOT: watchos
+        SKIP_INSTALL: NO
+  CodexWatchTests:
+    type: bundle.unit-test
+    platform: watchOS
+    sources:
+      - path: WatchAppTests
+    dependencies:
+      - target: CodexWatch
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: ai.rsitech.voiceinbox.tests
+        GENERATE_INFOPLIST_FILE: YES
+        SDKROOT: watchos
+schemes:
+  CodexWatch:
+    build:
+      targets:
+        CodexWatch: all
+    test:
+      targets:
+        - CodexWatchTests

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDisplayName</key>
+	<string>Voice Inbox</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
+	<key>NSHumanReadableCopyright</key>
+	<string>Copyright © 2026 Rafal Sikora. Licensed under Apache-2.0.</string>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_voiceinbox._tcp</string>
+	</array>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Voice Inbox finds your paired Mac bridge on your local network.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Voice Inbox records the voice ideas you explicitly choose to capture.</string>
+	<key>WKApplication</key>
+	<true/>
+	<key>WKWatchOnly</key>
+	<true/>
+	<key>WKBackgroundModes</key>
+	<array>
+		<string>audio</string>
+	</array>
+</dict>
+</plist>

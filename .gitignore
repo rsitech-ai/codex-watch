@@ -1,0 +1,17 @@
+.build/
+.swiftpm/
+.derived-data/
+Compatibility/Schemas/Generated/
+Compatibility/Reports/
+.codex-compat-journal/
+.codex/
+*.xcresult
+*.xcarchive
+*.ipa
+*.dmg
+*.pkg
+*.zip
+.cursor/
+.vscode/
+.DS_Store
+.worktrees/
