@@ -19,16 +19,16 @@ if [[ $# -eq 1 && "$1" == "--help" ]]; then
   exit 0
 fi
 
-typeset -A options
+typeset -A release_options
 while [[ $# -gt 0 ]]; do
-  [[ "$1" == --* && $# -ge 2 && -z "${options[${1#--}]:-}" ]] || { usage >&2; exit 64; }
-  options[${1#--}]="$2"
+  [[ "$1" == --* && $# -ge 2 && -z "${release_options[${1#--}]:-}" ]] || { usage >&2; exit 64; }
+  release_options[${1#--}]="$2"
   shift 2
 done
 
-output="${options[output]:-}"
-sign_identity="${options[sign-identity]:-}"
-notary_profile="${options[notary-profile]:-}"
+output="${release_options[output]:-}"
+sign_identity="${release_options[sign-identity]:-}"
+notary_profile="${release_options[notary-profile]:-}"
 [[ -n "$output" && -n "$sign_identity" ]] || { usage >&2; exit 64; }
 [[ "$output" = /* ]] || { print -u2 "release output must be an absolute path"; exit 64; }
 [[ ! -e "$output" ]] || { print -u2 "refusing to overwrite existing release output: $output"; exit 73; }
