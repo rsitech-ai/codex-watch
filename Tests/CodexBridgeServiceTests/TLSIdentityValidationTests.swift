@@ -7,6 +7,39 @@ import Testing
 @Suite(.serialized) struct TLSIdentityValidationTests {
     private let now = utcValidationDate("20400101000000Z")
 
+    @Test func fixtureImportRetriesTransientFailuresWithinItsBound() throws {
+        var attempts = 0
+        var delayedAttempts: [Int] = []
+
+        let value: Int = try MemoryOnlyPKCS12Identity.retryImport(
+            maxAttempts: 3,
+            delay: { delayedAttempts.append($0) }
+        ) {
+            attempts += 1
+            if attempts < 3 { throw MemoryOnlyPKCS12Identity.FixtureError.importFailed }
+            return 42
+        }
+
+        #expect(value == 42)
+        #expect(attempts == 3)
+        #expect(delayedAttempts == [1, 2])
+    }
+
+    @Test func fixtureImportStopsAtItsRetryBound() {
+        var attempts = 0
+
+        #expect(throws: MemoryOnlyPKCS12Identity.FixtureError.importFailed) {
+            _ = try MemoryOnlyPKCS12Identity.retryImport(
+                maxAttempts: 3,
+                delay: { _ in }
+            ) {
+                attempts += 1
+                throw MemoryOnlyPKCS12Identity.FixtureError.importFailed
+            } as Int
+        }
+        #expect(attempts == 3)
+    }
+
     @Test func validatorAcceptsCurrentSelfSignedP256ServerIdentityAndMatchesItsPublicKey() throws {
         let generated = try X509CertificateBuilder(now: { now }).build()
         let identity = try MemoryOnlyPKCS12Identity.make(
@@ -190,7 +223,26 @@ import Testing
 }
 
 enum MemoryOnlyPKCS12Identity {
-    enum FixtureError: Error { case invalidKey, commandFailed(String), importFailed }
+    enum FixtureError: Error, Equatable { case invalidKey, commandFailed(String), importFailed }
+
+    static func retryImport<T>(
+        maxAttempts: Int = 5,
+        delay: (Int) -> Void = { attempt in
+            Thread.sleep(forTimeInterval: 0.25 * Double(attempt))
+        },
+        _ operation: () throws -> T
+    ) throws -> T {
+        guard maxAttempts > 0 else { throw FixtureError.importFailed }
+        var attempt = 1
+        while true {
+            do { return try operation() }
+            catch {
+                guard attempt < maxAttempts else { throw error }
+                delay(attempt)
+                attempt += 1
+            }
+        }
+    }
 
     static func make(privateKey: SecKey, certificate: SecCertificate) throws -> SecIdentity {
         let privateBytes = try #require(SecKeyCopyExternalRepresentation(privateKey, nil) as Data?)
@@ -252,10 +304,12 @@ enum MemoryOnlyPKCS12Identity {
         ])
         let data = try Data(contentsOf: archive)
         do {
-            return try PKCS12TLSIdentityProvider.importMemoryOnlyIdentity(
-                data: data,
-                password: password
-            )
+            return try retryImport {
+                try PKCS12TLSIdentityProvider.importMemoryOnlyIdentity(
+                    data: data,
+                    password: password
+                )
+            }
         } catch {
             throw FixtureError.importFailed
         }
