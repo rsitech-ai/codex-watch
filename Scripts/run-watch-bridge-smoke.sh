@@ -15,4 +15,5 @@ repo_root="$(cd "$(dirname "$0")/.." && pwd -P)"
 # App Server.
 swift test \
   --package-path "$repo_root" \
+  --no-parallel \
   --filter 'production(ArchiveStatus|TimeoutAfterPossible|AuthoritativeZero|ReplayAfterBridge|Status404|CorruptFinalStatus|ContradictoryDualStatusTruth|FinalAckLoss|TerminalReceiptCapacity|ReservationCommitFailure)'
