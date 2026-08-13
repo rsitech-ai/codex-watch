@@ -3,7 +3,9 @@
 ## Status
 
 - Design approved in conversation on 2026-08-13.
-- Implementation has not started.
+- Physical readiness, deterministic simulator selection, and isolated Codex
+  compatibility tooling are implemented on the hardening branch. Full
+  end-to-end regression and branch review remain in progress.
 - Physical Watch execution is currently `blocked:external` by Apple CoreDevice
   preparation, not by a proven Voice Inbox defect.
 

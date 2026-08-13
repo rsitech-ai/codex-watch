@@ -1,0 +1,9 @@
+{
+  "codexVersion" : "codex-cli 0.147.0-alpha.6.5",
+  "label" : "unverified",
+  "method" : "thread/list",
+  "observedAt" : "2026-08-13T11:12:46Z",
+  "result" : "PASS",
+  "schemaVersion" : 1,
+  "sourceCommit" : "091808f9e49aaf0e0a93273d0f5f5f0a10f8ae77"
+}

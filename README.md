@@ -22,14 +22,18 @@ OpenAI.
 
 - `repo-ready` means package tests, the Watch simulator build, bridge smokes,
   privacy metadata, and release packaging pass for the published source.
-- `package-ready` applies only to the downloadable macOS bridge artifact after
-  its exact signature, checksum, and notarization state are verified.
-- Physical Apple Watch capture, device-to-Mac transfer, Speech permission, and
-  login-restart behavior remain device/operator verification gates.
+- The exact `v0.1.0` macOS bridge download is `package-ready`: its published
+  checksum, Developer ID signature, Gatekeeper notarization assessment, and
+  stapled ticket were verified. This does not prove the Watch app on hardware.
+- Physical Apple Watch capture and the complete Watch-to-Mac workflow remain
+  `blocked:external` while the connected Watch's CoreDevice tunnel is
+  disconnected; simulator evidence is not physical-device evidence.
 - The Watch app is currently distributed as source. App Store signing,
   App Store Connect metadata, TestFlight, and review are separate release gates.
-- Codex App Server compatibility is version-sensitive and experimental. A local
-  integration result is not an OpenAI support guarantee or proof that every
+- Codex App Server compatibility is version-specific. The latest retained
+  isolated `thread/list` smoke and date are recorded in
+  [`docs/RELEASE-VERIFICATION.md`](docs/RELEASE-VERIFICATION.md); other versions
+  remain `unverified`. This is not an OpenAI support guarantee or proof that an
   official Codex client will render an inserted item.
 
 ## Requirements
@@ -73,6 +77,21 @@ test "$(/usr/libexec/PlistBuddy -c 'Print :LSBackgroundOnly' \
   "$bridge_output/VoiceInboxBridge.app/Contents/Info.plist")" = true
 
 Scripts/run-watch-bridge-smoke.sh
+
+# Read-only physical readiness; never invokes Xcode or changes device state.
+swift run watch-device-preflight
+
+# Read-only exact-runtime selector used by hosted CI.
+swift run watch-simulator-selector --format shell
+
+# Non-mutating compatibility probe. Supply an explicit executable; there is no
+# PATH, Desktop App Server, normal Codex home, or existing-task fallback.
+mkdir -p docs/evidence
+swift run codex-compatibility-smoke \
+  --codex /opt/homebrew/bin/codex \
+  --evidence-directory "$PWD/docs/evidence" \
+  --source-commit "$(git rev-parse HEAD)" \
+  --timeout-seconds 20
 ```
 
 Installer tests inject temporary paths plus fake launchctl, signature, identity,
