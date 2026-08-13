@@ -1,0 +1,5 @@
+{
+  "activeSDK":"26.5",
+  "runtimeInventory":{"runtimes":[{"identifier":"com.apple.CoreSimulator.SimRuntime.watchOS-26-5","version":"26.5","platform":"watchOS","isAvailable":true}]},
+  "deviceInventory":{"devices":{"com.apple.CoreSimulator.SimRuntime.watchOS-26-5":[{"name":"Apple Watch SE 3 (40mm)","udid":"00000000-0000-0000-0000-000000000040","isAvailable":false,"deviceTypeIdentifier":"com.apple.CoreSimulator.SimDeviceType.Apple-Watch-SE-3-40mm"}]}}
+}
