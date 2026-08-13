@@ -6,6 +6,7 @@ let package = Package(
     platforms: [.macOS(.v15), .watchOS(.v10)],
     products: [
         .executable(name: "codex-watch-bridge", targets: ["CodexWatchBridgeCLI"]),
+        .executable(name: "codex-compatibility-smoke", targets: ["CodexCompatibilitySmokeCLI"]),
         .executable(name: "watch-device-preflight", targets: ["WatchDevicePreflightCLI"]),
         .executable(name: "watch-simulator-selector", targets: ["WatchSimulatorSelectorCLI"]),
         .library(name: "CodexBridgeShared", targets: ["CodexBridgeShared"]),
@@ -44,6 +45,10 @@ let package = Package(
             ]
         ),
         .executableTarget(
+            name: "CodexCompatibilitySmokeCLI",
+            dependencies: ["CodexAppServerClient"]
+        ),
+        .executableTarget(
             name: "WatchDevicePreflightCLI",
             dependencies: ["WatchDeviceReadiness", "CodexAppServerClient"]
         ),
@@ -76,6 +81,10 @@ let package = Package(
         .testTarget(
             name: "CodexAppServerClientTests",
             dependencies: ["CodexAppServerClient", "CodexAppServerProtocol"]
+        ),
+        .testTarget(
+            name: "CodexCompatibilitySmokeCLITests",
+            dependencies: ["CodexCompatibilitySmokeCLI", "CodexAppServerClient"]
         ),
         .testTarget(
             name: "IntegrationTests",
