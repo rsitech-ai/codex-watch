@@ -331,4 +331,3 @@ git status --short
 ```
 
 Expected: no provisioning/account/device mutation appears; only the simulator destination appears; no whitespace or unrelated changes.
-
