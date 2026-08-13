@@ -36,6 +36,8 @@ jobs:
           swift --version
       - name: Release packaging contract
         run: Tests/ReleasePackagingTests/package_bridge_release_contract_test.sh
+      - name: Watch destination contract
+        run: Tests/CIContractTests/watch_destination_contract_test.sh
       - name: Swift package tests
         run: swift test --no-parallel
       - name: Bridge production smoke (latest macOS)
@@ -61,14 +63,15 @@ jobs:
           persist-credentials: false
       - name: Select Xcode
         run: sudo xcode-select -s /Applications/Xcode_26.5.app
+      - name: Resolve deterministic Watch destination
+        id: watch-destination
+        run: Scripts/resolve-watch-simulator-destination.sh
       - name: Run Watch app tests
         run: |
-          destination_id="$(xcrun simctl list devices available | sed -nE '/Apple Watch/ { s/.*\(([0-9A-F-]{36})\).*/\1/p; q; }')"
-          test -n "$destination_id"
           xcodebuild \
             -project CodexWatch.xcodeproj \
             -scheme CodexWatch \
             -configuration Debug \
-            -destination "platform=watchOS Simulator,id=$destination_id" \
+            -destination "platform=watchOS Simulator,id=${{ steps.watch-destination.outputs.destination_id }}" \
             CODE_SIGNING_ALLOWED=NO \
             test
