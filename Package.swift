@@ -7,6 +7,7 @@ let package = Package(
     products: [
         .executable(name: "codex-watch-bridge", targets: ["CodexWatchBridgeCLI"]),
         .executable(name: "watch-device-preflight", targets: ["WatchDevicePreflightCLI"]),
+        .executable(name: "watch-simulator-selector", targets: ["WatchSimulatorSelectorCLI"]),
         .library(name: "CodexBridgeShared", targets: ["CodexBridgeShared"]),
         .library(name: "CodexBridgeDelivery", targets: ["CodexBridgeDelivery"]),
         .library(name: "CodexBridgeService", targets: ["CodexBridgeService"]),
@@ -45,6 +46,10 @@ let package = Package(
         .executableTarget(
             name: "WatchDevicePreflightCLI",
             dependencies: ["WatchDeviceReadiness", "CodexAppServerClient"]
+        ),
+        .executableTarget(
+            name: "WatchSimulatorSelectorCLI",
+            dependencies: ["WatchSimulatorSelection", "CodexAppServerClient"]
         ),
         .testTarget(name: "CodexAppServerProtocolTests", dependencies: ["CodexAppServerProtocol"]),
         .testTarget(name: "CodexBridgeSharedTests", dependencies: ["CodexBridgeShared"]),
@@ -96,6 +101,10 @@ let package = Package(
             name: "WatchSimulatorSelectionTests",
             dependencies: ["WatchSimulatorSelection"],
             resources: [.copy("Fixtures")]
+        ),
+        .testTarget(
+            name: "WatchSimulatorSelectorCLITests",
+            dependencies: ["WatchSimulatorSelectorCLI", "WatchSimulatorSelection"]
         ),
     ]
 )
