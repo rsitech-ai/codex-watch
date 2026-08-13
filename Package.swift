@@ -12,6 +12,7 @@ let package = Package(
         .library(name: "CodexWatchCore", targets: ["CodexWatchCore"]),
         .library(name: "CodexAppServerProtocol", targets: ["CodexAppServerProtocol"]),
         .library(name: "CodexAppServerClient", targets: ["CodexAppServerClient"]),
+        .library(name: "WatchDeviceReadiness", targets: ["WatchDeviceReadiness"]),
     ],
     targets: [
         .target(name: "CodexBridgeShared"),
@@ -28,6 +29,7 @@ let package = Package(
         .target(name: "CodexWatchCore", dependencies: ["CodexBridgeShared"]),
         .target(name: "CodexAppServerProtocol"),
         .target(name: "CodexAppServerClient", dependencies: ["CodexAppServerProtocol"]),
+        .target(name: "WatchDeviceReadiness"),
         .executableTarget(
             name: "CodexWatchBridgeCLI",
             dependencies: [
@@ -73,6 +75,11 @@ let package = Package(
                 "CodexBridgeShared",
                 "CodexWatchCore",
             ]
+        ),
+        .testTarget(
+            name: "WatchDeviceReadinessTests",
+            dependencies: ["WatchDeviceReadiness"],
+            resources: [.copy("Fixtures")]
         ),
     ]
 )
