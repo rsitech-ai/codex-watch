@@ -6,6 +6,7 @@ let package = Package(
     platforms: [.macOS(.v15), .watchOS(.v10)],
     products: [
         .executable(name: "codex-watch-bridge", targets: ["CodexWatchBridgeCLI"]),
+        .executable(name: "watch-device-preflight", targets: ["WatchDevicePreflightCLI"]),
         .library(name: "CodexBridgeShared", targets: ["CodexBridgeShared"]),
         .library(name: "CodexBridgeDelivery", targets: ["CodexBridgeDelivery"]),
         .library(name: "CodexBridgeService", targets: ["CodexBridgeService"]),
@@ -38,6 +39,10 @@ let package = Package(
                 "CodexBridgeShared",
                 "CodexWatchCore",
             ]
+        ),
+        .executableTarget(
+            name: "WatchDevicePreflightCLI",
+            dependencies: ["WatchDeviceReadiness", "CodexAppServerClient"]
         ),
         .testTarget(name: "CodexAppServerProtocolTests", dependencies: ["CodexAppServerProtocol"]),
         .testTarget(name: "CodexBridgeSharedTests", dependencies: ["CodexBridgeShared"]),
@@ -80,6 +85,10 @@ let package = Package(
             name: "WatchDeviceReadinessTests",
             dependencies: ["WatchDeviceReadiness"],
             resources: [.copy("Fixtures")]
+        ),
+        .testTarget(
+            name: "WatchDevicePreflightCLITests",
+            dependencies: ["WatchDevicePreflightCLI", "WatchDeviceReadiness"]
         ),
     ]
 )
