@@ -100,11 +100,28 @@ public struct CodexCompatibilityEvidenceWriter: Sendable {
             if errno == EEXIST { throw CodexCompatibilityEvidenceWriteError.alreadyExists }
             throw CodexCompatibilityEvidenceWriteError.writeFailed
         }
+        var createdMetadata = stat()
+        guard fstat(descriptor, &createdMetadata) == 0,
+              createdMetadata.st_mode & S_IFMT == S_IFREG,
+              createdMetadata.st_uid == geteuid()
+        else {
+            Darwin.close(descriptor)
+            throw CodexCompatibilityEvidenceWriteError.writeFailed
+        }
 
         var completed = false
         defer {
             Darwin.close(descriptor)
-            if !completed { unlink(target.path) }
+            if !completed {
+                var namedMetadata = stat()
+                if lstat(target.path, &namedMetadata) == 0,
+                   namedMetadata.st_mode & S_IFMT == S_IFREG,
+                   namedMetadata.st_dev == createdMetadata.st_dev,
+                   namedMetadata.st_ino == createdMetadata.st_ino
+                {
+                    unlink(target.path)
+                }
+            }
         }
         var offset = 0
         try payload.withUnsafeBytes { bytes in

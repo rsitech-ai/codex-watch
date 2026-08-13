@@ -184,6 +184,7 @@ public struct CodexCompatibilityProbe: Sendable {
             executable: executable.url.path,
             arguments: arguments,
             environment: environment,
+            inheritEnvironment: false,
             currentDirectory: cwd
         )
         return OwnedCodexCompatibilitySession(
