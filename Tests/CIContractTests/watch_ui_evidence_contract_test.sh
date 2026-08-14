@@ -78,15 +78,15 @@ done
 [[ -f "$output/manifest.tsv" ]]
 [[ "$(wc -l < "$output/manifest.tsv" | tr -d ' ')" == 36 ]]
 /usr/bin/awk -F $'\t' 'NF != 8 { exit 1 }' "$output/manifest.tsv"
-[[ "$(rg -c '\|boot ' "$log")" == 5 ]]
-[[ "$(rg -c '\|install ' "$log")" == 5 ]]
-[[ "$(rg -c '\|launch ' "$log")" == 35 ]]
-[[ "$(rg -c '\|io .* screenshot ' "$log")" == 35 ]]
-[[ "$(rg -c '\|terminate ' "$log")" == 35 ]]
+[[ "$(/usr/bin/grep -cF '|boot ' "$log")" == 5 ]]
+[[ "$(/usr/bin/grep -cF '|install ' "$log")" == 5 ]]
+[[ "$(/usr/bin/grep -cF '|launch ' "$log")" == 35 ]]
+[[ "$(/usr/bin/grep -cE '\|io .* screenshot ' "$log")" == 35 ]]
+[[ "$(/usr/bin/grep -cF '|terminate ' "$log")" == 35 ]]
 for scenario in "${scenarios[@]}"; do
-    [[ "$(rg -c "^${scenario}\\|" "$log")" == 3 ]]
+    [[ "$(/usr/bin/grep -cE "^${scenario}\\|" "$log")" == 3 ]]
 done
-if rg -n '\b(erase|delete|shutdown|pair)\b' "$log"; then
+if /usr/bin/grep -nE '(^|[^[:alnum:]_])(erase|delete|shutdown|pair)([^[:alnum:]_]|$)' "$log"; then
     printf '%s\n' "capture invoked a destructive simulator command" >&2
     exit 1
 fi
