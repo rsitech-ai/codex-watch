@@ -239,6 +239,60 @@ struct CaptureScenePresentation: Equatable {
     }
 }
 
+enum PairingVisualStep: Int, CaseIterable, Equatable {
+    case discovery
+    case identity
+    case code
+    case paired
+
+    var title: String {
+        switch self {
+        case .discovery:
+            "Mac"
+        case .identity:
+            "Identity"
+        case .code:
+            "Code"
+        case .paired:
+            "Paired"
+        }
+    }
+}
+
+struct PairingStepsPresentation: Equatable {
+    let current: PairingVisualStep
+
+    static func make(
+        selectedBridge: Bool,
+        fingerprintConfirmed: Bool,
+        paired: Bool
+    ) -> Self {
+        if paired {
+            return Self(current: .paired)
+        }
+        guard selectedBridge else {
+            return Self(current: .discovery)
+        }
+        guard fingerprintConfirmed else {
+            return Self(current: .identity)
+        }
+        return Self(current: .code)
+    }
+
+    func state(for step: PairingVisualStep) -> SignalNodeVisualState {
+        if current == .paired {
+            return .confirmed
+        }
+        if step.rawValue < current.rawValue {
+            return .confirmed
+        }
+        if step == current {
+            return .active
+        }
+        return .pending
+    }
+}
+
 struct RelayItemPresentation: Equatable {
     let status: String
     let detail: String

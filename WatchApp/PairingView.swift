@@ -8,9 +8,21 @@ struct PairingView: View {
     @State private var pairingCode = ""
     @State private var localError: String?
 
+    private var stepsPresentation: PairingStepsPresentation {
+        PairingStepsPresentation.make(
+            selectedBridge: selectedBridge != nil,
+            fingerprintConfirmed: confirmedPin != nil,
+            paired: BridgeCredentialPresentation.showsSavedBridge(
+                hasSavedCredential: model.hasSavedBridgeCredential
+            )
+        )
+    }
+
     var body: some View {
         ScrollView {
             VStack(spacing: 10) {
+                PairingStepRail(presentation: stepsPresentation)
+
                 if BridgeCredentialPresentation.showsSavedBridge(
                     hasSavedCredential: model.hasSavedBridgeCredential
                 ) {
@@ -39,7 +51,7 @@ struct PairingView: View {
         VStack(spacing: 8) {
             Image(systemName: "checkmark.shield.fill")
                 .font(.title2)
-                .foregroundStyle(.green)
+                .foregroundStyle(WatchExperienceTheme.ColorToken.confirmed)
             Text(model.bridgeState.title)
                 .font(.headline)
                 .multilineTextAlignment(.center)
@@ -129,7 +141,7 @@ struct PairingView: View {
             if let localError {
                 Text(localError)
                     .font(.caption2)
-                    .foregroundStyle(.red)
+                    .foregroundStyle(WatchExperienceTheme.ColorToken.destructive)
                     .multilineTextAlignment(.center)
                     .accessibilityLabel("Pairing error: \(localError)")
             }
@@ -143,6 +155,81 @@ struct PairingView: View {
             .buttonStyle(.plain)
             .font(.caption2)
         }
+    }
+}
+
+private struct PairingStepRail: View {
+    let presentation: PairingStepsPresentation
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        VStack(spacing: 3) {
+            HStack(spacing: 3) {
+                ForEach(PairingVisualStep.allCases, id: \.rawValue) { step in
+                    stepNode(step)
+                    if step != .paired {
+                        Rectangle()
+                            .fill(connectorColor(after: step))
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 2)
+                    }
+                }
+            }
+
+            Text(presentation.current.title.uppercased())
+                .font(.system(size: 9, weight: .bold, design: .rounded))
+                .tracking(0.7)
+                .foregroundStyle(color(for: presentation.state(for: presentation.current)))
+        }
+        .padding(.horizontal, 2)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Pairing progress")
+        .accessibilityValue(presentation.current.title)
+        .animation(
+            reduceMotion ? nil : .easeOut(duration: 0.24),
+            value: presentation
+        )
+    }
+
+    @ViewBuilder
+    private func stepNode(_ step: PairingVisualStep) -> some View {
+        let state = presentation.state(for: step)
+        switch state {
+        case .pending:
+            Circle()
+                .stroke(color(for: state), lineWidth: 1.5)
+                .frame(width: 11, height: 11)
+        case .active:
+            RoundedRectangle(cornerRadius: 2)
+                .fill(color(for: state))
+                .frame(width: 10, height: 10)
+                .rotationEffect(.degrees(45))
+        case .confirmed:
+            ZStack {
+                Circle()
+                    .fill(color(for: state))
+                Image(systemName: "checkmark")
+                    .font(.system(size: 7, weight: .black))
+                    .foregroundStyle(.black)
+            }
+            .frame(width: 13, height: 13)
+        case .attention:
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(color(for: state))
+        }
+    }
+
+    private func connectorColor(after step: PairingVisualStep) -> Color {
+        guard let next = PairingVisualStep(rawValue: step.rawValue + 1) else {
+            return WatchExperienceTheme.ColorToken.neutral
+        }
+        return color(for: presentation.state(for: next)).opacity(0.55)
+    }
+
+    private func color(for state: SignalNodeVisualState) -> Color {
+        WatchExperienceTheme.ColorToken.forNode(state)
     }
 }
 

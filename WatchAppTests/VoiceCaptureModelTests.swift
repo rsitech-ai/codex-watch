@@ -170,6 +170,25 @@ final class VoiceCaptureModelTests: XCTestCase {
         )
     }
 
+    func testPairingStepsNeverSkipIdentityConfirmation() {
+        XCTAssertEqual(
+            PairingStepsPresentation.make(
+                selectedBridge: true,
+                fingerprintConfirmed: false,
+                paired: false
+            ).current,
+            .identity
+        )
+        XCTAssertEqual(
+            PairingStepsPresentation.make(
+                selectedBridge: true,
+                fingerprintConfirmed: true,
+                paired: false
+            ).current,
+            .code
+        )
+    }
+
     func testQueueStatusVocabularyMapsEveryInternalStateExactly() throws {
         let memoID = try MemoID("70707070-7070-7070-7070-707070707070")
         let capturedAt = Date(timeIntervalSince1970: 100)

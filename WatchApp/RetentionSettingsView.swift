@@ -15,7 +15,12 @@ struct RetentionSettingsView: View {
             }
 
             Section {
-                Text("Only ideas already added to Codex are eligible. Waiting or attention items stay on this Watch.")
+                Label {
+                    Text("Only audio with confirmed Codex delivery is eligible. Waiting, sending, and needs-attention recordings remain on this Watch.")
+                } icon: {
+                    Image(systemName: "checkmark.shield")
+                        .foregroundStyle(WatchExperienceTheme.ColorToken.confirmed)
+                }
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
