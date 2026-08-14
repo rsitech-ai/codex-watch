@@ -19,6 +19,8 @@
 - Motion is bounded and has a Reduce Motion replacement; idle has no perpetual animation.
 - Color is redundant with copy, symbols, fill, or position.
 - Debug scenarios compile out of Release and contain no transcript, audio, credential, identifier, or private-path content.
+- After adding a Watch source file, run `xcodegen generate --spec project.yml` and review the generated project diff; never hand-edit generated project membership.
+- Resolve the smallest test destination through `watch-simulator-selector --format shell` and use its validated UDID because simulator names may be duplicated.
 - Simulator evidence remains separate from physical microphone, haptic, energy, Always On, and paired-device proof.
 - Do not push, publish, open a pull request, or mutate external services.
 
@@ -65,15 +67,19 @@ Add table rows for idle, preparing, recording, saving, permission denied, interr
 
 ```bash
 xcodebuild test -project CodexWatch.xcodeproj -scheme CodexWatch \
-  -destination 'platform=watchOS Simulator,name=Apple Watch SE 3 (40mm)' \
+  -destination 'id=33E70F70-2895-4F8E-8CFB-AFD04684631D' \
   -only-testing:CodexWatchTests/VoiceCaptureModelTests/testCapturePresentationNeverPromotesLocalSaveToMacOrCodex
 ```
 
 Expected: compilation fails because `CaptureScenePresentation` is undefined.
 
+The shown UDID is the selector result observed on 2026-08-14. Re-resolve it before execution and use the current validated identifier if inventory changes.
+
 - [ ] **Step 3: Implement exhaustive capture mapping**
 
 Use exact approved copy. Recording activates only Watch; saving activates only Watch; saved confirms only Watch. Remote bridge copy remains secondary and never changes local-capture provenance.
+
+After adding the file, run `xcodegen generate --spec project.yml` so the Watch target and test host compile the new source.
 
 - [ ] **Step 4: Write and implement the failing memo-state table**
 

@@ -107,6 +107,7 @@
 - 2026-08-14: Base on evidence-hardening commit `213604fb`.
 - 2026-08-14: Use Debug-only deterministic scenarios for nondefault states without mutating real data.
 - 2026-08-14: Validate installed exact-runtime sizes 40/42/44/46/49mm rather than treating three representatives as all-size proof.
+- 2026-08-14: Regenerate the Xcode project from `project.yml` after new source files and use selector-resolved UDIDs because duplicate simulator names are present.
 
 ## Progress Log
 
