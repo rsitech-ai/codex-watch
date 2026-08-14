@@ -18,6 +18,38 @@ public enum WatchSimulatorSelector {
         runtimes: [SimulatorRuntime],
         devices: [SimulatorDevice]
     ) throws -> WatchSimulatorDestination {
+        let candidates = try validatedCandidates(
+            activeSDK: activeSDK,
+            runtimes: runtimes,
+            devices: devices,
+            rationale: "smallest-available-display-on-exact-active-runtime"
+        )
+        return candidates.sorted(by: stableDestinationOrder)[0]
+    }
+
+    public static func selectEachDisplaySize(
+        activeSDK: String,
+        runtimes: [SimulatorRuntime],
+        devices: [SimulatorDevice]
+    ) throws -> [WatchSimulatorDestination] {
+        let candidates = try validatedCandidates(
+            activeSDK: activeSDK,
+            runtimes: runtimes,
+            devices: devices,
+            rationale: "one-stable-destination-per-display-on-exact-active-runtime"
+        )
+        let destinationsBySize = Dictionary(grouping: candidates, by: \.displayMillimeters)
+        return destinationsBySize.keys.sorted().compactMap { size in
+            destinationsBySize[size]?.sorted(by: stableDestinationOrder).first
+        }
+    }
+
+    private static func validatedCandidates(
+        activeSDK: String,
+        runtimes: [SimulatorRuntime],
+        devices: [SimulatorDevice],
+        rationale: String
+    ) throws -> [WatchSimulatorDestination] {
         guard activeSDK.range(of: #"^[0-9]+\.[0-9]+$"#, options: .regularExpression) != nil else {
             throw WatchSimulatorSelectionError.invalidSDKVersion
         }
@@ -60,17 +92,21 @@ public enum WatchSimulatorSelector {
                 runtimeIdentifier: runtimeIdentifier,
                 runtimeVersion: activeSDK,
                 displayMillimeters: displayMillimeters,
-                rationale: "smallest-available-display-on-exact-active-runtime"
+                rationale: rationale
             )
         }
+        return candidates
+    }
 
-        return candidates.sorted {
-            if $0.displayMillimeters != $1.displayMillimeters {
-                return $0.displayMillimeters < $1.displayMillimeters
-            }
-            if $0.name != $1.name { return $0.name < $1.name }
-            return $0.identifier < $1.identifier
-        }[0]
+    private static func stableDestinationOrder(
+        _ lhs: WatchSimulatorDestination,
+        _ rhs: WatchSimulatorDestination
+    ) -> Bool {
+        if lhs.displayMillimeters != rhs.displayMillimeters {
+            return lhs.displayMillimeters < rhs.displayMillimeters
+        }
+        if lhs.name != rhs.name { return lhs.name < rhs.name }
+        return lhs.identifier < rhs.identifier
     }
 
     private static func displaySize(from name: String) -> Int? {

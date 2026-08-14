@@ -130,11 +130,22 @@ struct XcrunSimulatorToolRunner: SimulatorToolRunning {
 }
 
 enum WatchSimulatorSelectorCommand {
+    private enum OutputMode {
+        case shell
+        case allSizesJSON
+    }
+
     static func run(
         arguments: [String],
         runner: any SimulatorToolRunning = XcrunSimulatorToolRunner()
     ) async -> WatchSimulatorSelectorResult {
-        guard arguments == ["--format", "shell"] else {
+        let outputMode: OutputMode
+        switch arguments {
+        case ["--format", "shell"]:
+            outputMode = .shell
+        case ["--all-sizes", "--format", "json"]:
+            outputMode = .allSizesJSON
+        default:
             return failure(.usage, code: "USAGE")
         }
 
@@ -170,12 +181,24 @@ enum WatchSimulatorSelectorCommand {
         }
 
         do {
-            let destination = try WatchSimulatorSelector.select(
-                activeSDK: activeSDK,
-                runtimes: SimulatorInventory.decodeRuntimes(runtimeData),
-                devices: SimulatorInventory.decodeDevices(deviceData)
-            )
-            return try success(destination)
+            let runtimes = try SimulatorInventory.decodeRuntimes(runtimeData)
+            let devices = try SimulatorInventory.decodeDevices(deviceData)
+            switch outputMode {
+            case .shell:
+                let destination = try WatchSimulatorSelector.select(
+                    activeSDK: activeSDK,
+                    runtimes: runtimes,
+                    devices: devices
+                )
+                return try success(destination)
+            case .allSizesJSON:
+                let destinations = try WatchSimulatorSelector.selectEachDisplaySize(
+                    activeSDK: activeSDK,
+                    runtimes: runtimes,
+                    devices: devices
+                )
+                return try jsonSuccess(destinations, activeSDK: activeSDK)
+            }
         } catch let error as WatchSimulatorSelectionError {
             switch error {
             case .invalidSDKVersion, .malformedInventory:
@@ -192,15 +215,7 @@ enum WatchSimulatorSelectorCommand {
     private static func success(
         _ destination: WatchSimulatorDestination
     ) throws -> WatchSimulatorSelectorResult {
-        guard destination.identifier.range(
-            of: #"^[0-9A-Fa-f]{8}(-[0-9A-Fa-f]{4}){3}-[0-9A-Fa-f]{12}$"#,
-            options: .regularExpression
-        ) != nil,
-        destination.runtimeIdentifier.range(
-            of: #"^[A-Za-z0-9._-]+$"#,
-            options: .regularExpression
-        ) != nil
-        else { throw WatchSimulatorSelectionError.malformedInventory }
+        try validate(destination)
 
         let name = sanitizeName(destination.name)
         let stdout = [
@@ -217,6 +232,48 @@ enum WatchSimulatorSelectorCommand {
             stdout: stdout,
             stderr: stderr
         )
+    }
+
+    private static func jsonSuccess(
+        _ destinations: [WatchSimulatorDestination],
+        activeSDK: String
+    ) throws -> WatchSimulatorSelectorResult {
+        let values: [[String: Any]] = try destinations.map { destination in
+            try validate(destination)
+            return [
+                "name": sanitizeName(destination.name),
+                "identifier": destination.identifier,
+                "runtime": destination.runtimeVersion,
+                "runtime_identifier": destination.runtimeIdentifier,
+                "display_mm": destination.displayMillimeters,
+                "rationale": destination.rationale,
+            ]
+        }
+        let envelope: [String: Any] = ["destinations": values]
+        guard JSONSerialization.isValidJSONObject(envelope) else {
+            throw WatchSimulatorSelectionError.malformedInventory
+        }
+        let data = try JSONSerialization.data(withJSONObject: envelope, options: [.sortedKeys])
+        guard let json = String(data: data, encoding: .utf8) else {
+            throw WatchSimulatorSelectionError.malformedInventory
+        }
+        return WatchSimulatorSelectorResult(
+            exitCode: .success,
+            stdout: json + "\n",
+            stderr: "selected \(destinations.count) Watch simulator display sizes on watchOS \(activeSDK)\n"
+        )
+    }
+
+    private static func validate(_ destination: WatchSimulatorDestination) throws {
+        guard destination.identifier.range(
+            of: #"^[0-9A-Fa-f]{8}(-[0-9A-Fa-f]{4}){3}-[0-9A-Fa-f]{12}$"#,
+            options: .regularExpression
+        ) != nil,
+        destination.runtimeIdentifier.range(
+            of: #"^[A-Za-z0-9._-]+$"#,
+            options: .regularExpression
+        ) != nil
+        else { throw WatchSimulatorSelectionError.malformedInventory }
     }
 
     private static func failure(

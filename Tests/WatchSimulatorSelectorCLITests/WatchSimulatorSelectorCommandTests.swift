@@ -25,6 +25,37 @@ import Testing
     #expect(result.stderr == "selected Watch simulator: Apple Watch SE 3 (40mm); watchOS 26.5; 40mm; smallest-available-display-on-exact-active-runtime\n")
 }
 
+@Test func allSizesJSONReturnsStablePublicDestinationArray() async throws {
+    let fixture = try selectorFixture("exact-runtime")
+    let runner = RecordingSimulatorToolRunner(results: [
+        .activeSDK: .success(Data("26.5\n".utf8)),
+        .runtimes: .success(fixture.runtimes),
+        .devices: .success(fixture.devices),
+    ])
+
+    let result = await WatchSimulatorSelectorCommand.run(
+        arguments: ["--all-sizes", "--format", "json"],
+        runner: runner
+    )
+
+    #expect(result.exitCode == .success)
+    let envelope = try #require(
+        JSONSerialization.jsonObject(with: Data(result.stdout.utf8))
+            as? [String: Any]
+    )
+    #expect(Set(envelope.keys) == ["destinations"])
+    let values = try #require(envelope["destinations"] as? [[String: Any]])
+    #expect(values.compactMap { $0["display_mm"] as? Int } == [40, 44, 49])
+    #expect(values.allSatisfy {
+        $0["rationale"] as? String
+            == "one-stable-destination-per-display-on-exact-active-runtime"
+    })
+    #expect(values.allSatisfy { Set($0.keys) == [
+        "name", "identifier", "runtime", "runtime_identifier", "display_mm", "rationale",
+    ] })
+    #expect(result.stderr == "selected 3 Watch simulator display sizes on watchOS 26.5\n")
+}
+
 @Test(arguments: [
     (SimulatorToolResult.unavailable, "TOOLS_UNAVAILABLE"),
     (.timedOut, "TOOL_TIMEOUT"),
@@ -67,6 +98,8 @@ func sdkToolFailuresAreClosed(
     ["--format"],
     ["--format", "json"],
     ["--format", "shell", "extra"],
+    ["--format", "json", "--all-sizes"],
+    ["--all-sizes", "--format", "json", "extra"],
 ])
 func unsupportedArgumentsReturnUsage(arguments: [String]) async {
     let result = await WatchSimulatorSelectorCommand.run(
