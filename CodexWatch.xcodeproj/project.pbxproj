@@ -15,6 +15,7 @@
 		280FC69A3CD5341595C856BE /* CodexWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3DA6D1E943146C2FD2656B1 /* CodexWatchApp.swift */; };
 		2F40308B828F54A190CEE4E9 /* WatchPrimaryActionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA2ADF6CA4DC2932992C3CE6 /* WatchPrimaryActionView.swift */; };
 		31E2C2C3D458210602630E01 /* VoiceCaptureModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6A1073E31AC6348CB0F169E /* VoiceCaptureModelTests.swift */; };
+		341638B77D88277DEFFC93E7 /* RelayLedgerRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C729F6BFA33638862EBC66F /* RelayLedgerRow.swift */; };
 		390AB3798EA1E0A20382D0DC /* WatchAudioPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADDEB5B27DF3A2183F971A43 /* WatchAudioPlayer.swift */; };
 		393339C91CD4A8A24D11D60F /* WatchExperienceTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61FF8956B5F9DFFD42F7E121 /* WatchExperienceTheme.swift */; };
 		3F4083F8F98CC4CD424BC2DF /* PairingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4AD5207B26F6BB9AD0D7675 /* PairingView.swift */; };
@@ -47,6 +48,7 @@
 		504A23C7515831358886A734 /* RetentionSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RetentionSettingsView.swift; sourceTree = "<group>"; };
 		61FF8956B5F9DFFD42F7E121 /* WatchExperienceTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchExperienceTheme.swift; sourceTree = "<group>"; };
 		669D3661A6FF2FB0409A6FD0 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		7C729F6BFA33638862EBC66F /* RelayLedgerRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RelayLedgerRow.swift; sourceTree = "<group>"; };
 		81B6C1733E9680377C15F1B5 /* CodexWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CodexWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		829D986282C3BF659B151704 /* CodexWatchTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CodexWatchTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		8DA149FEE1E1E0EBF9E71525 /* VoiceCaptureModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceCaptureModel.swift; sourceTree = "<group>"; };
@@ -112,6 +114,7 @@
 				E4AD5207B26F6BB9AD0D7675 /* PairingView.swift */,
 				669D3661A6FF2FB0409A6FD0 /* PrivacyInfo.xcprivacy */,
 				E6ACC57379F892ECA15AC36A /* QueueView.swift */,
+				7C729F6BFA33638862EBC66F /* RelayLedgerRow.swift */,
 				504A23C7515831358886A734 /* RetentionSettingsView.swift */,
 				971902C76CADB954703B02A8 /* SignalSpineView.swift */,
 				8DA149FEE1E1E0EBF9E71525 /* VoiceCaptureModel.swift */,
@@ -263,6 +266,7 @@
 				D09144E724FB069323966030 /* HTTPSBridgeTransport.swift in Sources */,
 				3F4083F8F98CC4CD424BC2DF /* PairingView.swift in Sources */,
 				5A23DB0AEB36F98C773488C8 /* QueueView.swift in Sources */,
+				341638B77D88277DEFFC93E7 /* RelayLedgerRow.swift in Sources */,
 				F8307F5F2BB5CBBBD8918C4A /* RetentionSettingsView.swift in Sources */,
 				136BC4B0E74A12F3D0981C1A /* SignalSpineView.swift in Sources */,
 				128F8E708E2FE272D4FA83CB /* VoiceCaptureModel.swift in Sources */,

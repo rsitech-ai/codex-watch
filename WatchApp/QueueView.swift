@@ -5,55 +5,42 @@ struct QueueView: View {
     @EnvironmentObject private var model: VoiceCaptureModel
     @State private var itemPendingDeletion: WatchQueueItem?
 
+    private var summary: RelayLedgerSummary {
+        RelayLedgerSummary(count: model.queueItems.count)
+    }
+
     var body: some View {
         Group {
             if model.queueItems.isEmpty {
-                VStack(spacing: 8) {
-                    Image(systemName: "tray")
-                        .font(.title2)
-                        .foregroundStyle(.secondary)
-                    Text("No saved ideas")
-                        .font(.headline)
-                    Text("Record an idea and it will wait here until your Mac bridge receives it.")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                }
-                .padding()
+                emptyLedger
             } else {
-                List(model.queueItems) { item in
-                    VStack(alignment: .leading, spacing: 5) {
-                        Label(item.statusText, systemImage: icon(for: item.state))
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(color(for: item.state))
-                            .accessibilityValue(item.statusText)
-                        Text(item.capturedAt, style: .relative)
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                        Button {
-                            Task {
-                                await model.togglePlayback(item)
-                            }
-                        } label: {
-                            Label(
-                                playbackActionTitle(for: item),
-                                systemImage: playbackIcon(for: item)
+                List {
+                    Section {
+                        ForEach(Array(model.queueItems.enumerated()), id: \.element.id) { index, item in
+                            let presentation = RelayItemPresentation.make(item: item)
+                            RelayLedgerRow(
+                                item: item,
+                                presentation: presentation,
+                                isLast: index == model.queueItems.count - 1,
+                                playbackActionTitle: playbackActionTitle(for: item),
+                                playbackIcon: playbackIcon(for: item),
+                                playbackDisabled: model.isRecording,
+                                onPlayback: {
+                                    Task { await model.togglePlayback(item) }
+                                },
+                                onDelete: {
+                                    itemPendingDeletion = item
+                                }
                             )
                         }
-                        .font(.caption2)
-                        .accessibilityValue(item.statusText)
-                        .disabled(model.isRecording)
-                        if item.canDelete {
-                            Button("Delete from Watch", role: .destructive) {
-                                itemPendingDeletion = item
-                            }
-                            .font(.caption2)
-                        }
+                    } header: {
+                        Text(summary.accessibilityValue)
+                            .font(.caption2.weight(.semibold))
                     }
                 }
             }
         }
-        .navigationTitle("Saved ideas")
+        .navigationTitle("Relay ledger")
         .onAppear {
             model.handleQueueAppeared()
         }
@@ -61,7 +48,7 @@ struct QueueView: View {
             model.handleQueueDisappeared()
         }
         .confirmationDialog(
-            "Delete this idea?",
+            "Delete this recording?",
             isPresented: Binding(
                 get: { itemPendingDeletion != nil },
                 set: { if !$0 { itemPendingDeletion = nil } }
@@ -71,9 +58,7 @@ struct QueueView: View {
             Button("Delete recording", role: .destructive) {
                 guard let item = itemPendingDeletion else { return }
                 itemPendingDeletion = nil
-                Task {
-                    await model.delete(item)
-                }
+                Task { await model.delete(item) }
             }
             Button("Keep recording", role: .cancel) {
                 itemPendingDeletion = nil
@@ -83,46 +68,35 @@ struct QueueView: View {
         }
     }
 
+    private var emptyLedger: some View {
+        VStack(spacing: 7) {
+            Image(systemName: "point.3.connected.trianglepath.dotted")
+                .font(.title2)
+                .foregroundStyle(WatchExperienceTheme.ColorToken.neutral)
+            Text("Relay ledger empty")
+                .font(.headline)
+            Text("New recordings appear here after they are saved on this Watch.")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+        }
+        .padding()
+        .accessibilityElement(children: .combine)
+        .accessibilityValue(summary.accessibilityValue)
+    }
+
     private func playbackActionTitle(for item: WatchQueueItem) -> String {
         switch model.playbackState {
         case let .playing(memoID) where memoID == item.id:
-            return "Stop playback"
+            "Stop playback"
         case let .failed(memoID) where memoID == item.id:
-            return "Try playback again"
+            "Try playback again"
         default:
-            return "Play recording"
+            "Play recording"
         }
     }
 
     private func playbackIcon(for item: WatchQueueItem) -> String {
         model.playbackState == .playing(item.id) ? "stop.fill" : "play.fill"
-    }
-
-    private func icon(for state: MemoState) -> String {
-        switch state {
-        case .saved:
-            return "applewatch"
-        case .uploading, .received:
-            return "arrow.up.circle.fill"
-        case .transcribing:
-            return "waveform"
-        case .readyForCodex, .inserting, .reconciling:
-            return "sparkles"
-        case .delivered:
-            return "checkmark.circle.fill"
-        case .needsAttention:
-            return "exclamationmark.triangle.fill"
-        }
-    }
-
-    private func color(for state: MemoState) -> Color {
-        switch state {
-        case .delivered:
-            return .green
-        case .needsAttention:
-            return .orange
-        default:
-            return .accentColor
-        }
     }
 }

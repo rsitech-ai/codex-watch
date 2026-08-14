@@ -155,6 +155,21 @@ final class VoiceCaptureModelTests: XCTestCase {
         )
     }
 
+    func testRelayLedgerSummaryUsesExactCountVocabulary() {
+        XCTAssertEqual(
+            RelayLedgerSummary(count: 0).accessibilityValue,
+            "No saved recordings"
+        )
+        XCTAssertEqual(
+            RelayLedgerSummary(count: 1).accessibilityValue,
+            "1 saved recording"
+        )
+        XCTAssertEqual(
+            RelayLedgerSummary(count: 2).accessibilityValue,
+            "2 saved recordings"
+        )
+    }
+
     func testQueueStatusVocabularyMapsEveryInternalStateExactly() throws {
         let memoID = try MemoID("70707070-7070-7070-7070-707070707070")
         let capturedAt = Date(timeIntervalSince1970: 100)
