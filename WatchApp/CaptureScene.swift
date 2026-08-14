@@ -21,6 +21,10 @@ enum CapturePrivacyMode {
     var spineOpacity: Double { self == .standard ? 1 : 0.52 }
 }
 
+enum CaptureLayoutPolicy {
+    static let fitAxes: Axis.Set = [.horizontal, .vertical]
+}
+
 struct CaptureScene: View {
     let presentation: CaptureScenePresentation
     let bridgeTitle: String
@@ -41,7 +45,7 @@ struct CaptureScene: View {
     }
 
     var body: some View {
-        ViewThatFits(in: .vertical) {
+        ViewThatFits(in: CaptureLayoutPolicy.fitAxes) {
             composition(isCompact: false)
             composition(isCompact: true)
             ScrollView {

@@ -96,6 +96,7 @@
 - 2026-08-14: Reviewed current Apple guidance for glanceable Watch composition, Always On/reduced luminance, `ViewThatFits`, `TimelineView`, non-color differentiation, and accessibility sort priority.
 - 2026-08-14: Confirmed RED subprocess regression: `ProcessCodexVersionRunner` deadlocked on 128 KiB stderr and required a 12-second external watchdog (`exit 142`). Implemented simultaneous bounded drains and owned-child cancellation; focused tests now finish in 0.172 seconds and cancellation in 0.111 seconds.
 - 2026-08-14: Corrected relay truth mapping, pairing discovery restart after forgetting credentials, accessibility reading priority, render fixture truth, and CI execution of the Watch UI evidence contract. Focused Watch tests pass on the selector-resolved 40 mm simulator.
+- 2026-08-14: Final render review found the regular 49 mm delivered composition clipping the leading confirmed node. Changed `ViewThatFits` to validate both horizontal and vertical fit before selecting the roomier composition; focused layout-policy test passes. The first `c1d9f5b` render matrix is rejected evidence and will not be cited as final proof.
 - 2026-08-14: Current: finish source review and run strict static/script/full-suite gates.
 - 2026-08-14: Next: run fresh package/Watch builds, integration/service/restart/log checks, recapture final evidence, and rerun physical preflight before any GitHub publication.
 

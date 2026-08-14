@@ -5,6 +5,7 @@ import Combine
 import CryptoKit
 import Darwin
 import Foundation
+import SwiftUI
 import XCTest
 @testable import CodexWatch
 
@@ -115,6 +116,11 @@ final class VoiceCaptureModelTests: XCTestCase {
             CaptureAccessibilityPriority.primaryAction,
             CaptureAccessibilityPriority.secondaryNavigation
         )
+    }
+
+    func testCaptureLayoutChecksBothAxesBeforeSelectingTheRoomierComposition() {
+        XCTAssertTrue(CaptureLayoutPolicy.fitAxes.contains(.horizontal))
+        XCTAssertTrue(CaptureLayoutPolicy.fitAxes.contains(.vertical))
     }
 
     func testSignalMotionPolicyIsBoundedOrImmediate() {
