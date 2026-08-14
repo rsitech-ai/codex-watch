@@ -416,13 +416,13 @@ for each installed 40/42/44/46/49mm size.
 - Modify: `docs/PHYSICAL-WATCH-ACCEPTANCE.md`
 - Modify: `plans/active/2026-08-14-signal-spine-watch-experience.md`
 
-- [ ] **Step 1: Run complete regressions**
+- [x] **Step 1: Run complete regressions**
 
 ```bash
 git diff --check
 swift test
 xcodebuild test -project CodexWatch.xcodeproj -scheme CodexWatch \
-  -destination 'platform=watchOS Simulator,name=Apple Watch SE 3 (40mm)' -only-testing:CodexWatchTests
+  -destination 'platform=watchOS Simulator,id=<selector-resolved-watchOS-26.5-40mm-identifier>' -only-testing:CodexWatchTests
 xcodebuild -quiet build-for-testing -project CodexWatch.xcodeproj -scheme CodexWatch \
   -configuration Debug -destination 'generic/platform=watchOS Simulator' CODE_SIGNING_ALLOWED=NO
 xcodebuild -quiet build -project CodexWatch.xcodeproj -scheme CodexWatch \
@@ -431,27 +431,27 @@ xcodebuild -quiet build -project CodexWatch.xcodeproj -scheme CodexWatch \
 
 Expected: all tests pass and both configurations build.
 
-- [ ] **Step 2: Capture and inspect the matrix**
+- [x] **Step 2: Capture and inspect the matrix**
 
 Write into a new directory under `/Users/s1kor/.codex/visualizations/2026/08/14/signal-spine-<short-sha>/`. On the current watchOS 26.5 inventory, expect 35 PNGs: seven scenarios on 40, 42, 44, 46, and 49mm. Inspect every image for clipping, truncation, system-time/corner overlap, redundant state encoding, action density, secrets, and fabricated data. Repair and recapture failed cells.
 
-- [ ] **Step 3: Exercise accessibility**
+- [x] **Step 3: Exercise accessibility**
 
 On 40mm and 49mm inspect Reduce Motion, Increase Contrast, Differentiate Without Color, Reduce Transparency, VoiceOver order, bold text, and largest available accessibility text. Record observation or `unverified`; never infer a pass.
 
-- [ ] **Step 4: Run physical readiness**
+- [x] **Step 4: Run physical readiness**
 
 ```bash
-swift run watch-device-preflight --format human
+swift run watch-device-preflight
 ```
 
 On `READY`, run only authorized non-destructive install, launch, synthetic capture, haptic, and Always On checks. Otherwise retain the closed code and label hardware scope `blocked:external` or `unverified`.
 
-- [ ] **Step 5: Write evidence, update progress, and re-run final checks**
+- [x] **Step 5: Write evidence, update progress, and re-run final checks**
 
 Record source SHA, SDK/runtime, public device names/sizes, scenario count, command results, screenshot directory, accessibility observations, and remaining physical gates. Then run `swift test`, `git diff --check`, `git status --short`, and review the branch diff.
 
-- [ ] **Step 6: Commit documentation**
+- [x] **Step 6: Commit documentation**
 
 ```bash
 git add docs/evidence/2026-08-14-signal-spine-simulator-matrix.md \

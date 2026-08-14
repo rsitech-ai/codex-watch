@@ -91,7 +91,7 @@
 ## Verification
 
 - `swift test`
-- `xcodebuild test -project CodexWatch.xcodeproj -scheme CodexWatch -destination 'platform=watchOS Simulator,name=Apple Watch SE 3 (40mm)' -only-testing:CodexWatchTests`
+- `xcodebuild test -project CodexWatch.xcodeproj -scheme CodexWatch -destination 'platform=watchOS Simulator,id=<selector-resolved-watchOS-26.5-40mm-identifier>' -only-testing:CodexWatchTests`
 - `xcodebuild -quiet build-for-testing -project CodexWatch.xcodeproj -scheme CodexWatch -configuration Debug -destination 'generic/platform=watchOS Simulator' CODE_SIGNING_ALLOWED=NO`
 - `xcodebuild -quiet build -project CodexWatch.xcodeproj -scheme CodexWatch -configuration Release -destination 'generic/platform=watchOS Simulator' CODE_SIGNING_ALLOWED=NO`
 - `bash Tests/CIContractTests/watch_ui_evidence_contract_test.sh`
@@ -130,8 +130,11 @@
 - 2026-08-14: Visually inspected content-free recording, queue, and pairing scenario renders on 40mm under `/Users/s1kor/.codex/visualizations/2026/08/03/019fc66a-469c-7440-a856-456037ea0845/codex-watch-signal-spine-scenario-smoke-2026-08-14/`.
 - 2026-08-14: Completed Task 7 at `cadb0b8`: 15 selector/CLI tests and the dynamic 35-image shell contract pass.
 - 2026-08-14: Live exact-runtime selection resolves stable 40/42/44/46/49mm destinations on watchOS 26.5; the capture script rejects unsafe paths, nonempty outputs, duplicate matrix axes, malformed JSON, and command hangs without erasing or shutting down simulators.
-- 2026-08-14: Current: Task 8 full proof and retained evidence.
-- 2026-08-14: Next: build the exact Debug app, capture all 35 live scenario/size cells, inspect the matrix, and run the complete regression suite.
+- 2026-08-14: The first all-size review found compact text truncation and a malformed TSV separator. Both were repaired, the complete matrix was recaptured at UI source `0166cb1`, and all 35 retained hashes match.
+- 2026-08-14: Final verification passed: 582 Swift package tests, 72 Watch tests on the selector-resolved 40mm watchOS 26.5 simulator, Debug and Release builds, the 35-image shell contract, and the perpetual-motion scan.
+- 2026-08-14: Simulator accessibility controls report content size and Increase Contrast unsupported. Code/tests prove bounded/immediate motion, combined delivery-path accessibility, and shape-redundant states; setting-specific runtime and VoiceOver observations remain unverified.
+- 2026-08-14: Fresh physical preflight is `blocked:external / SUPPORTING_PHONE_UNAVAILABLE`; no hardware proof is claimed.
+- 2026-08-14: Task 8 implementation and retained evidence complete. Next: resolve physical preflight, then execute only the still-unverified hardware and accessibility rows.
 
 ## Rollback / Recovery
 
