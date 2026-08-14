@@ -119,8 +119,11 @@
 - 2026-08-14: Completed Task 1 at `4ac3fd8`: five new truth tests and all 66 Watch tests pass on the selector-resolved 40mm simulator.
 - 2026-08-14: Completed Task 2 at `b2cd804`: the accessibility RED failed on the missing helper; the focused GREEN, all 67 Watch tests, and `build-for-testing` passed on the selector-resolved 40mm simulator.
 - 2026-08-14: Added semantic tone tokens, one combined Signal Spine accessibility element, shape-redundant node states, bounded presentation-keyed motion, and exact compact action labels.
-- 2026-08-14: Current: Task 3 adaptive capture scene.
-- 2026-08-14: Next: write the elapsed-time and reduced-luminance privacy RED tests.
+- 2026-08-14: Completed Task 3 at `f424b65`: all 69 Watch tests pass on 40mm, the 49mm build-for-testing passes, and the repeating-motion scan is empty.
+- 2026-08-14: Inspected live 40mm and 49mm renders. The initial system-title composition still clipped 40mm; the accepted compact composition removes that chrome, retains quiet settings/pairing/ledger routes, and shows the full primary action.
+- 2026-08-14: Retained Task 3 renders under `/Users/s1kor/.codex/visualizations/2026/08/03/019fc66a-469c-7440-a856-456037ea0845/codex-watch-signal-spine-task3-2026-08-14/`.
+- 2026-08-14: Current: Task 4 relay ledger.
+- 2026-08-14: Next: write count vocabulary and ledger-row RED tests.
 
 ## Rollback / Recovery
 

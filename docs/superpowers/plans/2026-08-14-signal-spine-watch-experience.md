@@ -159,7 +159,7 @@ local package identity did not inherit the linked-worktree basename.
 - Consumes: production presentation, model timer/action APIs, spine, primary control, navigation closures, and SwiftUI `isLuminanceReduced`.
 - Produces: `CaptureScene`, pure `CaptureElapsedTime.text(start:now:maximumDuration:)`, `CapturePrivacyMode`, and compact/regular variants selected by `ViewThatFits`.
 
-- [ ] **Step 1: Write failing elapsed-time and action tests**
+- [x] **Step 1: Write failing elapsed-time and action tests**
 
 ```swift
 func testCaptureElapsedTimeClampsAtProtocolLimit() {
@@ -173,15 +173,15 @@ func testCaptureElapsedTimeClampsAtProtocolLimit() {
 
 Also assert recording uses `.stopAndSave` while Mac and Codex nodes remain pending. Add a pure privacy test that reduced-luminance mode retains only state, elapsed duration, a dim spine, and the essential action label while suppressing secondary detail.
 
-- [ ] **Step 2: Verify RED, then build the compact-first scene**
+- [x] **Step 2: Verify RED, then build the compact-first scene**
 
 Both `ViewThatFits` variants include state header, spine plus hero/timer, fixed primary action, and compact ledger link. Keep retention outside the capture hierarchy. Remove the repeating symbol pulse. Keep the one-second timeline only while recording; numeric transition becomes identity under Reduce Motion. Read `isLuminanceReduced`; dim the spine and omit secondary detail in that mode without adding memo content or transcript text.
 
-- [ ] **Step 3: Wire actions without new workflow APIs**
+- [x] **Step 3: Wire actions without new workflow APIs**
 
 Record/stop/record-another call `toggleRecording()`. Pairing navigates. Retry calls the existing foreground refresh path. Do not add transfer side effects to the view.
 
-- [ ] **Step 4: Test, build 40mm and 49mm, and commit**
+- [x] **Step 4: Test, build 40mm and 49mm, and commit**
 
 ```bash
 xcodebuild test -project CodexWatch.xcodeproj -scheme CodexWatch \
@@ -193,6 +193,14 @@ git commit -m "feat: redesign Watch capture around Signal Spine"
 ```
 
 Expected: tests/builds pass and `rg` finds no repeating symbol effect.
+
+Completed at `f424b65`. The elapsed-time/privacy RED failed on the missing pure
+types; all 69 Watch tests passed on the selector-resolved 40mm simulator, the
+49mm build-for-testing passed, and the repeating pulse scan was empty. Live
+40mm/49mm renders were inspected at
+`codex-watch-signal-spine-task3-2026-08-14/`; the first render exposed clipped
+system chrome, and the accepted render keeps the complete primary action above
+the rounded lower edge on 40mm while preserving all three utility routes.
 
 ### Task 4: Relay ledger
 
