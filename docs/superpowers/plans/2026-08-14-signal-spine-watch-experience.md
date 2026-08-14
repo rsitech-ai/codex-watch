@@ -361,7 +361,7 @@ Fixtures contain only fixed public copy, `Studio Mac`, `0:18`, and `10:10`.
 **Interfaces:**
 - Produces: `selectEachDisplaySize(activeSDK:runtimes:devices:)`, CLI `--all-sizes --format json`, and script arguments `--app <absolute .app> --output <absolute absent-or-empty directory>`.
 
-- [ ] **Step 1: Write failing stable-size tests**
+- [x] **Step 1: Write failing stable-size tests**
 
 ```swift
 func testSelectEachDisplaySizeReturnsOneStableDestinationPerSize() throws {
@@ -375,19 +375,19 @@ func testSelectEachDisplaySizeReturnsOneStableDestinationPerSize() throws {
 
 Also cover duplicate UDID, unknown size, unavailable device, runtime mismatch, and stable ties.
 
-- [ ] **Step 2: Verify RED and implement shared exact-runtime selection**
+- [x] **Step 2: Verify RED and implement shared exact-runtime selection**
 
 Keep existing `select` output unchanged. Group validated destinations by millimeters, choose name then identifier stably, and return ascending sizes with rationale `one-stable-destination-per-display-on-exact-active-runtime`.
 
-- [ ] **Step 3: Add strict JSON CLI mode and tests**
+- [x] **Step 3: Add strict JSON CLI mode and tests**
 
 Accept only the new exact argument list or existing `--format shell`. JSON contains public name, UDID, runtime, size, and rationale. Extra or reordered flags return usage 64.
 
-- [ ] **Step 4: Write the failing shell contract, then the script**
+- [x] **Step 4: Write the failing shell contract, then the script**
 
 The test proves the script rejects relative paths, non-app inputs, and nonempty outputs; covers all seven scenarios per size; uses bounded waits; never erases a simulator; and emits content-free filenames/manifests. The script boots if required, installs the app, launches through `SIMCTL_CHILD_CODEX_WATCH_RENDER_SCENARIO`, captures with `simctl io screenshot`, terminates only this app, hashes images, and fails on any missing cell.
 
-- [ ] **Step 5: Run contracts and commit**
+- [x] **Step 5: Run contracts and commit**
 
 ```bash
 swift test --filter WatchSimulatorSelectionTests
@@ -400,6 +400,14 @@ git commit -m "test: capture Watch UI across every display size"
 ```
 
 Expected: existing shell mode remains compatible and all new contracts pass.
+
+Completed at `cadb0b8`. Fifteen focused selector/CLI tests pass, including
+duplicate identifiers, unknown sizes, unavailable devices, stable ties, exact
+runtime matching, and strict/reordered argument rejection. The dynamic shell
+contract produces 35 content-free fixture images, rejects unsafe inputs and
+nonempty outputs, bounds a hung simulator command, and confirms no destructive
+simulator operation. Live selection resolves one stable watchOS 26.5 device
+for each installed 40/42/44/46/49mm size.
 
 ### Task 8: Full proof and documentation
 
