@@ -28,6 +28,7 @@
 		D09144E724FB069323966030 /* HTTPSBridgeTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0480F6F709663077465123A /* HTTPSBridgeTransport.swift */; };
 		DCCE3F8B079CBEEBB252AECC /* WatchRetentionPreference.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38E89C6B058D31DCD8ED5918 /* WatchRetentionPreference.swift */; };
 		F8307F5F2BB5CBBBD8918C4A /* RetentionSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 504A23C7515831358886A734 /* RetentionSettingsView.swift */; };
+		FED742992193E3C5CC52B998 /* CaptureScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = E398C90C14F20AD3B6F13EF9 /* CaptureScene.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -59,6 +60,7 @@
 		C8E092477D638DBA85F956BC /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		D337B84A148EAD91CE8BD689 /* BridgeDiscovery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BridgeDiscovery.swift; sourceTree = "<group>"; };
 		DB898B666BA553E60A733AD0 /* WatchExperiencePresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchExperiencePresentation.swift; sourceTree = "<group>"; };
+		E398C90C14F20AD3B6F13EF9 /* CaptureScene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureScene.swift; sourceTree = "<group>"; };
 		E4AD5207B26F6BB9AD0D7675 /* PairingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PairingView.swift; sourceTree = "<group>"; };
 		E6A1073E31AC6348CB0F169E /* VoiceCaptureModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceCaptureModelTests.swift; sourceTree = "<group>"; };
 		E6ACC57379F892ECA15AC36A /* QueueView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QueueView.swift; sourceTree = "<group>"; };
@@ -103,6 +105,7 @@
 				035AB61BAD77A10B94240861 /* AudioRecorder.swift */,
 				D337B84A148EAD91CE8BD689 /* BridgeDiscovery.swift */,
 				9EFAEAC95FC4F91EDC2B6386 /* BridgeKeychain.swift */,
+				E398C90C14F20AD3B6F13EF9 /* CaptureScene.swift */,
 				A3DA6D1E943146C2FD2656B1 /* CodexWatchApp.swift */,
 				A0315AD28D8DC607C812CBA7 /* ContentView.swift */,
 				C0480F6F709663077465123A /* HTTPSBridgeTransport.swift */,
@@ -254,6 +257,7 @@
 				88B816FD3E44FF391CD35BD5 /* AudioRecorder.swift in Sources */,
 				5542654FD8E752E9EC5D3AB9 /* BridgeDiscovery.swift in Sources */,
 				75DD2594440CCB4DA214F683 /* BridgeKeychain.swift in Sources */,
+				FED742992193E3C5CC52B998 /* CaptureScene.swift in Sources */,
 				280FC69A3CD5341595C856BE /* CodexWatchApp.swift in Sources */,
 				1E0E0CE6496093FBDB587E58 /* ContentView.swift in Sources */,
 				D09144E724FB069323966030 /* HTTPSBridgeTransport.swift in Sources */,

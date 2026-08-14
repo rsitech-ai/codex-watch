@@ -10,6 +10,7 @@ enum SignalSpineAccessibility {
 
 struct SignalSpineView: View {
     let presentation: SignalSpinePresentation
+    var nodeSpacing = WatchExperienceTheme.Metric.nodeSpacing
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -38,7 +39,7 @@ struct SignalSpineView: View {
                         .fill(segmentColor(after: index))
                         .frame(
                             width: WatchExperienceTheme.Metric.spineWidth,
-                            height: WatchExperienceTheme.Metric.nodeSpacing
+                            height: nodeSpacing
                         )
                         .padding(.leading, (WatchExperienceTheme.Metric.nodeSize - WatchExperienceTheme.Metric.spineWidth) / 2)
                 }

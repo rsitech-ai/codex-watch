@@ -123,6 +123,38 @@ final class VoiceCaptureModelTests: XCTestCase {
         )
     }
 
+    func testCaptureElapsedTimeClampsAtProtocolLimit() {
+        let start = Date(timeIntervalSince1970: 100)
+
+        XCTAssertEqual(
+            CaptureElapsedTime.text(
+                start: start,
+                now: start.addingTimeInterval(901),
+                maximumDuration: 900
+            ),
+            "15:00"
+        )
+        XCTAssertEqual(
+            CaptureElapsedTime.text(
+                start: start,
+                now: start.addingTimeInterval(-1),
+                maximumDuration: 900
+            ),
+            "0:00"
+        )
+    }
+
+    func testReducedLuminanceCapturePrivacySuppressesSecondaryDetail() {
+        XCTAssertTrue(CapturePrivacyMode.reducedLuminance.showsState)
+        XCTAssertTrue(CapturePrivacyMode.reducedLuminance.showsElapsedTime)
+        XCTAssertTrue(CapturePrivacyMode.reducedLuminance.showsEssentialAction)
+        XCTAssertFalse(CapturePrivacyMode.reducedLuminance.showsSecondaryDetail)
+        XCTAssertLessThan(
+            CapturePrivacyMode.reducedLuminance.spineOpacity,
+            CapturePrivacyMode.standard.spineOpacity
+        )
+    }
+
     func testQueueStatusVocabularyMapsEveryInternalStateExactly() throws {
         let memoID = try MemoID("70707070-7070-7070-7070-707070707070")
         let capturedAt = Date(timeIntervalSince1970: 100)
