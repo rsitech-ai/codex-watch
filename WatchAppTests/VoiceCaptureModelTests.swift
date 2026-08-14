@@ -108,6 +108,21 @@ final class VoiceCaptureModelTests: XCTestCase {
         )
     }
 
+    func testSignalSpineAccessibilityCombinesDecorativeNodes() {
+        let spine = SignalSpinePresentation(
+            watch: .confirmed,
+            mac: .active,
+            codex: .pending,
+            accessibilityValue: "Saved on Watch; sending to Mac; Codex pending"
+        )
+
+        XCTAssertEqual(SignalSpineAccessibility.label, "Delivery path")
+        XCTAssertEqual(
+            SignalSpineAccessibility.value(for: spine),
+            spine.accessibilityValue
+        )
+    }
+
     func testQueueStatusVocabularyMapsEveryInternalStateExactly() throws {
         let memoID = try MemoID("70707070-7070-7070-7070-707070707070")
         let capturedAt = Date(timeIntervalSince1970: 100)
