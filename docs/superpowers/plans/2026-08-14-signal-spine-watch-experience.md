@@ -303,7 +303,7 @@ cleanup boundary explicitly.
 **Interfaces:**
 - Produces: allowlisted `WatchRenderScenario` cases `ready`, `recording`, `savedOnWatch`, `delivered`, `needsAttention`, `queue`, and `pairing`; Debug-only `WatchRenderScenarioRoot`.
 
-- [ ] **Step 1: Write the failing parser test**
+- [x] **Step 1: Write the failing parser test**
 
 ```swift
 func testRenderScenarioParserAcceptsOnlyAllowlistedValues() {
@@ -316,11 +316,11 @@ func testRenderScenarioParserAcceptsOnlyAllowlistedValues() {
 }
 ```
 
-- [ ] **Step 2: Verify RED, then implement Debug-only routing**
+- [x] **Step 2: Verify RED, then implement Debug-only routing**
 
 If the variable is absent or invalid, launch normal `ContentView`. Fixtures use only `Studio Mac`, fixed `0:18`, fixed `10:10`, and public status copy. Release does not reference the environment key or scenario root.
 
-- [ ] **Step 3: Prove bounded motion and both configurations**
+- [x] **Step 3: Prove bounded motion and both configurations**
 
 ```bash
 rg -n 'repeatForever|\.repeating|symbolEffect\(.+repeating' WatchApp
@@ -332,13 +332,21 @@ xcodebuild -quiet build -project CodexWatch.xcodeproj -scheme CodexWatch \
 
 Expected: no perpetual-motion match and both configurations build.
 
-- [ ] **Step 4: Commit render support**
+- [x] **Step 4: Commit render support**
 
 ```bash
 git add WatchApp/WatchRenderScenario.swift WatchApp/CodexWatchApp.swift \
   WatchApp/SignalSpineView.swift WatchAppTests/VoiceCaptureModelTests.swift
 git commit -m "test: add deterministic Watch render scenarios"
 ```
+
+Completed at `0bf637d`. The parser RED failed on the missing allowlisted type;
+all 72 Watch tests then passed on 40mm. Debug build-for-testing and Release
+build both passed, the perpetual-motion scan was empty, and the Release
+executable contained neither the environment key nor scenario-root symbol.
+Recording, queue, and pairing fixtures were launched through `simctl` on 40mm
+and visually inspected under `codex-watch-signal-spine-scenario-smoke-2026-08-14/`.
+Fixtures contain only fixed public copy, `Studio Mac`, `0:18`, and `10:10`.
 
 ### Task 7: All-size selection and screenshot capture
 

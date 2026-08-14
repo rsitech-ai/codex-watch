@@ -126,8 +126,10 @@
 - 2026-08-14: The ledger uses chronological rules, explicit authoritative status/detail, relative capture time, and quiet playback/delete actions; it adds no fabricated duration or predecessor phase.
 - 2026-08-14: Completed Task 5 at `7bd1375`: all 71 Watch tests pass on 40mm, including Pair again, credential, rejected-upload, and retention regressions.
 - 2026-08-14: Pairing now exposes a bounded Mac/Identity/Code/Paired progress rail while keeping exact phrase comparison, explicit confirmation, sanitized code input, forget behavior, and raw-fingerprint accessibility isolation.
-- 2026-08-14: Current: Task 6 deterministic Debug render scenarios.
-- 2026-08-14: Next: write the allowlist/privacy RED tests before adding Debug-only routing.
+- 2026-08-14: Completed Task 6 at `0bf637d`: all 72 Watch tests pass, Debug and Release builds pass, the perpetual-motion scan is empty, and the Release executable contains no scenario key/root symbol.
+- 2026-08-14: Visually inspected content-free recording, queue, and pairing scenario renders on 40mm under `/Users/s1kor/.codex/visualizations/2026/08/03/019fc66a-469c-7440-a856-456037ea0845/codex-watch-signal-spine-scenario-smoke-2026-08-14/`.
+- 2026-08-14: Current: Task 7 all-size selection and screenshot capture.
+- 2026-08-14: Next: write stable one-per-size selector RED tests for 40/42/44/46/49mm and duplicate destinations.
 
 ## Rollback / Recovery
 
