@@ -240,20 +240,55 @@ public struct ProcessCodexVersionRunner: CodexVersionRunning {
     ) async throws -> String {
         let process = Process()
         let output = Pipe()
-        let error = Pipe()
+        let errorPipe = Pipe()
+        let stdout = CompatibilityProcessOutput(limit: 4_096)
+        let stderr = CompatibilityProcessOutput(limit: 4_096)
         process.executableURL = executable.url
         process.arguments = ["--version"]
         process.environment = environment
         process.currentDirectoryURL = cwd
+        process.standardInput = FileHandle.nullDevice
         process.standardOutput = output
-        process.standardError = error
-        try process.run()
+        process.standardError = errorPipe
+        output.fileHandleForReading.readabilityHandler = { handle in
+            stdout.consumeAvailable(from: handle)
+        }
+        errorPipe.fileHandleForReading.readabilityHandler = { handle in
+            stderr.consumeAvailable(from: handle)
+        }
 
-        let data = try output.fileHandleForReading.readToEnd() ?? Data()
-        _ = try? error.fileHandleForReading.readToEnd()
-        process.waitUntilExit()
+        do {
+            try process.run()
+        } catch {
+            Self.close(output)
+            Self.close(errorPipe)
+            throw CodexCompatibilityFailure.versionUnavailable
+        }
+
+        do {
+            while process.isRunning {
+                try await Task.sleep(for: .milliseconds(10))
+            }
+        } catch {
+            if process.isRunning {
+                _ = await OwnedChildShutdown(policy: .init(
+                    gracefulTimeout: .zero,
+                    terminateTimeout: .milliseconds(100),
+                    killTimeout: .milliseconds(100)
+                )).stop(process: process, stdin: nil)
+            }
+            Self.close(output)
+            Self.close(errorPipe)
+            throw CancellationError()
+        }
+
+        try? await Task.sleep(for: .milliseconds(20))
+        Self.close(output)
+        Self.close(errorPipe)
+
+        let data = stdout.data
         guard process.terminationStatus == 0,
-              data.count <= 4096,
+              !stdout.exceededLimit,
               let text = String(data: data, encoding: .utf8)
         else { throw CodexCompatibilityFailure.versionUnavailable }
 
@@ -264,5 +299,47 @@ public struct ProcessCodexVersionRunner: CodexVersionRunning {
               line.unicodeScalars.allSatisfy({ !CharacterSet.controlCharacters.contains($0) })
         else { throw CodexCompatibilityFailure.versionUnavailable }
         return line
+    }
+
+    private static func close(_ pipe: Pipe) {
+        pipe.fileHandleForReading.readabilityHandler = nil
+        try? pipe.fileHandleForReading.close()
+        try? pipe.fileHandleForWriting.close()
+    }
+}
+
+private final class CompatibilityProcessOutput: @unchecked Sendable {
+    private let lock = NSLock()
+    private let limit: Int
+    private var storage = Data()
+    private var overflowed = false
+
+    init(limit: Int) {
+        self.limit = limit
+    }
+
+    func consumeAvailable(from handle: FileHandle) {
+        lock.withLock {
+            appendWhileLocked(handle.availableData)
+        }
+    }
+
+    var data: Data {
+        lock.withLock { storage }
+    }
+
+    var exceededLimit: Bool {
+        lock.withLock { overflowed }
+    }
+
+    private func appendWhileLocked(_ data: Data) {
+        guard !data.isEmpty else { return }
+        let remaining = max(0, limit - storage.count)
+        if data.count > remaining {
+            overflowed = true
+        }
+        if remaining > 0 {
+            storage.append(data.prefix(remaining))
+        }
     }
 }

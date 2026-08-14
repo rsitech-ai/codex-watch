@@ -111,6 +111,67 @@ import Testing
     #expect(await session.closeCount == 1)
 }
 
+@Test func processVersionRunnerDrainsLargeStderrWithoutBlocking() async throws {
+    let fixture = try ExecutableFixture(script: """
+    #!/bin/sh
+    head -c 131072 /dev/zero >&2
+    printf 'codex-cli 1.2.3\\n'
+    """)
+    defer { fixture.close() }
+
+    let version = try await ProcessCodexVersionRunner().version(
+        executable: fixture.executable,
+        environment: [:],
+        cwd: fixture.root
+    )
+
+    #expect(version == "codex-cli 1.2.3")
+}
+
+@Test func processVersionRunnerCancelsAndStopsItsOwnedChildPromptly() async throws {
+    let fixture = try ExecutableFixture(script: """
+    #!/bin/sh
+    trap '' TERM
+    while :; do sleep 1; done
+    """)
+    defer { fixture.close() }
+    let task = Task {
+        try await ProcessCodexVersionRunner().version(
+            executable: fixture.executable,
+            environment: [:],
+            cwd: fixture.root
+        )
+    }
+    try await Task.sleep(for: .milliseconds(100))
+
+    let cancelledAt = ContinuousClock.now
+    task.cancel()
+
+    await #expect(throws: CancellationError.self) {
+        try await task.value
+    }
+    #expect(cancelledAt.duration(to: .now) < .seconds(1))
+}
+
+@Test func processVersionRunnerDoesNotWaitForDescendantRetainedPipes() async throws {
+    let fixture = try ExecutableFixture(script: """
+    #!/bin/sh
+    sleep 10 &
+    printf 'codex-cli 1.2.3\\n'
+    """)
+    defer { fixture.close() }
+
+    let startedAt = ContinuousClock.now
+    let version = try await ProcessCodexVersionRunner().version(
+        executable: fixture.executable,
+        environment: [:],
+        cwd: fixture.root
+    )
+
+    #expect(version == "codex-cli 1.2.3")
+    #expect(startedAt.duration(to: .now) < .seconds(1))
+}
+
 private enum ProbeTestError: Error { case injected }
 
 private struct StubVersionRunner: CodexVersionRunning {
@@ -222,6 +283,30 @@ private final class ProbeFixture: @unchecked Sendable {
 
     func close() {
         workspace.close()
+        try? FileManager.default.removeItem(at: root)
+    }
+}
+
+private final class ExecutableFixture: @unchecked Sendable {
+    let root: URL
+    let executable: ValidatedCodexExecutable
+
+    init(script: String) throws {
+        root = FileManager.default.temporaryDirectory.appendingPathComponent(
+            "compatibility-version-tests-\(UUID().uuidString)",
+            isDirectory: true
+        )
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        let executableURL = root.appendingPathComponent("codex")
+        try Data(script.utf8).write(to: executableURL)
+        try FileManager.default.setAttributes(
+            [.posixPermissions: 0o700],
+            ofItemAtPath: executableURL.path
+        )
+        executable = try ValidatedCodexExecutable(executableURL)
+    }
+
+    func close() {
         try? FileManager.default.removeItem(at: root)
     }
 }

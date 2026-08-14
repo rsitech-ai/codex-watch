@@ -112,9 +112,9 @@ struct WatchRenderScenarioRoot: View {
                 tone: .attention,
                 spine: .init(
                     watch: .confirmed,
-                    mac: .attention,
+                    mac: .pending,
                     codex: .pending,
-                    accessibilityValue: "Needs attention; last remote phase unavailable"
+                    accessibilityValue: "Saved on Watch; remote phase unavailable"
                 ),
                 action: .retryRelay
             )

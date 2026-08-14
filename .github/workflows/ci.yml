@@ -38,6 +38,8 @@ jobs:
         run: Tests/ReleasePackagingTests/package_bridge_release_contract_test.sh
       - name: Watch destination contract
         run: Tests/CIContractTests/watch_destination_contract_test.sh
+      - name: Watch UI evidence contract
+        run: Tests/CIContractTests/watch_ui_evidence_contract_test.sh
       - name: Swift package tests
         run: swift test --no-parallel
       - name: Bridge production smoke (latest macOS)

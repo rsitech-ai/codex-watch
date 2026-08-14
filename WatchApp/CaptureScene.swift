@@ -63,9 +63,11 @@ struct CaptureScene: View {
                 )
                     .opacity(privacyMode.spineOpacity)
                     .fixedSize()
+                    .accessibilitySortPriority(CaptureAccessibilityPriority.relayPath)
 
                 hero(isCompact: isCompact)
                     .frame(maxWidth: .infinity, alignment: .leading)
+                    .accessibilitySortPriority(CaptureAccessibilityPriority.state)
             }
 
             if privacyMode.showsEssentialAction {
@@ -76,6 +78,7 @@ struct CaptureScene: View {
                 ) {
                     onPrimaryAction(presentation.primaryAction)
                 }
+                .accessibilitySortPriority(CaptureAccessibilityPriority.primaryAction)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -90,6 +93,7 @@ struct CaptureScene: View {
                 .lineLimit(1)
                 .minimumScaleFactor(isCompact ? 0.68 : 0.85)
                 .layoutPriority(1)
+                .accessibilitySortPriority(CaptureAccessibilityPriority.state)
 
             Spacer(minLength: 4)
 
@@ -101,6 +105,7 @@ struct CaptureScene: View {
             .buttonStyle(.plain)
             .accessibilityLabel("Retention settings")
             .accessibilityHint("Changes how long delivered audio remains on this Watch")
+            .accessibilitySortPriority(CaptureAccessibilityPriority.secondaryNavigation)
 
             Button(action: onOpenPairing) {
                 Image(systemName: "desktopcomputer")
@@ -110,6 +115,7 @@ struct CaptureScene: View {
             .buttonStyle(.plain)
             .accessibilityLabel("Mac bridge status: \(bridgeTitle)")
             .accessibilityHint("Opens secure Mac pairing")
+            .accessibilitySortPriority(CaptureAccessibilityPriority.secondaryNavigation)
 
             Button(action: onOpenQueue) {
                 Image(systemName: "tray.full")
@@ -120,6 +126,7 @@ struct CaptureScene: View {
             .accessibilityLabel("Relay ledger")
             .accessibilityValue("\(queueCount) \(queueCount == 1 ? "item" : "items")")
             .accessibilityHint("Opens saved recordings and relay status")
+            .accessibilitySortPriority(CaptureAccessibilityPriority.secondaryNavigation)
         }
     }
 

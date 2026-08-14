@@ -38,9 +38,14 @@ struct PairingView: View {
             .padding(.bottom, 8)
         }
         .navigationTitle("Mac Bridge")
-        .task {
-            guard !model.hasSavedBridgeCredential else { return }
-            model.discovery.start()
+        .task(id: model.hasSavedBridgeCredential) {
+            if PairingDiscoveryPolicy.shouldRun(
+                hasSavedCredential: model.hasSavedBridgeCredential
+            ) {
+                model.discovery.start()
+            } else {
+                model.discovery.stop()
+            }
         }
         .onDisappear {
             model.discovery.stop()
@@ -155,6 +160,12 @@ struct PairingView: View {
             .buttonStyle(.plain)
             .font(.caption2)
         }
+    }
+}
+
+enum PairingDiscoveryPolicy {
+    static func shouldRun(hasSavedCredential: Bool) -> Bool {
+        !hasSavedCredential
     }
 }
 

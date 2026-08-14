@@ -64,12 +64,12 @@ final class VoiceCaptureModelTests: XCTestCase {
             (.saved, .pending, .pending),
             (.uploading, .active, .pending),
             (.received, .confirmed, .pending),
-            (.transcribing, .confirmed, .active),
-            (.readyForCodex, .confirmed, .active),
+            (.transcribing, .active, .pending),
+            (.readyForCodex, .confirmed, .pending),
             (.inserting, .confirmed, .active),
             (.reconciling, .confirmed, .active),
             (.delivered, .confirmed, .confirmed),
-            (.needsAttention, .attention, .pending),
+            (.needsAttention, .pending, .pending),
         ]
 
         for (state, mac, codex) in expected {
@@ -93,7 +93,27 @@ final class VoiceCaptureModelTests: XCTestCase {
         XCTAssertEqual(presentation.status, "Needs attention")
         XCTAssertEqual(
             presentation.spine.accessibilityValue,
-            "Needs attention; last remote phase unavailable"
+            "Saved on Watch; remote phase unavailable"
+        )
+    }
+
+    func testPairingDiscoveryRunsExactlyWhenNoCredentialIsSaved() {
+        XCTAssertTrue(PairingDiscoveryPolicy.shouldRun(hasSavedCredential: false))
+        XCTAssertFalse(PairingDiscoveryPolicy.shouldRun(hasSavedCredential: true))
+    }
+
+    func testCaptureAccessibilityReadsStateAndPrimaryActionBeforeSecondaryNavigation() {
+        XCTAssertGreaterThan(
+            CaptureAccessibilityPriority.state,
+            CaptureAccessibilityPriority.relayPath
+        )
+        XCTAssertGreaterThan(
+            CaptureAccessibilityPriority.relayPath,
+            CaptureAccessibilityPriority.primaryAction
+        )
+        XCTAssertGreaterThan(
+            CaptureAccessibilityPriority.primaryAction,
+            CaptureAccessibilityPriority.secondaryNavigation
         )
     }
 

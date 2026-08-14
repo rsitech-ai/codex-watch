@@ -335,11 +335,21 @@ struct RelayItemPresentation: Equatable {
         case .transcribing:
             detail = "Processing locally on Mac"
             tone = .active
-            spine = codexActiveSpine("transcribing locally")
+            spine = SignalSpinePresentation(
+                watch: .confirmed,
+                mac: .active,
+                codex: .pending,
+                accessibilityValue: "Saved on Watch; processing locally on Mac; Codex pending"
+            )
         case .readyForCodex:
             detail = "Ready for Codex"
             tone = .active
-            spine = codexActiveSpine("ready for Codex")
+            spine = SignalSpinePresentation(
+                watch: .confirmed,
+                mac: .confirmed,
+                codex: .pending,
+                accessibilityValue: "Saved on Watch; prepared by Mac; ready for Codex"
+            )
         case .inserting:
             detail = "Adding to local Inbox"
             tone = .active
@@ -362,9 +372,9 @@ struct RelayItemPresentation: Equatable {
             tone = .attention
             spine = SignalSpinePresentation(
                 watch: .confirmed,
-                mac: .attention,
+                mac: .pending,
                 codex: .pending,
-                accessibilityValue: "Needs attention; last remote phase unavailable"
+                accessibilityValue: "Saved on Watch; remote phase unavailable"
             )
         }
         return Self(
@@ -393,4 +403,11 @@ enum SignalMotionStyle: Equatable {
     static func forTransition(reduceMotion: Bool) -> Self {
         reduceMotion ? .immediate : .bounded(duration: 0.24)
     }
+}
+
+enum CaptureAccessibilityPriority {
+    static let state = 4.0
+    static let relayPath = 3.0
+    static let primaryAction = 2.0
+    static let secondaryNavigation = 1.0
 }
