@@ -84,11 +84,11 @@ struct CaptureScene: View {
     private func statusHeader(isCompact: Bool) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 5) {
             Text(presentation.kicker.uppercased())
-                .font(.system(size: 10, weight: .bold, design: .rounded))
-                .tracking(0.75)
+                .font(.system(size: isCompact ? 9 : 10, weight: .bold, design: .rounded))
+                .tracking(isCompact ? 0.4 : 0.75)
                 .foregroundStyle(WatchExperienceTheme.ColorToken.forTone(presentation.tone))
                 .lineLimit(1)
-                .minimumScaleFactor(isCompact ? 0.72 : 1)
+                .minimumScaleFactor(isCompact ? 0.68 : 0.85)
                 .layoutPriority(1)
 
             Spacer(minLength: 4)
@@ -112,15 +112,9 @@ struct CaptureScene: View {
             .accessibilityHint("Opens secure Mac pairing")
 
             Button(action: onOpenQueue) {
-                HStack(spacing: 2) {
-                    Image(systemName: "tray.full")
-                    if queueCount > 0 {
-                        Text("\(queueCount)")
-                            .monospacedDigit()
-                    }
-                }
-                .font(.caption2.weight(.semibold))
-                .foregroundStyle(.secondary)
+                Image(systemName: "tray.full")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.secondary)
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Relay ledger")
@@ -153,7 +147,9 @@ struct CaptureScene: View {
                                     ? Color.secondary
                                     : WatchExperienceTheme.ColorToken.attention
                             )
-                            .lineLimit(isCompact ? 1 : 2)
+                            .lineLimit(2)
+                            .minimumScaleFactor(0.82)
+                            .allowsTightening(true)
                     }
                 }
             }
@@ -170,7 +166,9 @@ struct CaptureScene: View {
                     Text(presentation.detail)
                         .font(.caption2)
                         .foregroundStyle(.secondary)
-                        .lineLimit(isCompact ? 1 : 2)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.82)
+                        .allowsTightening(true)
                 }
             }
             .accessibilityElement(children: .combine)

@@ -173,7 +173,9 @@ for position in {1..${#identifiers[@]}}; do
             || fail "app termination failed for ${scenario} ${size}mm" 2
 
         digest="$(/usr/bin/shasum -a 256 "$screenshot" | /usr/bin/awk '{print $1}')"
-        print -r -- "${size}\t${scenario}\t${filename}\t${digest}\t${names[$position]}\t${identifier}\t${runtimes[$position]}\t${rationales[$position]}" \
+        /usr/bin/printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+            "$size" "$scenario" "$filename" "$digest" "${names[$position]}" \
+            "$identifier" "${runtimes[$position]}" "${rationales[$position]}" \
             >> "$manifest"
     done
 done

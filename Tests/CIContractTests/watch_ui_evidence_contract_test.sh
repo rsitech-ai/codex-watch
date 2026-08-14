@@ -77,6 +77,7 @@ done
 
 [[ -f "$output/manifest.tsv" ]]
 [[ "$(wc -l < "$output/manifest.tsv" | tr -d ' ')" == 36 ]]
+/usr/bin/awk -F $'\t' 'NF != 8 { exit 1 }' "$output/manifest.tsv"
 [[ "$(rg -c '\|boot ' "$log")" == 5 ]]
 [[ "$(rg -c '\|install ' "$log")" == 5 ]]
 [[ "$(rg -c '\|launch ' "$log")" == 35 ]]
