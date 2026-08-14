@@ -9,6 +9,105 @@ import XCTest
 @testable import CodexWatch
 
 final class VoiceCaptureModelTests: XCTestCase {
+    func testCapturePresentationNeverPromotesLocalSaveToMacOrCodex() throws {
+        let memoID = try MemoID("11111111-1111-1111-1111-111111111111")
+
+        let presentation = CaptureScenePresentation.make(
+            captureState: .savedOnWatch(memoID),
+            bridgeState: .waiting("Studio Mac")
+        )
+
+        XCTAssertEqual(presentation.kicker, "Saved on Watch")
+        XCTAssertEqual(presentation.spine.watch, .confirmed)
+        XCTAssertEqual(presentation.spine.mac, .pending)
+        XCTAssertEqual(presentation.spine.codex, .pending)
+        XCTAssertEqual(
+            presentation.spine.accessibilityValue,
+            "Saved on Watch; waiting for Mac"
+        )
+    }
+
+    func testCapturePresentationCoversEveryLocalStateWithoutRemoteProgress() throws {
+        let memoID = try MemoID("12121212-1212-1212-1212-121212121212")
+        let cases: [(WatchCaptureState, WatchPrimaryAction, Bool, Bool)] = [
+            (.idle, .record, false, false),
+            (.preparing, .none, false, true),
+            (.recording(memoID), .stopAndSave, true, false),
+            (.saving(memoID), .none, false, true),
+            (.savedOnWatch(memoID), .recordAnother, false, false),
+            (.permissionDenied, .none, false, true),
+            (.interruptedRecordingFound(1), .record, false, false),
+            (.failed(.identifier), .none, false, true),
+            (.failed(.recorderStart), .record, false, false),
+            (.failed(.recorderStop), .record, false, false),
+            (.failed(.queueCommit), .none, false, true),
+            (.failed(.recovery), .none, false, true),
+        ]
+
+        for (state, action, showsElapsedTime, disabled) in cases {
+            let presentation = CaptureScenePresentation.make(
+                captureState: state,
+                bridgeState: .paired("Studio Mac")
+            )
+            XCTAssertEqual(presentation.primaryAction, action, "state: \(state)")
+            XCTAssertEqual(presentation.showsElapsedTime, showsElapsedTime, "state: \(state)")
+            XCTAssertEqual(presentation.primaryActionDisabled, disabled, "state: \(state)")
+            XCTAssertEqual(presentation.spine.mac, .pending, "state: \(state)")
+            XCTAssertEqual(presentation.spine.codex, .pending, "state: \(state)")
+        }
+    }
+
+    func testRelayPresentationMapsEveryMemoStateToLastConfirmedNode() throws {
+        let memoID = try MemoID("22222222-2222-2222-2222-222222222222")
+        let capturedAt = Date(timeIntervalSince1970: 100)
+        let expected: [(MemoState, SignalNodeVisualState, SignalNodeVisualState)] = [
+            (.saved, .pending, .pending),
+            (.uploading, .active, .pending),
+            (.received, .confirmed, .pending),
+            (.transcribing, .confirmed, .active),
+            (.readyForCodex, .confirmed, .active),
+            (.inserting, .confirmed, .active),
+            (.reconciling, .confirmed, .active),
+            (.delivered, .confirmed, .confirmed),
+            (.needsAttention, .attention, .pending),
+        ]
+
+        for (state, mac, codex) in expected {
+            let item = WatchQueueItem(id: memoID, capturedAt: capturedAt, state: state)
+            let presentation = RelayItemPresentation.make(item: item)
+            XCTAssertEqual(presentation.spine.watch, .confirmed, "state: \(state)")
+            XCTAssertEqual(presentation.spine.mac, mac, "state: \(state)")
+            XCTAssertEqual(presentation.spine.codex, codex, "state: \(state)")
+        }
+    }
+
+    func testRelayAttentionDoesNotInventItsPreviousRemotePhase() throws {
+        let item = WatchQueueItem(
+            id: try MemoID("23232323-2323-2323-2323-232323232323"),
+            capturedAt: Date(timeIntervalSince1970: 100),
+            state: .needsAttention
+        )
+
+        let presentation = RelayItemPresentation.make(item: item)
+
+        XCTAssertEqual(presentation.status, "Needs attention")
+        XCTAssertEqual(
+            presentation.spine.accessibilityValue,
+            "Needs attention; last remote phase unavailable"
+        )
+    }
+
+    func testSignalMotionPolicyIsBoundedOrImmediate() {
+        XCTAssertEqual(
+            SignalMotionStyle.forTransition(reduceMotion: false),
+            .bounded(duration: 0.24)
+        )
+        XCTAssertEqual(
+            SignalMotionStyle.forTransition(reduceMotion: true),
+            .immediate
+        )
+    }
+
     func testQueueStatusVocabularyMapsEveryInternalStateExactly() throws {
         let memoID = try MemoID("70707070-7070-7070-7070-707070707070")
         let capturedAt = Date(timeIntervalSince1970: 100)
