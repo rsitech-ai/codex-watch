@@ -3,7 +3,7 @@ import Foundation
 import Security
 import Testing
 
-@Suite struct SystemTLSIdentityKeychainTests {
+extension TLSIdentitySecurityTests {
     @Test func systemTLSIdentityQueriesUseLoginKeychainWithoutInventingAccessGroup() throws {
         let generated = try X509CertificateBuilder().build()
         let label = TLSIdentityProvisioner.defaultLabel

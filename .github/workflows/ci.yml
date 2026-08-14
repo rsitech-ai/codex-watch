@@ -40,8 +40,10 @@ jobs:
         run: Tests/CIContractTests/watch_destination_contract_test.sh
       - name: Watch UI evidence contract
         run: Tests/CIContractTests/watch_ui_evidence_contract_test.sh
+      - name: Swift package test process contract
+        run: Tests/CIContractTests/swift_package_test_process_contract_test.sh
       - name: Swift package tests
-        run: swift test --no-parallel
+        run: Scripts/run-swift-package-tests.sh
       - name: Bridge production smoke (latest macOS)
         if: matrix.runner == 'macos-26'
         run: Scripts/run-watch-bridge-smoke.sh

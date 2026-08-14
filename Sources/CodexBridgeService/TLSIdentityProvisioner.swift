@@ -568,8 +568,8 @@ public actor TLSIdentityProvisioner {
 
     private let keychain: any TLSIdentityKeychain
     private let label: String
-    private let builder: X509CertificateBuilder
     private let mutationLock: any TLSIdentityMutationLock
+    private let buildCertificate: @Sendable () throws -> GeneratedX509Certificate
 
     public init(
         keychain: any TLSIdentityKeychain,
@@ -579,7 +579,19 @@ public actor TLSIdentityProvisioner {
         self.keychain = keychain
         self.label = label
         self.mutationLock = mutationLock
-        builder = X509CertificateBuilder()
+        buildCertificate = { try X509CertificateBuilder().build() }
+    }
+
+    init(
+        keychain: any TLSIdentityKeychain,
+        label: String = TLSIdentityProvisioner.defaultLabel,
+        mutationLock: any TLSIdentityMutationLock,
+        buildCertificate: @escaping @Sendable () throws -> GeneratedX509Certificate
+    ) {
+        self.keychain = keychain
+        self.label = label
+        self.mutationLock = mutationLock
+        self.buildCertificate = buildCertificate
     }
 
     public func loadOrCreate() throws -> ProvisionedTLSIdentity {
@@ -650,7 +662,7 @@ public actor TLSIdentityProvisioner {
         if let existing = try sanitized({ try keychain.load(label: label) }) {
                 return try Self.provisioned(existing)
         }
-        let generated = try builder.build()
+        let generated = try buildCertificate()
         let inserted = try sanitized {
             try keychain.insert(
                 privateKey: generated.privateKey,
@@ -675,7 +687,7 @@ public actor TLSIdentityProvisioner {
     private func rotateLocked() throws -> ProvisionedTLSIdentity {
         let previous = try sanitized { try keychain.load(label: label) }
         let previousSnapshot = try previous.map(TLSIdentitySnapshot.init)
-        let generated = try builder.build()
+        let generated = try buildCertificate()
         let expectedFingerprint = try Self.publicKeyFingerprint(generated.privateKey)
         let stagingLabel = "\(label).staged.\(UUID().uuidString)"
         let staged = try sanitized {
