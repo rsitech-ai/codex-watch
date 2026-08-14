@@ -249,7 +249,7 @@ without adding a duration field or guessing the last remote phase.
 **Interfaces:**
 - Produces: `PairingVisualStep` and `PairingStepsPresentation.make(selectedBridge:fingerprintConfirmed:paired:)`.
 
-- [ ] **Step 1: Write the failing identity-step test**
+- [x] **Step 1: Write the failing identity-step test**
 
 ```swift
 func testPairingStepsNeverSkipIdentityConfirmation() {
@@ -264,15 +264,15 @@ func testPairingStepsNeverSkipIdentityConfirmation() {
 }
 ```
 
-- [ ] **Step 2: Verify RED, then implement step composition**
+- [x] **Step 2: Verify RED, then implement step composition**
 
 Keep bridge discovery, exact phrase comparison, explicit `Fingerprint Matches`, sanitized six-digit code, pairing, failure, and forget behavior. Raw fingerprints never enter combined accessibility summaries.
 
-- [ ] **Step 3: Polish retention without policy changes**
+- [x] **Step 3: Polish retention without policy changes**
 
 Keep the platform picker and existing choices. State that only confirmed delivered audio is eligible and unresolved recordings remain on Watch.
 
-- [ ] **Step 4: Run all Watch tests and commit**
+- [x] **Step 4: Run all Watch tests and commit**
 
 ```bash
 xcodebuild test -project CodexWatch.xcodeproj -scheme CodexWatch \
@@ -283,6 +283,14 @@ git commit -m "feat: extend Signal Spine through pairing"
 ```
 
 Expected: Pair again, saved-credential escape hatch, rejected upload, and retention regressions pass.
+
+Completed at `7bd1375`. The identity-gate RED failed on the missing pairing
+presentation; all 71 Watch tests passed on 40mm after implementation. The
+visual rail advances from Mac discovery to identity, code, and paired without
+skipping explicit fingerprint confirmation. The exact phrase remains exposed
+only in its dedicated comparison element, not the combined progress summary.
+Retention keeps the same picker and policy while stating the delivered-only
+cleanup boundary explicitly.
 
 ### Task 6: Deterministic Debug render scenarios
 

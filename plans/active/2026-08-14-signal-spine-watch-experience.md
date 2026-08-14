@@ -124,8 +124,10 @@
 - 2026-08-14: Retained Task 3 renders under `/Users/s1kor/.codex/visualizations/2026/08/03/019fc66a-469c-7440-a856-456037ea0845/codex-watch-signal-spine-task3-2026-08-14/`.
 - 2026-08-14: Completed Task 4 at `914521d`: all 70 Watch tests pass on 40mm, including the existing playback serialization, deletion, retention, and attention regressions.
 - 2026-08-14: The ledger uses chronological rules, explicit authoritative status/detail, relative capture time, and quiet playback/delete actions; it adds no fabricated duration or predecessor phase.
-- 2026-08-14: Current: Task 5 pairing and retention.
-- 2026-08-14: Next: write the pairing identity-step RED test.
+- 2026-08-14: Completed Task 5 at `7bd1375`: all 71 Watch tests pass on 40mm, including Pair again, credential, rejected-upload, and retention regressions.
+- 2026-08-14: Pairing now exposes a bounded Mac/Identity/Code/Paired progress rail while keeping exact phrase comparison, explicit confirmation, sanitized code input, forget behavior, and raw-fingerprint accessibility isolation.
+- 2026-08-14: Current: Task 6 deterministic Debug render scenarios.
+- 2026-08-14: Next: write the allowlist/privacy RED tests before adding Debug-only routing.
 
 ## Rollback / Recovery
 
