@@ -167,7 +167,7 @@ struct CaptureScene: View {
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                         .lineLimit(2)
-                        .minimumScaleFactor(0.82)
+                        .minimumScaleFactor(isCompact ? 0.68 : 0.82)
                         .allowsTightening(true)
                 }
             }
