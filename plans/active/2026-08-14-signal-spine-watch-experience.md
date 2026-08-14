@@ -117,8 +117,10 @@
 - 2026-08-14: Committed approved design spec at `bcfb146`.
 - 2026-08-14: Confirmed inherited baseline: 578 tests passed, zero failures.
 - 2026-08-14: Completed Task 1 at `4ac3fd8`: five new truth tests and all 66 Watch tests pass on the selector-resolved 40mm simulator.
-- 2026-08-14: Current: Task 2 semantic components.
-- 2026-08-14: Next: write the Signal Spine accessibility RED test.
+- 2026-08-14: Completed Task 2 at `b2cd804`: the accessibility RED failed on the missing helper; the focused GREEN, all 67 Watch tests, and `build-for-testing` passed on the selector-resolved 40mm simulator.
+- 2026-08-14: Added semantic tone tokens, one combined Signal Spine accessibility element, shape-redundant node states, bounded presentation-keyed motion, and exact compact action labels.
+- 2026-08-14: Current: Task 3 adaptive capture scene.
+- 2026-08-14: Next: write the elapsed-time and reduced-luminance privacy RED tests.
 
 ## Rollback / Recovery
 

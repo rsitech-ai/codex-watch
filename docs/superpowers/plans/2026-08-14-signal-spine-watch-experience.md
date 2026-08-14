@@ -113,7 +113,7 @@ Expected: all Watch tests pass and the commit contains only the pure contract an
 - Consumes: Task 1 presentation types.
 - Produces: semantic tone colors, `SignalSpineView(presentation:reduceMotion:)`, `WatchPrimaryActionView(action:tone:disabled:handler:)`, and pure `SignalSpineAccessibility` helpers.
 
-- [ ] **Step 1: Write the failing accessibility test**
+- [x] **Step 1: Write the failing accessibility test**
 
 ```swift
 func testSignalSpineAccessibilityCombinesDecorativeNodes() {
@@ -126,11 +126,11 @@ func testSignalSpineAccessibilityCombinesDecorativeNodes() {
 }
 ```
 
-- [ ] **Step 2: Verify RED, then implement components**
+- [x] **Step 2: Verify RED, then implement components**
 
 Hide line segments and individual nodes from accessibility and combine the spine into one element. Apply animation only with `presentation` as the value. Map primary actions to exact labels: `Tap to record`, `Stop & save`, `Pair with Mac`, `Retry relay`, and `Record another`.
 
-- [ ] **Step 3: Build the smallest destination and commit**
+- [x] **Step 3: Build the smallest destination and commit**
 
 ```bash
 xcodebuild -quiet build-for-testing -project CodexWatch.xcodeproj -scheme CodexWatch \
@@ -141,6 +141,12 @@ git commit -m "feat: add Signal Spine Watch components"
 ```
 
 Expected: build succeeds without availability warnings below watchOS 10.
+
+Completed at `b2cd804`. The focused RED failed on the missing accessibility
+helper, the focused GREEN passed, all 67 Watch tests passed on the
+selector-resolved 40mm simulator, and `build-for-testing` completed without
+warnings. XcodeGen was run through the canonical `codex-watch` symlink so the
+local package identity did not inherit the linked-worktree basename.
 
 ### Task 3: Adaptive capture scene
 
