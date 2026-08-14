@@ -213,15 +213,15 @@ the rounded lower edge on 40mm while preserving all three utility routes.
 - Consumes: relay presentation, playback state, existing playback/delete actions, and deletion copy.
 - Produces: `RelayLedgerRow` and `RelayLedgerSummary(count:)`.
 
-- [ ] **Step 1: Write failing ledger tests**
+- [x] **Step 1: Write failing ledger tests**
 
 Assert one/plural count accessibility, all nine memo-state labels, and that needs-attention does not invent its previous remote phase.
 
-- [ ] **Step 2: Verify RED, then implement the ledger**
+- [x] **Step 2: Verify RED, then implement the ledger**
 
 Use a chronological connecting rule, explicit status, and relative capture time. Do not invent duration because `WatchQueueItem` does not expose it. Keep playback in row details and destructive deletion behind the current confirmation dialog.
 
-- [ ] **Step 3: Run playback/deletion regressions and commit**
+- [x] **Step 3: Run playback/deletion regressions and commit**
 
 ```bash
 xcodebuild test -project CodexWatch.xcodeproj -scheme CodexWatch \
@@ -231,6 +231,12 @@ git commit -m "feat: present saved ideas as a relay ledger"
 ```
 
 Expected: playback serialization, deletion cancellation, retention, and attention tests remain green.
+
+Completed at `914521d`. The count-vocabulary RED failed on the missing ledger
+summary; all 70 Watch tests then passed on the selector-resolved 40mm
+simulator. The chronological rule, exact relative capture time, presentation
+status/detail, playback action, and existing confirmation dialog are retained
+without adding a duration field or guessing the last remote phase.
 
 ### Task 5: Pairing and retention
 
