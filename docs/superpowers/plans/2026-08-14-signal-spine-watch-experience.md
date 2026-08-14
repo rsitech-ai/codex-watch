@@ -45,7 +45,7 @@
 - Consumes: `WatchCaptureState`, `WatchCaptureFailure`, `WatchBridgeConnectionState`, `WatchQueueItem`, and `MemoState`.
 - Produces: `WatchExperienceTone`, `SignalNodeVisualState`, `SignalSpinePresentation`, `WatchPrimaryAction`, `CaptureScenePresentation.make(captureState:bridgeState:)`, `RelayItemPresentation.make(item:)`, and `SignalMotionStyle.forTransition(reduceMotion:)`.
 
-- [ ] **Step 1: Write the failing capture-truth test**
+- [x] **Step 1: Write the failing capture-truth test**
 
 ```swift
 func testCapturePresentationNeverPromotesLocalSaveToMacOrCodex() throws {
@@ -63,7 +63,7 @@ func testCapturePresentationNeverPromotesLocalSaveToMacOrCodex() throws {
 
 Add table rows for idle, preparing, recording, saving, permission denied, interrupted recording, and every capture failure.
 
-- [ ] **Step 2: Run the focused test and verify RED**
+- [x] **Step 2: Run the focused test and verify RED**
 
 ```bash
 xcodebuild test -project CodexWatch.xcodeproj -scheme CodexWatch \
@@ -75,21 +75,21 @@ Expected: compilation fails because `CaptureScenePresentation` is undefined.
 
 The shown UDID is the selector result observed on 2026-08-14. Re-resolve it before execution and use the current validated identifier if inventory changes.
 
-- [ ] **Step 3: Implement exhaustive capture mapping**
+- [x] **Step 3: Implement exhaustive capture mapping**
 
 Use exact approved copy. Recording activates only Watch; saving activates only Watch; saved confirms only Watch. Remote bridge copy remains secondary and never changes local-capture provenance.
 
 After adding the file, run `xcodegen generate --spec project.yml` so the Watch target and test host compile the new source.
 
-- [ ] **Step 4: Write and implement the failing memo-state table**
+- [x] **Step 4: Write and implement the failing memo-state table**
 
 Test all nine memo states. Watch is confirmed for stored items; Mac becomes confirmed at `.received`; Codex becomes confirmed only at `.delivered`. Because `.needsAttention` does not retain its predecessor, expose `Needs attention; last remote phase unavailable` instead of inventing provenance.
 
-- [ ] **Step 5: Add and test motion policy**
+- [x] **Step 5: Add and test motion policy**
 
 Assert Reduce Motion maps to `.immediate` and normal motion maps to `.bounded(duration: 0.24)`.
 
-- [ ] **Step 6: Run all Watch tests and commit**
+- [x] **Step 6: Run all Watch tests and commit**
 
 ```bash
 xcodebuild test -project CodexWatch.xcodeproj -scheme CodexWatch \

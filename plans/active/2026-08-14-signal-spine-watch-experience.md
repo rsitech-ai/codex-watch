@@ -108,6 +108,7 @@
 - 2026-08-14: Use Debug-only deterministic scenarios for nondefault states without mutating real data.
 - 2026-08-14: Validate installed exact-runtime sizes 40/42/44/46/49mm rather than treating three representatives as all-size proof.
 - 2026-08-14: Regenerate the Xcode project from `project.yml` after new source files and use selector-resolved UDIDs because duplicate simulator names are present.
+- 2026-08-14: In linked worktrees, generate through a temporary symlink named `codex-watch`; XcodeGen otherwise embeds the worktree basename as the local package display name.
 
 ## Progress Log
 
@@ -115,8 +116,9 @@
 - 2026-08-14: User selected and approved Signal Spine.
 - 2026-08-14: Committed approved design spec at `bcfb146`.
 - 2026-08-14: Confirmed inherited baseline: 578 tests passed, zero failures.
-- 2026-08-14: Current: implementation plan prepared for execution selection.
-- 2026-08-14: Next: execute Task 1 presentation contract with RED/GREEN proof.
+- 2026-08-14: Completed Task 1 at `4ac3fd8`: five new truth tests and all 66 Watch tests pass on the selector-resolved 40mm simulator.
+- 2026-08-14: Current: Task 2 semantic components.
+- 2026-08-14: Next: write the Signal Spine accessibility RED test.
 
 ## Rollback / Recovery
 
