@@ -5,8 +5,9 @@
 - Readiness: `repo-ready` and `simulator-proven` for the seven deterministic
   Watch scenes on every installed supported display size. Physical Watch proof
   remains `blocked:external` and is not implied by this document.
-- UI source commit: `0166cb13af9e6d6319cacbb6671086efce717eef` on
-  `feat/andrzej_signal_spine_watch_ui`, based on `213604fb`.
+- UI source commit: `c8f0bc3d75b4af0d0fe5022a8bf28c8b76fee716` on
+  `feat/andrzej_signal_spine_watch_ui`, with current `origin/main` merge base
+  `636c630047893daa2c7ce691f7fffdf1267cfce9`.
 - Toolchain: Xcode 26.6 (17F113), watchOS Simulator SDK/runtime 26.5.
 - Public destinations: Apple Watch SE 3 (40 mm), Apple Watch Series 11
   (42 mm), Apple Watch SE 3 (44 mm), Apple Watch Series 11 (46 mm), and
@@ -20,31 +21,34 @@ of the five sizes. The manifest contains one row per matrix cell and a SHA-256
 for every PNG. All 35 hashes were independently recomputed and matched.
 
 - Evidence directory:
-  `/Users/s1kor/.codex/visualizations/2026/08/14/signal-spine-0166cb1/`
+  `/Users/s1kor/.codex/visualizations/2026/08/14/signal-spine-c8f0bc3/`
 - Manifest: `manifest.tsv` in that directory.
 - Capture command: `Scripts/capture-watch-ui-evidence.sh` with the exact Debug
   app and a new empty output directory.
 
 Visual review covered clipping, truncation, rounded corners/system time,
 primary actions, state shape plus color, private content, and fabricated data.
-The first matrix exposed compact kicker/detail truncation and a malformed TSV
-separator. Those defects were repaired and the complete matrix was recaptured.
-The retained matrix has no observed clipping or ellipsis in the core capture
-states. Queue and pairing remain intentionally scrollable; their initial
-viewport presents the current state and first meaningful control without
-inventing progress.
+Earlier matrices exposed compact kicker/detail truncation, a malformed TSV
+separator, and a clipped leading confirmed node in the regular 49 mm delivered
+composition. Those defects were repaired; layout selection now checks both
+horizontal and vertical fit before choosing the roomier composition. The
+complete matrix was recaptured from the exact source commit above. The retained
+matrix has no observed clipping or ellipsis in the core capture states. Queue
+and pairing remain intentionally scrollable; their initial viewport presents
+the current state and first meaningful control without inventing progress.
 
 ## Fresh verification
 
 | Check | Result |
 | --- | --- |
-| Swift package suite | 582 tests in 11 suites, 0 failures |
-| Watch app suite, exact 40 mm watchOS 26.5 destination | 72 tests, 0 failures |
-| Debug generic watchOS Simulator build-for-testing | Passed |
-| Release generic watchOS Simulator build | Passed |
+| Swift package suite with warnings as errors | 585 tests in 11 suites, 0 failures |
+| Watch app suite with warnings as errors, exact 40 mm watchOS 26.5 destination | 75 tests, 0 failures |
+| Debug generic watchOS Simulator build | Passed |
+| Release exact-runtime watchOS Simulator build | Passed; Debug scenario routing absent |
+| Xcode static analyzer | Passed with zero diagnostics |
 | Dynamic screenshot shell contract | Passed; 35 fixture images |
-| Perpetual-motion source scan | Empty |
 | Manifest verification | 35/35 SHA-256 values matched |
+| Final render-launch error/fault log scan | Empty for the exact capture window |
 
 The name-only 40 mm Xcode destination became ambiguous after watchOS 27.0
 simulators were installed. Final Watch tests therefore used the selector-
@@ -56,7 +60,9 @@ hardening requirement, not an application failure.
 - Proven in code/tests: the Signal Spine exposes one combined delivery-path
   accessibility element; node states use distinct shapes as well as color;
   motion is bounded and becomes immediate under Reduce Motion; reduced-
-  luminance privacy presentation preserves the essential state/action.
+  luminance privacy presentation preserves the essential state/action; state,
+  relay path, primary action, and secondary navigation have explicit descending
+  accessibility sort priorities.
 - Render-proven: the fixed primary action and essential state fit the normal
   40–49 mm matrix.
 - Unverified at runtime: largest accessibility text, Bold Text, VoiceOver
@@ -70,10 +76,12 @@ hardening requirement, not an application failure.
 
 Fresh `watch-device-preflight` returned
 `blocked:external / SUPPORTING_PHONE_UNAVAILABLE` for the public model Apple
-Watch Ultra 2 on watchOS 26.4; Watch lock state was unobserved. No signed build,
-install, launch, microphone, haptic, Always On, or end-to-end relay claim was
-made. Hardware work may resume only after the paired iPhone is visible to
-Xcode/devicectl and preflight returns `READY`.
+Watch Ultra 2 on watchOS 26.4; Watch lock state was unobserved. The read-only
+inventory showed both physical Watch and supporting iPhone visible, paired,
+and Developer Mode enabled, but both CoreDevice tunnels disconnected. No
+signed build, install, launch, microphone, haptic, Always On, or end-to-end
+relay claim was made. Hardware work may resume only after preflight returns
+`READY`.
 
 ## Risks and next checks
 

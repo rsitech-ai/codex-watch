@@ -26,7 +26,7 @@ physical-Watch proof. Use synthetic, non-confidential speech and test data.
 
 | Scenario | Expected | Actual | Evidence | Status | Readiness label |
 | --- | --- | --- | --- | --- | --- |
-| Read-only device preflight | One physical Watch is paired, Developer Mode is enabled, supporting iPhone is ready, Watch tunnel is connected, and DDI is available | Supporting iPhone unavailable; Watch lock state unobserved | `watch-device-preflight`, 2026-08-14; code `SUPPORTING_PHONE_UNAVAILABLE` | Blocked | `blocked:external` |
+| Read-only device preflight | One physical Watch is paired, Developer Mode is enabled, supporting iPhone is ready, Watch tunnel is connected, and DDI is available | Watch and iPhone visible, paired, and Developer Mode enabled; both CoreDevice tunnels disconnected; Watch lock state unobserved | `watch-device-preflight`, 2026-08-14; code `SUPPORTING_PHONE_UNAVAILABLE` plus redacted inventory review | Blocked | `blocked:external` |
 | First signed development build | Xcode reaches the signing/provisioning boundary only after preflight `READY` | Not run | Operator build log | Unverified | `unverified` |
 | First install | Exact branch build installs on the named public model/OS | Not run | Xcode device log plus operator observation | Unverified | `unverified` |
 | Cold launch | App launches without crash and shows truthful setup/ready state | Not run | Content-free device log plus observation | Unverified | `unverified` |
@@ -97,7 +97,7 @@ physical-Watch proof. Use synthetic, non-confidential speech and test data.
 | Representative Watch | Core capture, delivery, attention, queue, and pairing scenes remain coherent | Seven deterministic scenes reviewed on 42, 44, and 46 mm; physical observation not run | [Simulator matrix evidence](evidence/2026-08-14-signal-spine-simulator-matrix.md) | Passed in simulator | `simulator-proven` |
 | Largest Watch | Added space improves readability without changing semantics | Seven deterministic scenes reviewed on 49 mm; physical observation not run | [Simulator matrix evidence](evidence/2026-08-14-signal-spine-simulator-matrix.md) | Passed in simulator | `simulator-proven` |
 | Accessibility text sizes | Essential state and primary controls remain usable at supported larger text sizes | Not run | Simulator plus physical observation | Unverified | `unverified` |
-| VoiceOver | Order, labels, values, hints, adjustable controls, and destructive confirmation are understandable | Not run | Physical VoiceOver observation | Unverified | `unverified` |
+| VoiceOver | Order, labels, values, hints, adjustable controls, and destructive confirmation are understandable | State, relay path, primary action, and secondary navigation sort policy verified in code/tests; runtime focus traversal not run | Watch tests plus physical VoiceOver observation | Partially proven | `unverified` |
 | Increase Contrast | Controls and status remain distinguishable | Not run | Simulator plus physical observation | Unverified | `unverified` |
 | Differentiate Without Color | State never depends on color alone | Shape-redundant nodes verified by code/tests; setting-specific runtime observation not run | Watch tests; later physical observation required | Partially proven | `unverified` |
 | Reduce Transparency | Content remains legible without material transparency | Not run | Simulator observation | Unverified | `unverified` |
