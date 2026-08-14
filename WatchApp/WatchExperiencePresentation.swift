@@ -77,7 +77,7 @@ struct CaptureScenePresentation: Equatable {
             )
         case .recording:
             return Self(
-                kicker: "Recording locally",
+                kicker: "Recording",
                 headline: "Recording",
                 detail: "Audio stays on this Watch",
                 tone: .active,

@@ -158,7 +158,7 @@ struct PairingView: View {
     }
 }
 
-private struct PairingStepRail: View {
+struct PairingStepRail: View {
     let presentation: PairingStepsPresentation
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion

@@ -26,6 +26,7 @@
 		6FAC000449C3ABCA0A8BD98F /* WatchExperiencePresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB898B666BA553E60A733AD0 /* WatchExperiencePresentation.swift */; };
 		75DD2594440CCB4DA214F683 /* BridgeKeychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EFAEAC95FC4F91EDC2B6386 /* BridgeKeychain.swift */; };
 		88B816FD3E44FF391CD35BD5 /* AudioRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035AB61BAD77A10B94240861 /* AudioRecorder.swift */; };
+		9CF2E09D3A0816A882C78B02 /* WatchRenderScenario.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8619B8CAAABA3BCE2D65E5C /* WatchRenderScenario.swift */; };
 		D09144E724FB069323966030 /* HTTPSBridgeTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0480F6F709663077465123A /* HTTPSBridgeTransport.swift */; };
 		DCCE3F8B079CBEEBB252AECC /* WatchRetentionPreference.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38E89C6B058D31DCD8ED5918 /* WatchRetentionPreference.swift */; };
 		F8307F5F2BB5CBBBD8918C4A /* RetentionSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 504A23C7515831358886A734 /* RetentionSettingsView.swift */; };
@@ -67,6 +68,7 @@
 		E6A1073E31AC6348CB0F169E /* VoiceCaptureModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceCaptureModelTests.swift; sourceTree = "<group>"; };
 		E6ACC57379F892ECA15AC36A /* QueueView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QueueView.swift; sourceTree = "<group>"; };
 		EA2ADF6CA4DC2932992C3CE6 /* WatchPrimaryActionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchPrimaryActionView.swift; sourceTree = "<group>"; };
+		F8619B8CAAABA3BCE2D65E5C /* WatchRenderScenario.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchRenderScenario.swift; sourceTree = "<group>"; };
 		FB81EBE79BBDA4F12AABC8AC /* AVFAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFAudio.framework; path = System/Library/Frameworks/AVFAudio.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
@@ -122,6 +124,7 @@
 				DB898B666BA553E60A733AD0 /* WatchExperiencePresentation.swift */,
 				61FF8956B5F9DFFD42F7E121 /* WatchExperienceTheme.swift */,
 				EA2ADF6CA4DC2932992C3CE6 /* WatchPrimaryActionView.swift */,
+				F8619B8CAAABA3BCE2D65E5C /* WatchRenderScenario.swift */,
 				38E89C6B058D31DCD8ED5918 /* WatchRetentionPreference.swift */,
 			);
 			path = WatchApp;
@@ -274,6 +277,7 @@
 				6FAC000449C3ABCA0A8BD98F /* WatchExperiencePresentation.swift in Sources */,
 				393339C91CD4A8A24D11D60F /* WatchExperienceTheme.swift in Sources */,
 				2F40308B828F54A190CEE4E9 /* WatchPrimaryActionView.swift in Sources */,
+				9CF2E09D3A0816A882C78B02 /* WatchRenderScenario.swift in Sources */,
 				DCCE3F8B079CBEEBB252AECC /* WatchRetentionPreference.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

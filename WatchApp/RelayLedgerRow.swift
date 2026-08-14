@@ -22,6 +22,7 @@ struct RelayLedgerRow: View {
     let playbackActionTitle: String
     let playbackIcon: String
     let playbackDisabled: Bool
+    var timestampLabel: String? = nil
     let onPlayback: () -> Void
     let onDelete: () -> Void
 
@@ -39,13 +40,11 @@ struct RelayLedgerRow: View {
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                         .lineLimit(2)
-                    Text(item.capturedAt, style: .relative)
-                        .font(.caption2.monospacedDigit())
-                        .foregroundStyle(.tertiary)
+                    timestamp
                 }
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(presentation.accessibilityValue)
-                .accessibilityValue(Text(item.capturedAt, style: .relative))
+                .accessibilityValue(timestampAccessibilityValue)
 
                 HStack(spacing: 12) {
                     Button(action: onPlayback) {
@@ -86,6 +85,26 @@ struct RelayLedgerRow: View {
         }
         .frame(width: 18)
         .accessibilityHidden(true)
+    }
+
+    @ViewBuilder
+    private var timestamp: some View {
+        if let timestampLabel {
+            Text(timestampLabel)
+                .font(.caption2.monospacedDigit())
+                .foregroundStyle(.tertiary)
+        } else {
+            Text(item.capturedAt, style: .relative)
+                .font(.caption2.monospacedDigit())
+                .foregroundStyle(.tertiary)
+        }
+    }
+
+    private var timestampAccessibilityValue: Text {
+        if let timestampLabel {
+            return Text(timestampLabel)
+        }
+        return Text(item.capturedAt, style: .relative)
     }
 
     @ViewBuilder

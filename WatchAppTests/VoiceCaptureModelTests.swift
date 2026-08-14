@@ -189,6 +189,21 @@ final class VoiceCaptureModelTests: XCTestCase {
         )
     }
 
+    func testRenderScenarioParserAcceptsOnlyAllowlistedValues() {
+        XCTAssertEqual(
+            WatchRenderScenario.parse(
+                environment: ["CODEX_WATCH_RENDER_SCENARIO": "recording"]
+            ),
+            .recording
+        )
+        XCTAssertNil(
+            WatchRenderScenario.parse(
+                environment: ["CODEX_WATCH_RENDER_SCENARIO": "../../private"]
+            )
+        )
+        XCTAssertEqual(WatchRenderScenario.allCases.count, 7)
+    }
+
     func testQueueStatusVocabularyMapsEveryInternalStateExactly() throws {
         let memoID = try MemoID("70707070-7070-7070-7070-707070707070")
         let capturedAt = Date(timeIntervalSince1970: 100)
