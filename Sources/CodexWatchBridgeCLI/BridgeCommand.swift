@@ -281,7 +281,14 @@ enum BridgeCommand {
             codexExecutableURL: URL(fileURLWithPath: codexPath),
             neutralDirectory: paths.codexInbox
         )
-        let processor = MemoProcessor(journal: journal, transcriber: AppleSpeechTranscriber(), inbox: inbox)
+        let specStore = MemoSpecStore(root: paths.delivery)
+        let processor = MemoProcessor(
+            journal: journal,
+            transcriber: AppleSpeechTranscriber(),
+            inbox: inbox,
+            specImprover: inbox,
+            specStore: specStore
+        )
         let completionPublisher = DeliveryCompletionPublisher(
             intakeStore: intake,
             journal: journal,

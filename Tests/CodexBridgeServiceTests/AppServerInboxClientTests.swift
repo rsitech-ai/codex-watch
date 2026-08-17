@@ -4,6 +4,54 @@ import CodexBridgeShared
 import Foundation
 import Testing
 
+@Test func inboxClientImproveSpecReadsAssistantMarkdown() async throws {
+    let neutral = try privateNeutralDirectory()
+    let session = AppServerSessionStub(responses: [
+        inboxPage(id: "thr_inbox", cwd: neutral.path),
+        .object(["turn": .object(["id": .string("turn_spec")])]),
+        .object(["thread": .object([
+            "id": .string("thr_inbox"),
+            "cwd": .string(neutral.path),
+            "turns": .array([.object([
+                "items": .array([
+                    .object([
+                        "type": .string("userMessage"),
+                        "text": .string("Turn this Watch voice transcript into a markdown spec."),
+                    ]),
+                    .object([
+                        "type": .string("agentMessage"),
+                        "text": .string("# Quiet capture\n\n## Summary\nKeep the raw transcript visible."),
+                    ]),
+                ]),
+            ])]),
+        ])]),
+    ], notifications: [completionNotification(threadID: "thr_inbox", turnID: "turn_spec")])
+    let client = AppServerInboxClient(session: session, neutralDirectory: neutral)
+    let memoID = try MemoID("12121212-3434-5656-7878-909090909090")
+
+    let markdown = try await client.improveSpec(
+        memoID: memoID,
+        transcript: "Keep the raw transcript visible."
+    )
+
+    #expect(markdown.contains("# Quiet capture"))
+    let methods = await session.methods
+    #expect(methods.map(\.name) == ["thread/list", "turn/start", "thread/read"])
+    #expect(methods[1].params["clientUserMessageId"] == .string("\(memoID.rawValue)-spec"))
+}
+
+@Test func inboxClientImproveSpecFailsClosedWhenSessionCannotStart() async throws {
+    let client = AppServerInboxClient(
+        sessionFactory: { throw AppServerInboxError.unavailable },
+        neutralDirectory: try privateNeutralDirectory()
+    )
+    let memoID = try MemoID("13131313-1414-1515-1616-171717171717")
+
+    await #expect(throws: AppServerInboxError.unavailable) {
+        _ = try await client.improveSpec(memoID: memoID, transcript: "idea")
+    }
+}
+
 @Test func inboxClientReusesExactInboxAndUsesCaptureOnlyTurnPolicy() async throws {
     let neutral = try privateNeutralDirectory()
     let session = AppServerSessionStub(responses: [

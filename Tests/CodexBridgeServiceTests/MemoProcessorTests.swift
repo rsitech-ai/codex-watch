@@ -207,6 +207,78 @@ private let processorMemoID = try! MemoID("44444444-4444-4444-4444-444444444444"
     #expect(await inbox.historyCallCount == 2)
 }
 
+@Test func processorPersistsLocalSpecWhenImproverFailsAndStillInsertsRawTranscript() async throws {
+    let fixture = try ProcessorFixture()
+    let specRoot = fixture.audioURL.deletingLastPathComponent().appending(
+        path: "specs",
+        directoryHint: .isDirectory
+    )
+    let specStore = MemoSpecStore(root: specRoot)
+    let transcriber = TranscriberStub(result: .success("Remember to test the onboarding flow"))
+    let inbox = InboxStub(
+        journal: fixture.journal,
+        memoID: processorMemoID,
+        histories: [.init(texts: [MemoProcessor.marker(for: processorMemoID)], authoritative: true)]
+    )
+    let processor = MemoProcessor(
+        journal: fixture.journal,
+        transcriber: transcriber,
+        inbox: inbox,
+        specImprover: SpecImproverStub(result: .failure(AppServerInboxError.unavailable)),
+        specStore: specStore
+    )
+
+    let outcome = try await processor.process(fixture.request)
+
+    #expect(outcome == .delivered)
+    let spec = try #require(specStore.load(memoID: processorMemoID))
+    #expect(spec.provenance == .localFallback)
+    #expect(spec.markdown.contains("unverified local wrapper"))
+    let submissions = await inbox.submissions
+    #expect(submissions.count == 1)
+    #expect(submissions[0].text.contains("Voice idea:"))
+    #expect(submissions[0].text.contains("Remember to test the onboarding flow"))
+    #expect(!submissions[0].text.contains("Spec (Codex App Server):"))
+}
+
+@Test func processorInsertsAppServerSpecWhenImprovementSucceeds() async throws {
+    let fixture = try ProcessorFixture()
+    let specRoot = fixture.audioURL.deletingLastPathComponent().appending(
+        path: "specs",
+        directoryHint: .isDirectory
+    )
+    let specStore = MemoSpecStore(root: specRoot)
+    let transcriber = TranscriberStub(result: .success("Remember to test the onboarding flow"))
+    let inbox = InboxStub(
+        journal: fixture.journal,
+        memoID: processorMemoID,
+        histories: [.init(texts: [MemoProcessor.marker(for: processorMemoID)], authoritative: true)]
+    )
+    let processor = MemoProcessor(
+        journal: fixture.journal,
+        transcriber: transcriber,
+        inbox: inbox,
+        specImprover: SpecImproverStub(result: .success("""
+        # Onboarding flow
+
+        ## Summary
+        Cover the first-run path.
+        """)),
+        specStore: specStore
+    )
+
+    let outcome = try await processor.process(fixture.request)
+
+    #expect(outcome == .delivered)
+    let spec = try #require(specStore.load(memoID: processorMemoID))
+    #expect(spec.provenance == .appServer)
+    #expect(spec.title == "Onboarding flow")
+    let submissions = await inbox.submissions
+    #expect(submissions[0].text.contains("Spec (Codex App Server):"))
+    #expect(submissions[0].text.contains("# Onboarding flow"))
+    #expect(submissions[0].text.contains(MemoProcessor.marker(for: processorMemoID)))
+}
+
 private struct ProcessorFixture {
     let journal: DeliveryJournal
     let audioURL: URL
@@ -247,6 +319,20 @@ private struct ProcessorFixture {
             transcriber: TranscriberStub(result: .success("Idea")),
             inbox: inbox
         )
+    }
+}
+
+private actor SpecImproverStub: SpecImproving {
+    private let result: Result<String, AppServerInboxError>
+
+    init(result: Result<String, AppServerInboxError>) {
+        self.result = result
+    }
+
+    func improveSpec(memoID: MemoID, transcript: String) async throws -> String {
+        _ = memoID
+        _ = transcript
+        return try result.get()
     }
 }
 
