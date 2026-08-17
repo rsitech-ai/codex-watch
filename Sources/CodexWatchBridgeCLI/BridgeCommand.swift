@@ -328,7 +328,7 @@ enum BridgeCommand {
                     configuration: configuration,
                     router: router,
                     identityProvider: identityProvider,
-                    serviceName: "Voice Inbox Bridge",
+                    serviceName: CodexWatchBrand.productName,
                     bindHost: bindHost,
                     advertisedHost: advertisedHost
                 )
@@ -561,7 +561,7 @@ enum BridgeCommand {
         case .authorized:
             return "Speech authorization: authorized. On-device recognition availability is checked per locale and memo."
         case .denied:
-            return "Speech authorization: denied. Enable Speech Recognition for Voice Inbox Bridge in System Settings."
+            return "Speech authorization: denied. Enable Speech Recognition for \(CodexWatchBrand.productName) in System Settings."
         case .restricted:
             return "Speech authorization: restricted by macOS policy."
         }

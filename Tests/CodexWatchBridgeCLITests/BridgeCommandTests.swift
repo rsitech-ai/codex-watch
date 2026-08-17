@@ -253,7 +253,7 @@ import Testing
     )
     #expect(
         BridgeCommand.speechAuthorizationInstructions(for: .denied)
-            == "Speech authorization: denied. Enable Speech Recognition for Voice Inbox Bridge in System Settings."
+            == "Speech authorization: denied. Enable Speech Recognition for CodexWatch in System Settings."
     )
     #expect(
         BridgeCommand.speechAuthorizationInstructions(for: .restricted)

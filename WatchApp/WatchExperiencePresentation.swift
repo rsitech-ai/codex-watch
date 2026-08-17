@@ -90,7 +90,7 @@ struct CaptureScenePresentation: Equatable {
             presentation = Self(
                 kicker: "Preparing",
                 headline: "Preparing microphone",
-                detail: "Keep Voice Inbox open",
+                detail: "Keep CodexWatch open",
                 tone: .active,
                 spine: localSpine(
                     watch: .active,
@@ -118,7 +118,7 @@ struct CaptureScenePresentation: Equatable {
             presentation = Self(
                 kicker: "Saving on Watch",
                 headline: "Saving securely",
-                detail: "Keep Voice Inbox open",
+                detail: "Keep CodexWatch open",
                 tone: .active,
                 spine: localSpine(
                     watch: .active,
@@ -273,7 +273,7 @@ struct CaptureScenePresentation: Equatable {
             action = .none
         case .identifier, .recovery:
             headline = "Storage unavailable"
-            detail = "Voice Inbox can’t safely record right now"
+            detail = "CodexWatch can’t safely record right now"
             action = .none
         }
         return Self(

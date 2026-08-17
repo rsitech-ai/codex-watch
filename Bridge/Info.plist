@@ -6,8 +6,10 @@
     <string>codex-watch-bridge</string>
     <key>CFBundleIdentifier</key>
     <string>ai.rsitech.voiceinbox.bridge</string>
+    <key>CFBundleDisplayName</key>
+    <string>CodexWatch</string>
     <key>CFBundleName</key>
-    <string>Voice Inbox Bridge</string>
+    <string>CodexWatch</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
@@ -21,12 +23,12 @@
 	<key>LSMinimumSystemVersion</key>
 	<string>15.0</string>
     <key>NSLocalNetworkUsageDescription</key>
-    <string>Voice Inbox Bridge receives voice ideas from your paired Apple Watch on your local network.</string>
+    <string>CodexWatch receives voice ideas from your paired Apple Watch on your local network.</string>
     <key>NSBonjourServices</key>
     <array>
         <string>_voiceinbox._tcp</string>
     </array>
     <key>NSSpeechRecognitionUsageDescription</key>
-    <string>Voice Inbox Bridge transcribes voice memos locally on this Mac.</string>
+    <string>CodexWatch transcribes voice memos locally on this Mac.</string>
 </dict>
 </plist>

@@ -65,7 +65,7 @@ import Testing
         listenerPaused: false,
         watchPaired: true,
         speech: .authorized,
-        advertisedName: "Voice Inbox Bridge",
+        advertisedName: CodexWatchBrand.productName,
         latest: nil
     )
 
@@ -82,7 +82,7 @@ import Testing
         listenerPaused: false,
         watchPaired: true,
         speech: .notDetermined,
-        advertisedName: "Voice Inbox Bridge",
+        advertisedName: CodexWatchBrand.productName,
         latest: nil
     )
 

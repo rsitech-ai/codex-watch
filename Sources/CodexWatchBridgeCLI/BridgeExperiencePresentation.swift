@@ -4,6 +4,10 @@ import CodexBridgeShared
 import Foundation
 import SwiftUI
 
+enum CodexWatchBrand {
+    static let productName = "CodexWatch"
+}
+
 enum BridgeExperienceTone: Equatable {
     case neutral
     case active
@@ -263,7 +267,7 @@ struct BridgeConsoleHeaderPresentation: Equatable {
             return Self(
                 kicker: "Mac needs attention",
                 headline: "Install the Mac bridge.",
-                detail: "Voice Inbox Bridge is not installed for this user yet.",
+                detail: "\(CodexWatchBrand.productName) is not installed for this user yet.",
                 tone: .attention,
                 spine: BridgeSpinePresentation(
                     watch: .pending,
@@ -377,7 +381,7 @@ enum BridgeSpeechCopy {
         case .notDetermined:
             "Audio can sit on this Mac, but transcription is blocked until Speech Recognition is allowed."
         case .denied:
-            "Speech Recognition is off for Voice Inbox Bridge. Enable it in System Settings, then retry the memo."
+            "Speech Recognition is off for \(CodexWatchBrand.productName). Enable it in System Settings, then retry the memo."
         case .restricted:
             "Speech Recognition is restricted by macOS policy on this Mac."
         case .authorized:

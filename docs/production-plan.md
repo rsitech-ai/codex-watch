@@ -1,4 +1,4 @@
-# Production Plan: Voice Inbox Bridge
+# Production Plan: CodexWatch
 
 ## Product Brief
 

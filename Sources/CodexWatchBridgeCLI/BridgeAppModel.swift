@@ -15,7 +15,7 @@ final class BridgeAppModel: ObservableObject {
     @Published private(set) var listenerPaused = false
     @Published private(set) var watchPaired = false
     @Published private(set) var speech: BridgeSpeechAuthorizationStatus = .notDetermined
-    @Published private(set) var advertisedName = "Voice Inbox Bridge"
+    @Published private(set) var advertisedName = CodexWatchBrand.productName
     @Published private(set) var advertisedHost = "—"
     @Published private(set) var bindHost = "—"
     @Published private(set) var stateRootPath = "—"
@@ -72,7 +72,7 @@ final class BridgeAppModel: ObservableObject {
             )
             stateRootPath = install.state.path
             let runtime = LaunchAgentRuntimeConfiguration.load(plist: install.launchAgent)
-            advertisedName = "Voice Inbox Bridge"
+            advertisedName = CodexWatchBrand.productName
             advertisedHost = runtime?.advertisedHost ?? "—"
             bindHost = runtime?.bindHost ?? "—"
             installed = FileManager.default.fileExists(atPath: install.application.path)

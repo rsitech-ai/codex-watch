@@ -5,7 +5,7 @@ struct VoiceInboxBridgeApp: App {
     @StateObject private var model = BridgeAppModel()
 
     var body: some Scene {
-        WindowGroup("Voice Inbox Bridge", id: "bridge") {
+        WindowGroup(CodexWatchBrand.productName, id: "bridge") {
             BridgeConsoleView(model: model)
                 .frame(minWidth: 760, minHeight: 480)
         }
@@ -32,7 +32,7 @@ struct VoiceInboxBridgeApp: App {
             }
         }
 
-        MenuBarExtra("Voice Inbox Bridge", systemImage: "point.3.connected.trianglepath.dotted") {
+        MenuBarExtra(CodexWatchBrand.productName, systemImage: "point.3.connected.trianglepath.dotted") {
             BridgeMenuBarContent(model: model)
         }
 
@@ -52,7 +52,7 @@ private struct BridgeMenuBarContent: View {
             .foregroundStyle(.secondary)
             .onAppear { model.start() }
         Divider()
-        Button("Open Voice Inbox Bridge") {
+        Button("Open \(CodexWatchBrand.productName)") {
             openWindow(id: "bridge")
             NSApplication.shared.activate(ignoringOtherApps: true)
         }

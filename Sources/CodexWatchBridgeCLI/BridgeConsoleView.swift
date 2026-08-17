@@ -20,7 +20,7 @@ struct BridgeConsoleView: View {
             }
         }
         .background(consoleBackground)
-        .navigationTitle("Voice Inbox Bridge")
+        .navigationTitle(CodexWatchBrand.productName)
         .toolbar { toolbar }
         .onAppear { model.start() }
     }
@@ -320,6 +320,7 @@ struct BridgeSettingsView: View {
 
     var body: some View {
         Form {
+            LabeledContent("App", value: CodexWatchBrand.productName)
             LabeledContent("Advertised name", value: model.advertisedName)
             LabeledContent("Advertised host", value: model.advertisedHost)
             LabeledContent("Bind host", value: model.bindHost)
