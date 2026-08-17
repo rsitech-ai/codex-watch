@@ -75,6 +75,34 @@ import Testing
     #expect(header.primaryTitle == nil)
 }
 
+@Test func consoleHeaderKeepsRetryOnTheMemoNotTheSystemChrome() throws {
+    let item = MacInboxItem(
+        id: try MemoID("11111111-1111-1111-1111-111111111111"),
+        capturedAt: Date(timeIntervalSince1970: 0),
+        state: .needsAttention,
+        transcript: nil,
+        audioIsPresent: true,
+        isRetained: false
+    )
+    let header = BridgeConsoleHeaderPresentation.make(
+        installed: true,
+        listenerOnline: true,
+        listenerPaused: false,
+        watchPaired: true,
+        speech: .authorized,
+        advertisedName: CodexWatchBrand.productName,
+        latest: item
+    )
+    let presentation = MacInboxItemPresentation.make(item: item, speech: .authorized)
+
+    #expect(header.kicker == "Mac")
+    #expect(header.headline == "Transcription did not finish.")
+    #expect(header.kicker.caseInsensitiveCompare(header.headline) != .orderedSame)
+    #expect(header.primaryTitle == nil)
+    #expect(presentation.retryEnabled == true)
+    #expect(header.spine.codex == .pending)
+}
+
 @Test func consoleHeaderUsesSpeechCTAWhenAuthorizationIsNotDetermined() {
     let header = BridgeConsoleHeaderPresentation.make(
         installed: true,

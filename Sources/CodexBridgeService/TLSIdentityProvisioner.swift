@@ -837,6 +837,11 @@ public struct KeychainTLSIdentityProvider: BridgeTLSIdentityProvider, Sendable {
         let provisioned = try TLSIdentityProvisioner.provisioned(identity)
         return try BridgeTLSIdentity(secIdentity: provisioned.secIdentity)
     }
+
+    public func persistToStateDirectory(_ directory: URL) throws {
+        guard let identity = try keychain.load(label: label) else { return }
+        try PersistedTLSIdentity.persist(identity: identity, stateDirectory: directory)
+    }
 }
 
 public final class SystemTLSIdentityKeychain: TLSIdentityKeychain, TLSIdentityStagingKeychain,

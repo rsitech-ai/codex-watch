@@ -5,7 +5,7 @@ import Foundation
 import SwiftUI
 
 enum CodexWatchBrand {
-    static let productName = "CodexWatch"
+    static let productName = "Codex Watch"
 }
 
 enum BridgeExperienceTone: Equatable {
@@ -348,14 +348,15 @@ struct BridgeConsoleHeaderPresentation: Equatable {
         }
         if let latest {
             let item = MacInboxItemPresentation.make(item: latest, speech: speech)
+            let attentionWithoutTranscript = item.tone == .attention && latest.transcript == nil
             return Self(
-                kicker: item.status,
-                headline: item.status,
+                kicker: attentionWithoutTranscript ? "Mac" : item.status,
+                headline: attentionWithoutTranscript ? "Transcription did not finish." : item.status,
                 detail: item.detail,
                 tone: item.tone,
                 spine: item.spine,
-                primaryTitle: item.speechCTA ? "Allow Speech Recognition" : (item.retryEnabled ? "Retry transcription" : nil),
-                primaryHint: item.detail
+                primaryTitle: item.speechCTA ? "Allow Speech Recognition" : nil,
+                primaryHint: item.speechCTA ? item.detail : nil
             )
         }
         return Self(

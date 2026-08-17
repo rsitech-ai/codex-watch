@@ -6,9 +6,11 @@ All notable public releases are documented here.
 
 ### Added
 
-- User-facing macOS CodexWatch window and menu bar for pairing, Speech
+- User-facing macOS Codex Watch window and menu bar for pairing, Speech
   authorization, inbox status, and operator retry. The LaunchAgent still owns
-  the listener; opening the app does not start a second daemon.
+  the listener; opening the app does not start a second daemon. Retry of a
+  stalled memo transcribes in the window that already has Speech permission
+  when the installed listener is an older binary that ignores the retry mailbox.
 
 ## 0.1.0 - 2026-07-20
 

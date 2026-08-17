@@ -89,7 +89,7 @@ import Testing
     #expect(header.primaryTitle == "Allow Speech Recognition")
     #expect(header.spine.mac == .attention)
     #expect(header.spine.codex == .pending)
-    #expect(CodexWatchBrand.productName == "CodexWatch")
+    #expect(CodexWatchBrand.productName == "Codex Watch")
 
     let mailbox = OperatorRetryMailbox(stateDirectory: root)
     try mailbox.enqueue(memoID)

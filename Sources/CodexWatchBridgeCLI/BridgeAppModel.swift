@@ -100,14 +100,18 @@ final class BridgeAppModel: ObservableObject {
         pairingBusy = true
         defer { pairingBusy = false }
         do {
-            let identity = try KeychainTLSIdentityProvider(
-                keychain: SystemTLSIdentityKeychain()
-            ).loadIdentity()
+            let install = try BridgeInstallPaths.production(
+                home: FileManager.default.homeDirectoryForCurrentUser
+            )
+            let fingerprint = try String(
+                contentsOf: install.state.appending(path: ".identity-public-key-sha256"),
+                encoding: .utf8
+            ).trimmingCharacters(in: .whitespacesAndNewlines)
+            let pin = try CertificatePin(fingerprint)
             let store = try PairingStore(secretStore: KeychainSecretStore())
             let challenge = try await store.beginPairing(
                 validFor: BridgeCommand.pairingChallengeLifetime
             )
-            let pin = try CertificatePin(identity.publicKeySHA256)
             pairing = PairingChallengePresentation(
                 phrase: pin.comparisonPhrase,
                 code: challenge.code,
@@ -116,7 +120,9 @@ final class BridgeAppModel: ObservableObject {
             statusMessage = nil
             logger.info("pairing challenge generated")
         } catch {
-            statusMessage = "Couldn’t generate a pairing code. Install the bridge and try again."
+            statusMessage = listenerOnline
+                ? "Couldn’t read the Mac certificate phrase from bridge state."
+                : "Couldn’t generate a pairing code. Install the bridge and try again."
             logger.error("pairing challenge failed")
         }
     }
@@ -137,13 +143,31 @@ final class BridgeAppModel: ObservableObject {
                 home: FileManager.default.homeDirectoryForCurrentUser
             )
             let paths = try BridgeRuntimePaths(root: install.state)
+            if speech == .authorized,
+               let runtime = LaunchAgentRuntimeConfiguration.load(plist: install.launchAgent)
+            {
+                statusMessage = "Transcribing on this Mac…"
+                try await BridgeCommand.retryMemoNow(
+                    memoID: item.id,
+                    stateRoot: install.state,
+                    codexPath: runtime.codexExecutable.path
+                )
+                await refresh()
+                if selectedItem?.transcript == nil {
+                    statusMessage = "Transcription still did not finish. Speech in this window is allowed; the local recognizer rejected the audio or locale."
+                } else {
+                    statusMessage = nil
+                }
+                logger.info("operator retry finished in-process")
+                return
+            }
             try OperatorRetryMailbox(stateDirectory: paths.service).enqueue(item.id)
             statusMessage = listenerOnline
                 ? "Retry queued for the running bridge."
                 : "Retry queued. It runs when the Mac listener is online."
             logger.info("operator retry queued")
         } catch {
-            statusMessage = "Couldn’t queue a retry for this memo."
+            statusMessage = "Couldn’t retry this memo from the Codex Watch window."
             logger.error("operator retry failed")
         }
     }

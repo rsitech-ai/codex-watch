@@ -33,10 +33,12 @@ struct BridgeConsoleView: View {
                     .accessibilitySortPriority(3)
 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(presentation.kicker.uppercased())
-                        .font(.system(size: 11, weight: .bold, design: .rounded))
-                        .tracking(0.8)
-                        .foregroundStyle(BridgeExperienceTheme.ColorToken.forTone(presentation.tone))
+                    if presentation.kicker.caseInsensitiveCompare(presentation.headline) != .orderedSame {
+                        Text(presentation.kicker.uppercased())
+                            .font(.system(size: 11, weight: .bold, design: .rounded))
+                            .tracking(0.8)
+                            .foregroundStyle(BridgeExperienceTheme.ColorToken.forTone(presentation.tone))
+                    }
                     Text(presentation.headline)
                         .font(.system(.title2, design: .rounded, weight: .bold))
                     Text(presentation.detail)
@@ -143,10 +145,6 @@ struct BridgeConsoleView: View {
                         .font(.headline)
                         .foregroundStyle(BridgeExperienceTheme.ColorToken.forTone(presentation.tone))
                 }
-                Text(presentation.detail)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2)
                 Text(item.capturedAt, style: .relative)
                     .font(.caption2.monospacedDigit())
                     .foregroundStyle(.tertiary)
@@ -179,11 +177,15 @@ struct BridgeConsoleView: View {
             let presentation = MacInboxItemPresentation.make(item: item, speech: model.speech)
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
-                    BridgeSpineView(presentation: presentation.spine)
-                    Text(presentation.status)
-                        .font(.title2.weight(.bold))
-                    Text(presentation.detail)
-                        .foregroundStyle(.secondary)
+                    if presentation.spine != model.header.spine {
+                        BridgeSpineView(presentation: presentation.spine)
+                    }
+                    if item.id != model.items.first?.id {
+                        Text(presentation.status)
+                            .font(.title2.weight(.bold))
+                        Text(presentation.detail)
+                            .foregroundStyle(.secondary)
+                    }
                     LabeledContent("Captured", value: item.capturedAt.formatted(date: .abbreviated, time: .standard))
                     LabeledContent("Audio") {
                         Text(item.audioIsPresent ? "On this Mac" : "Not on this Mac")
@@ -198,19 +200,14 @@ struct BridgeConsoleView: View {
                         }
                     }
                     HStack {
-                        if presentation.speechCTA {
-                            Button("Allow Speech Recognition") {
-                                Task { await model.authorizeSpeech() }
-                            }
-                            .buttonStyle(.borderedProminent)
-                            .tint(BridgeExperienceTheme.ColorToken.attention)
-                            .disabled(model.speechBusy)
-                        }
-                        if presentation.retryEnabled {
+                        if presentation.retryEnabled, !presentation.speechCTA {
                             Button("Retry transcription") {
                                 Task { await model.retrySelected() }
                             }
-                            .disabled(presentation.speechCTA && model.speech != .authorized)
+                            .buttonStyle(.borderedProminent)
+                            .tint(BridgeExperienceTheme.ColorToken.attention)
+                            .disabled(model.speech != .authorized)
+                            .accessibilityLabel("Retry transcription")
                         }
                     }
                 }
@@ -229,24 +226,21 @@ struct BridgeConsoleView: View {
     @ToolbarContentBuilder
     private var toolbar: some ToolbarContent {
         ToolbarItemGroup {
-            Button {
+            Button("Refresh", systemImage: "arrow.clockwise") {
                 Task { await model.refresh() }
-            } label: {
-                Label("Refresh", systemImage: "arrow.clockwise")
             }
+            .labelStyle(.titleAndIcon)
             .help("Reload listener, pairing, Speech, and inbox state")
-            Button {
+            Button("Pairing code", systemImage: "link") {
                 Task { await model.generatePairingCode() }
-            } label: {
-                Label("Pairing code", systemImage: "link")
             }
+            .labelStyle(.titleAndIcon)
             .help("Generate a certificate phrase and 6-digit Watch code")
             .disabled(model.pairingBusy)
-            Button {
+            Button("Speech", systemImage: "waveform") {
                 Task { await model.authorizeSpeech() }
-            } label: {
-                Label("Speech", systemImage: "waveform")
             }
+            .labelStyle(.titleAndIcon)
             .help("Ask macOS for Speech Recognition so memos can transcribe locally")
             .disabled(model.speechBusy)
         }

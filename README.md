@@ -231,7 +231,7 @@ retention maintenance failures.
 
 ## Local Speech permission
 
-The bridge never falls back to cloud transcription. Open Voice Inbox Bridge and
+The bridge never falls back to cloud transcription. Open Codex Watch and
 choose **Allow Speech Recognition**. That prompt must come from the app window;
 the LaunchAgent `run` process cannot show it.
 
@@ -243,7 +243,7 @@ VoiceInboxBridge.app/Contents/MacOS/codex-watch-bridge speech-status \
 ```
 
 `authorize-speech` remains available as a Terminal fallback. If access is
-denied, enable Speech Recognition for Voice Inbox Bridge in System Settings.
+denied, enable Speech Recognition for Codex Watch in System Settings.
 Committed recordings stay on this Mac for retry instead of using a network
 recognizer.
 

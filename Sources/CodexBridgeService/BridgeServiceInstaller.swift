@@ -296,8 +296,9 @@ public actor BridgeServiceInstaller {
             )
             priorLoaded = try await serviceIsLoaded()
             let fingerprint: String
-            do { fingerprint = try await identityLifecycle.ensureFingerprint() }
-            catch {
+            do {
+                fingerprint = try await reusedOrCreatedFingerprint()
+            } catch {
                 throw BridgeServiceInstallerError.transactionFailed
             }
             if itemExists(fingerprintURL) {
@@ -856,6 +857,22 @@ public actor BridgeServiceInstaller {
         } catch {
             throw BridgeServiceInstallerError.launchctlFailed
         }
+    }
+
+    private func reusedOrCreatedFingerprint() async throws -> String {
+        if let existing = try await identityLifecycle.existingFingerprint() {
+            return existing
+        }
+        if let persisted = readFingerprint() {
+            let service = paths.state.appending(path: "service", directoryHint: .isDirectory)
+            // Keychain ACL is per code signature. Reinstall must keep the pin
+            // without minting; the listener loads PKCS#12 from this directory.
+            guard PersistedTLSIdentity.exists(stateDirectory: service) else {
+                throw BridgeServiceInstallerError.transactionFailed
+            }
+            return persisted
+        }
+        return try await identityLifecycle.ensureFingerprint()
     }
 
     private var fingerprintURL: URL {

@@ -48,7 +48,7 @@ struct InstallManifestTests {
         contentsOf: repositoryRoot.appending(path: "Bridge/ai.rsitech.voiceinbox.bridge.plist")
     ) as? [String: Any])
 
-    #expect(info["NSLocalNetworkUsageDescription"] as? String == "CodexWatch receives voice ideas from your paired Apple Watch on your local network.")
+    #expect(info["NSLocalNetworkUsageDescription"] as? String == "Codex Watch receives voice ideas from your paired Apple Watch on your local network.")
     #expect(info["NSBonjourServices"] as? [String] == ["_voiceinbox._tcp"])
     #expect(info["LSBackgroundOnly"] as? Bool == false)
     #expect(info["LSMinimumSystemVersion"] as? String == "15.0")

@@ -295,6 +295,38 @@ struct BridgeServiceInstallerTests {
         #expect(await fixture.identityLifecycle.creationCount == 1)
     }
 
+    @Test func reinstallReusesPersistedFingerprintWhenKeychainIdentityIsUnreadable() async throws {
+        let fixture = try InstallerFixture()
+        try await fixture.install(bundle: try fixture.makeBundle(version: "one"))
+        let firstIdentity = try #require(await fixture.identityLifecycle.existingFingerprint())
+        let service = fixture.paths.state.appending(path: "service", directoryHint: .isDirectory)
+        try FileManager.default.createDirectory(
+            at: service,
+            withIntermediateDirectories: true,
+            attributes: [.posixPermissions: NSNumber(value: 0o700)]
+        )
+        let p12 = service.appending(path: PersistedTLSIdentity.p12FileName)
+        let password = service.appending(path: PersistedTLSIdentity.passwordFileName)
+        try Data("p12".utf8).write(to: p12)
+        try Data("password".utf8).write(to: password)
+        try FileManager.default.setAttributes(
+            [.posixPermissions: NSNumber(value: 0o600)],
+            ofItemAtPath: p12.path
+        )
+        try FileManager.default.setAttributes(
+            [.posixPermissions: NSNumber(value: 0o600)],
+            ofItemAtPath: password.path
+        )
+        await fixture.identityLifecycle.loseKeychainAccess()
+
+        try await fixture.install(bundle: try fixture.makeBundle(version: "two"))
+
+        #expect(try fixture.installedExecutableContents() == "two")
+        #expect(try String(contentsOf: fixture.fingerprint, encoding: .utf8) == firstIdentity)
+        #expect(await fixture.identityLifecycle.creationCount == 1)
+        #expect(await fixture.identityLifecycle.existingFingerprint() == nil)
+    }
+
     @Test func failedBootstrapRestoresAndRebootstrapsThePriorInstall() async throws {
         let fixture = try InstallerFixture()
         try await fixture.install(bundle: try fixture.makeBundle(version: "one"))
@@ -1147,13 +1179,17 @@ private actor DeterministicInstallerIdentityLifecycle: BridgeInstallerIdentityLi
 
     func ensureFingerprint() -> String {
         if let fingerprint { return fingerprint }
-        let generated = String(repeating: "a", count: 64)
-        fingerprint = generated
         created += 1
+        let generated = String(repeating: created == 1 ? "a" : "c", count: 64)
+        fingerprint = generated
         return generated
     }
 
     func existingFingerprint() -> String? { fingerprint }
+
+    func loseKeychainAccess() {
+        fingerprint = nil
+    }
 
     func beginRotation() async throws -> BridgeInstallerIdentityRotationReceipt {
         guard let previous = fingerprint else { throw InstallerFakeError.injected }

@@ -82,7 +82,10 @@ enum BridgeCommand {
         case "rotate-identity":
             throw BridgeCommandError.usage
         case "pair":
-            let identity = try tlsIdentityProvider(options: options).loadIdentity()
+            let identity = try tlsIdentityProvider(
+                options: options,
+                stateDirectory: paths.service
+            ).loadIdentity()
             let pairing = try PairingStore(secretStore: KeychainSecretStore())
             let challenge = try await pairing.beginPairing(
                 validFor: pairingChallengeLifetime
@@ -235,11 +238,14 @@ enum BridgeCommand {
         options: [String: String],
         retryMemoID: MemoID?
     ) async throws {
-        guard let codexPath = options["codex"],
-              let bindHost = options["bind-host"],
-              let advertisedHost = options["advertised-host"]
-        else { throw BridgeCommandError.invalidConfiguration }
-        let identityProvider = try tlsIdentityProvider(options: options)
+        guard let codexPath = options["codex"] else {
+            throw BridgeCommandError.invalidConfiguration
+        }
+        if retryMemoID == nil {
+            guard options["bind-host"] != nil, options["advertised-host"] != nil else {
+                throw BridgeCommandError.invalidConfiguration
+            }
+        }
 
         try paths.prepareRoot()
         try paths.prepareCodexInbox()
@@ -261,13 +267,15 @@ enum BridgeCommand {
             intakeStore: intake,
             journal: journal
         )
-        do {
-            _ = try await withExclusiveRetentionLease(stateDirectory: paths.service) {
-                try await retention.performMaintenance()
+        if retryMemoID == nil {
+            do {
+                _ = try await withExclusiveRetentionLease(stateDirectory: paths.service) {
+                    try await retention.performMaintenance()
+                }
+            } catch {
+                _ = diagnostics.append(.retentionMaintenanceFailed)
+                throw error
             }
-        } catch {
-            _ = diagnostics.append(.retentionMaintenanceFailed)
-            throw error
         }
         let inbox = try AppServerInboxClient(
             codexExecutableURL: URL(fileURLWithPath: codexPath),
@@ -298,9 +306,18 @@ enum BridgeCommand {
             }
         )
         if let retryMemoID {
+            // ponytail: operator retry does not take the listener lease; it
+            // transcribes one durable memo in this process (GUI Speech TCC).
             try await pendingProcessor.retryCommitted(retryMemoID)
             return
         }
+        guard let bindHost = options["bind-host"],
+              let advertisedHost = options["advertised-host"]
+        else { throw BridgeCommandError.invalidConfiguration }
+        let identityProvider = try tlsIdentityProvider(
+            options: options,
+            stateDirectory: paths.service
+        )
         let pairing = try PairingStore(secretStore: KeychainSecretStore())
         let configuration = try BridgeConfiguration()
         let replayStore = try DurableReplayNonceStore(
@@ -389,12 +406,24 @@ enum BridgeCommand {
 
     static func tlsIdentityProvider(
         options: [String: String],
-        keychain: (any TLSIdentityKeychain)? = nil
+        keychain: (any TLSIdentityKeychain)? = nil,
+        stateDirectory: URL? = nil
     ) throws -> any BridgeTLSIdentityProvider {
         let p12Path = options["identity-p12"]
         let passwordPath = options["identity-password-file"]
         if p12Path == nil, passwordPath == nil {
-            return KeychainTLSIdentityProvider(keychain: keychain ?? SystemTLSIdentityKeychain())
+            if let stateDirectory, let persisted = try PersistedTLSIdentity.provider(
+                stateDirectory: stateDirectory
+            ) {
+                return persisted
+            }
+            let provider = KeychainTLSIdentityProvider(
+                keychain: keychain ?? SystemTLSIdentityKeychain()
+            )
+            if let stateDirectory {
+                persistKeychainIdentity(provider, to: stateDirectory)
+            }
+            return provider
         }
         guard let p12Path, let passwordPath else {
             throw BridgeCommandError.invalidConfiguration
@@ -407,6 +436,13 @@ enum BridgeCommand {
             p12URL: URL(fileURLWithPath: p12Path),
             password: password
         )
+    }
+
+    private static func persistKeychainIdentity(
+        _ provider: KeychainTLSIdentityProvider,
+        to stateDirectory: URL
+    ) {
+        try? provider.persistToStateDirectory(stateDirectory)
     }
 
     static func rotateIdentityWhileServiceStopped(
@@ -641,6 +677,19 @@ enum BridgeCommand {
         await withCheckedContinuation { continuation in
             requester { status in continuation.resume(returning: status) }
         }
+    }
+
+    static func retryMemoNow(
+        memoID: MemoID,
+        stateRoot: URL,
+        codexPath: String
+    ) async throws {
+        let paths = try BridgeRuntimePaths(root: stateRoot)
+        try await runService(
+            paths: paths,
+            options: ["codex": codexPath],
+            retryMemoID: memoID
+        )
     }
 
     static func requestSystemSpeechAuthorization() async -> BridgeSpeechAuthorizationStatus {
