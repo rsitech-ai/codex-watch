@@ -12,6 +12,7 @@ All notable public releases are documented here.
   stalled memo transcribes in the window that already has Speech permission
   when the installed listener is an older binary that ignores the retry mailbox.
   Ready-for-Codex memos can retry Inbox insert without re-transcribing.
+  Delivered copy names the local Codex Inbox thread, not the ChatGPT app.
 
 ## 0.1.0 - 2026-07-20
 

@@ -137,16 +137,16 @@ struct MacInboxItemPresentation: Equatable {
             )
         case .delivered:
             return phase(
-                status: "Delivered to Codex",
+                status: "Saved to local Inbox",
                 detail: item.isRetained
-                    ? "Codex delivery confirmed. Audio is in the Mac recovery archive."
-                    : "Codex delivery confirmed.",
+                    ? "Confirmed in this Mac’s Codex Inbox thread. Audio is in the Mac recovery archive."
+                    : "Confirmed in this Mac’s Codex Inbox thread.",
                 tone: .confirmed,
                 spine: BridgeSpinePresentation(
                     watch: .confirmed,
                     mac: .confirmed,
                     codex: .confirmed,
-                    accessibilityValue: "Saved on Watch; received by Mac; delivered to Codex"
+                    accessibilityValue: "Saved on Watch; received by Mac; saved to local Inbox"
                 ),
                 retryEnabled: false,
                 speechCTA: false

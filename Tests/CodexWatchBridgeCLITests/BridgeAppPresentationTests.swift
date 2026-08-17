@@ -103,6 +103,23 @@ import Testing
     #expect(header.spine.codex == .pending)
 }
 
+@Test func deliveredCopyNamesLocalInboxNotOfficialClient() throws {
+    let item = MacInboxItem(
+        id: try MemoID("11111111-1111-1111-1111-111111111111"),
+        capturedAt: Date(timeIntervalSince1970: 0),
+        state: .delivered,
+        transcript: "local transcript",
+        audioIsPresent: true,
+        isRetained: true
+    )
+    let presentation = MacInboxItemPresentation.make(item: item, speech: .authorized)
+
+    #expect(presentation.status == "Saved to local Inbox")
+    #expect(presentation.detail.contains("Codex Inbox thread"))
+    #expect(!presentation.detail.contains("Codex delivery confirmed"))
+    #expect(!presentation.status.contains("Delivered to Codex"))
+}
+
 @Test func readyForCodexKeepsInsertRetryOnTheMemo() throws {
     let item = MacInboxItem(
         id: try MemoID("11111111-1111-1111-1111-111111111111"),

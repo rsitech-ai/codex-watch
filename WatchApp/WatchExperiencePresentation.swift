@@ -412,13 +412,13 @@ struct RelayItemPresentation: Equatable {
             tone = .active
             spine = codexActiveSpine("reconciling Codex delivery")
         case .delivered:
-            detail = "Codex delivery confirmed"
+            detail = "Saved to local Inbox"
             tone = .confirmed
             spine = SignalSpinePresentation(
                 watch: .confirmed,
                 mac: .confirmed,
                 codex: .confirmed,
-                accessibilityValue: "Saved on Watch; received by Mac; delivered to Codex"
+                accessibilityValue: "Saved on Watch; received by Mac; saved to local Inbox"
             )
         case .needsAttention:
             detail = "Audio remains on this Watch"
