@@ -50,7 +50,8 @@ struct WatchRenderScenarioRoot: View {
             onPrimaryAction: { _ in },
             onOpenPairing: {},
             onOpenRetention: {},
-            onOpenQueue: {}
+            onOpenQueue: {},
+            bridgeIsPaired: scenario != .savedOnWatch && scenario != .needsAttention
         )
     }
 

@@ -36,6 +36,7 @@ struct CaptureScene: View {
     let onOpenPairing: () -> Void
     let onOpenRetention: () -> Void
     let onOpenQueue: () -> Void
+    var bridgeIsPaired = false
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.isLuminanceReduced) private var isLuminanceReduced
@@ -107,17 +108,33 @@ struct CaptureScene: View {
                     .foregroundStyle(.secondary)
             }
             .buttonStyle(.plain)
+            .fixedSize()
+            .layoutPriority(2)
             .accessibilityLabel("Retention settings")
             .accessibilityHint("Changes how long delivered audio remains on this Watch")
             .accessibilitySortPriority(CaptureAccessibilityPriority.secondaryNavigation)
 
             Button(action: onOpenPairing) {
-                Image(systemName: "desktopcomputer")
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(.secondary)
+                if CapturePairingChrome.showsLabeledHeader(isPaired: bridgeIsPaired) {
+                    Text(CapturePairingChrome.unpairedHeaderTitle)
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.75)
+                } else {
+                    Image(systemName: "desktopcomputer")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                }
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Mac bridge status: \(bridgeTitle)")
+            .fixedSize()
+            .layoutPriority(2)
+            .accessibilityLabel(
+                CapturePairingChrome.showsLabeledHeader(isPaired: bridgeIsPaired)
+                    ? CapturePairingChrome.unpairedHeaderTitle
+                    : "Mac bridge status: \(bridgeTitle)"
+            )
             .accessibilityHint("Opens secure Mac pairing")
             .accessibilitySortPriority(CaptureAccessibilityPriority.secondaryNavigation)
 
@@ -127,6 +144,8 @@ struct CaptureScene: View {
                     .foregroundStyle(.secondary)
             }
             .buttonStyle(.plain)
+            .fixedSize()
+            .layoutPriority(2)
             .accessibilityLabel("Relay ledger")
             .accessibilityValue("\(queueCount) \(queueCount == 1 ? "item" : "items")")
             .accessibilityHint("Opens saved recordings and relay status")

@@ -31,7 +31,8 @@ struct ContentView: View {
             onPrimaryAction: performPrimaryAction,
             onOpenPairing: { showsPairing = true },
             onOpenRetention: { showsRetention = true },
-            onOpenQueue: { showsQueue = true }
+            onOpenQueue: { showsQueue = true },
+            bridgeIsPaired: model.bridgeState.isPaired
         )
         .navigationDestination(isPresented: $showsPairing) {
             PairingView()

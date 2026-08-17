@@ -28,6 +28,41 @@ final class VoiceCaptureModelTests: XCTestCase {
         )
     }
 
+    func testUnpairedGlanceableStatesOfferPairingAsPrimaryAction() throws {
+        let memoID = try MemoID("13131313-1313-1313-1313-131313131313")
+        let unpairedStates: [WatchCaptureState] = [
+            .idle,
+            .savedOnWatch(memoID),
+            .interruptedRecordingFound(1),
+        ]
+
+        for state in unpairedStates {
+            let presentation = CaptureScenePresentation.make(
+                captureState: state,
+                bridgeState: .notPaired
+            )
+            XCTAssertEqual(presentation.primaryAction, .openPairing, "state: \(state)")
+        }
+
+        let recording = CaptureScenePresentation.make(
+            captureState: .recording(memoID),
+            bridgeState: .notPaired
+        )
+        XCTAssertEqual(recording.primaryAction, .stopAndSave)
+
+        let pairedIdle = CaptureScenePresentation.make(
+            captureState: .idle,
+            bridgeState: .paired("Studio Mac")
+        )
+        XCTAssertEqual(pairedIdle.primaryAction, .record)
+    }
+
+    func testPairingChromeLabelsUnpairedHeaderMacBridge() {
+        XCTAssertEqual(CapturePairingChrome.unpairedHeaderTitle, "Mac Bridge")
+        XCTAssertTrue(CapturePairingChrome.showsLabeledHeader(isPaired: false))
+        XCTAssertFalse(CapturePairingChrome.showsLabeledHeader(isPaired: true))
+    }
+
     func testCapturePresentationCoversEveryLocalStateWithoutRemoteProgress() throws {
         let memoID = try MemoID("12121212-1212-1212-1212-121212121212")
         let cases: [(WatchCaptureState, WatchPrimaryAction, Bool, Bool)] = [

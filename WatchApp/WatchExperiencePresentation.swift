@@ -32,6 +32,30 @@ enum WatchPrimaryAction: Equatable {
     case none
 }
 
+enum CapturePairingActionPolicy {
+    static func primaryAction(
+        captureState: WatchCaptureState,
+        bridgeState: WatchBridgeConnectionState,
+        captureAction: WatchPrimaryAction
+    ) -> WatchPrimaryAction {
+        guard !bridgeState.isPaired else { return captureAction }
+        switch captureState {
+        case .idle, .savedOnWatch, .interruptedRecordingFound:
+            return .openPairing
+        case .preparing, .recording, .saving, .permissionDenied, .failed:
+            return captureAction
+        }
+    }
+}
+
+enum CapturePairingChrome {
+    static let unpairedHeaderTitle = "Mac Bridge"
+
+    static func showsLabeledHeader(isPaired: Bool) -> Bool {
+        !isPaired
+    }
+}
+
 struct CaptureScenePresentation: Equatable {
     let kicker: String
     let headline: String
@@ -46,9 +70,10 @@ struct CaptureScenePresentation: Equatable {
         captureState: WatchCaptureState,
         bridgeState: WatchBridgeConnectionState
     ) -> Self {
+        let presentation: Self
         switch captureState {
         case .idle:
-            return Self(
+            presentation = Self(
                 kicker: "Watch ready",
                 headline: "Capture the thought.",
                 detail: bridgeDetail(bridgeState),
@@ -62,7 +87,7 @@ struct CaptureScenePresentation: Equatable {
                 primaryActionDisabled: false
             )
         case .preparing:
-            return Self(
+            presentation = Self(
                 kicker: "Preparing",
                 headline: "Preparing microphone",
                 detail: "Keep Voice Inbox open",
@@ -76,7 +101,7 @@ struct CaptureScenePresentation: Equatable {
                 primaryActionDisabled: true
             )
         case .recording:
-            return Self(
+            presentation = Self(
                 kicker: "Recording",
                 headline: "Recording",
                 detail: "Audio stays on this Watch",
@@ -90,7 +115,7 @@ struct CaptureScenePresentation: Equatable {
                 primaryActionDisabled: false
             )
         case .saving:
-            return Self(
+            presentation = Self(
                 kicker: "Saving on Watch",
                 headline: "Saving securely",
                 detail: "Keep Voice Inbox open",
@@ -104,7 +129,7 @@ struct CaptureScenePresentation: Equatable {
                 primaryActionDisabled: true
             )
         case .savedOnWatch:
-            return Self(
+            presentation = Self(
                 kicker: "Saved on Watch",
                 headline: "Thought secured.",
                 detail: "Waiting for your Mac bridge",
@@ -118,7 +143,7 @@ struct CaptureScenePresentation: Equatable {
                 primaryActionDisabled: false
             )
         case .permissionDenied:
-            return Self(
+            presentation = Self(
                 kicker: "Microphone access needed",
                 headline: "Enable microphone.",
                 detail: "Allow microphone access in Watch Settings",
@@ -135,7 +160,7 @@ struct CaptureScenePresentation: Equatable {
             let detail = count == 1
                 ? "One recording is preserved locally"
                 : "\(count) recordings are preserved locally"
-            return Self(
+            presentation = Self(
                 kicker: "Needs attention",
                 headline: "Audio is safe here.",
                 detail: detail,
@@ -149,8 +174,34 @@ struct CaptureScenePresentation: Equatable {
                 primaryActionDisabled: false
             )
         case let .failed(failure):
-            return failurePresentation(failure)
+            presentation = failurePresentation(failure)
         }
+        return presentation.offeringPairingIfNeeded(
+            captureState: captureState,
+            bridgeState: bridgeState
+        )
+    }
+
+    private func offeringPairingIfNeeded(
+        captureState: WatchCaptureState,
+        bridgeState: WatchBridgeConnectionState
+    ) -> Self {
+        let action = CapturePairingActionPolicy.primaryAction(
+            captureState: captureState,
+            bridgeState: bridgeState,
+            captureAction: primaryAction
+        )
+        guard action != primaryAction else { return self }
+        return Self(
+            kicker: kicker,
+            headline: headline,
+            detail: detail,
+            tone: tone,
+            spine: spine,
+            primaryAction: action,
+            showsElapsedTime: showsElapsedTime,
+            primaryActionDisabled: primaryActionDisabled
+        )
     }
 
     private static func localSpine(
