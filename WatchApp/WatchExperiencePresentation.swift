@@ -218,8 +218,10 @@ struct CaptureScenePresentation: Equatable {
 
     private static func bridgeDetail(_ state: WatchBridgeConnectionState) -> String {
         switch state {
-        case .notPaired, .needsAttention:
+        case .notPaired:
             "Mac needs attention"
+        case let .needsAttention(message):
+            message ?? "Mac needs attention"
         case .pairing:
             "Pairing with Mac"
         case .paired:
@@ -247,8 +249,8 @@ struct CaptureScenePresentation: Equatable {
             "sending a saved idea to Mac"
         case .received:
             "Mac received a saved idea"
-        case .needsAttention:
-            "Mac needs attention"
+        case let .needsAttention(message):
+            message == "Pair again" ? "Mac not paired" : "Mac needs attention"
         }
     }
 

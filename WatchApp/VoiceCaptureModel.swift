@@ -39,8 +39,10 @@ enum WatchBridgeConnectionState: Equatable {
         switch self {
         case .paired, .waiting, .sending, .received:
             return true
-        case .notPaired, .pairing, .needsAttention:
+        case .notPaired, .pairing:
             return false
+        case let .needsAttention(message):
+            return message != "Pair again"
         }
     }
 
@@ -743,7 +745,9 @@ final class VoiceCaptureModel: ObservableObject {
                     }
                     await refreshQueue()
                     if state == .needsAttention {
-                        bridgeState = .needsAttention("The Mac bridge needs attention. Audio remains on this Watch.")
+                        bridgeState = .needsAttention(
+                            "Mac received the audio. Local transcription still needs attention."
+                        )
                         return
                     }
                     continue
@@ -758,7 +762,7 @@ final class VoiceCaptureModel: ObservableObject {
                     return
                 case .needsAttention:
                     bridgeState = .needsAttention(
-                        "The Mac bridge needs attention. Audio remains on this Watch."
+                        "Mac received the audio. Local transcription still needs attention."
                     )
                     return
                 case .received:

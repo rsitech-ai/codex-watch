@@ -28,6 +28,33 @@ final class VoiceCaptureModelTests: XCTestCase {
         )
     }
 
+    func testPostPairAttentionKeepsRecordPrimaryInsteadOfPairing() {
+        XCTAssertTrue(
+            WatchBridgeConnectionState.needsAttention(
+                "Mac received the audio. Local transcription still needs attention."
+            ).isPaired
+        )
+        XCTAssertFalse(WatchBridgeConnectionState.needsAttention("Pair again").isPaired)
+
+        let postPair = CaptureScenePresentation.make(
+            captureState: .idle,
+            bridgeState: .needsAttention(
+                "Mac received the audio. Local transcription still needs attention."
+            )
+        )
+        XCTAssertEqual(postPair.primaryAction, .record)
+        XCTAssertEqual(
+            postPair.detail,
+            "Mac received the audio. Local transcription still needs attention."
+        )
+
+        let pairAgain = CaptureScenePresentation.make(
+            captureState: .idle,
+            bridgeState: .needsAttention("Pair again")
+        )
+        XCTAssertEqual(pairAgain.primaryAction, .openPairing)
+    }
+
     func testUnpairedGlanceableStatesOfferPairingAsPrimaryAction() throws {
         let memoID = try MemoID("13131313-1313-1313-1313-131313131313")
         let unpairedStates: [WatchCaptureState] = [
