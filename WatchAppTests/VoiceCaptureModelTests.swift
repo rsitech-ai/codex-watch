@@ -133,6 +133,21 @@ final class VoiceCaptureModelTests: XCTestCase {
         )
     }
 
+    func testPairingFailureCopyNamesCertificateAndReachabilityCauses() {
+        XCTAssertEqual(
+            PairingFailurePresentation.message(for: .certificateMismatch),
+            "The Mac certificate didn’t match. Compare the phrase again."
+        )
+        XCTAssertEqual(
+            PairingFailurePresentation.message(for: .unavailable),
+            "Couldn’t reach the Mac bridge."
+        )
+        XCTAssertEqual(
+            PairingFailurePresentation.message(for: .invalidResponse),
+            "The Mac rejected that code. Request a new one if it expired."
+        )
+    }
+
     func testPairingSubmitSurfacesInvalidCodeInsteadOfNoOp() {
         XCTAssertEqual(
             PairingSubmitPolicy.errorIfInvalidCode(""),

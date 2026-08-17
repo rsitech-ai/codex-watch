@@ -148,7 +148,7 @@ struct PairingView: View {
                             confirmedPin: confirmedPin,
                             code: pairingCode
                         )
-                        localError = paired ? nil : "Couldn’t pair. Check the bridge, phrase, and code."
+                        localError = paired ? nil : pairingFailureCopy
                     }
                 }
                 .disabled(model.bridgeState == .pairing)
@@ -163,6 +163,13 @@ struct PairingView: View {
             .buttonStyle(.plain)
             .font(.caption2)
         }
+    }
+
+    private var pairingFailureCopy: String {
+        if case let .needsAttention(message) = model.bridgeState, let message {
+            return message
+        }
+        return "Couldn’t pair. Check the bridge, phrase, and code."
     }
 }
 

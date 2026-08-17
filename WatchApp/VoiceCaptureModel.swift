@@ -541,8 +541,11 @@ final class VoiceCaptureModel: ObservableObject {
         } catch is CancellationError {
             bridgeState = .notPaired
             return false
+        } catch let error as WatchBridgeClientError {
+            bridgeState = .needsAttention(PairingFailurePresentation.message(for: error))
+            return false
         } catch {
-            bridgeState = .needsAttention("Pairing failed. The code may be invalid or the bridge may be unavailable.")
+            bridgeState = .needsAttention("Couldn’t pair. Check the bridge, phrase, and code.")
             return false
         }
     }
