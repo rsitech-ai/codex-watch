@@ -13,6 +13,11 @@ All notable public releases are documented here.
   when the installed listener is an older binary that ignores the retry mailbox.
   Ready-for-Codex memos can retry Inbox insert without re-transcribing.
   Delivered copy names the local Codex Inbox thread, not the ChatGPT app.
+- After a local Speech transcript, Codex Watch writes a markdown spec next to
+  the delivery journal (`*.spec.md`). Codex App Server can improve it; otherwise
+  the file is an unverified local wrapper. The window can save `.md` or `.html`.
+  Inbox insert uses the App Server spec when improvement succeeds, and still
+  names local Inbox rather than ChatGPT.app.
 
 ## 0.1.0 - 2026-07-20
 

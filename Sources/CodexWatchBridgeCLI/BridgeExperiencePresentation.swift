@@ -73,6 +73,28 @@ struct MacInboxItem: Identifiable, Equatable {
     let transcript: String?
     let audioIsPresent: Bool
     let isRetained: Bool
+    let specMarkdown: String?
+    let specProvenance: MemoSpecProvenance?
+
+    init(
+        id: MemoID,
+        capturedAt: Date,
+        state: MemoState,
+        transcript: String?,
+        audioIsPresent: Bool,
+        isRetained: Bool,
+        specMarkdown: String? = nil,
+        specProvenance: MemoSpecProvenance? = nil
+    ) {
+        self.id = id
+        self.capturedAt = capturedAt
+        self.state = state
+        self.transcript = transcript
+        self.audioIsPresent = audioIsPresent
+        self.isRetained = isRetained
+        self.specMarkdown = specMarkdown
+        self.specProvenance = specProvenance
+    }
 }
 
 struct MacInboxItemPresentation: Equatable {
@@ -82,6 +104,7 @@ struct MacInboxItemPresentation: Equatable {
     let spine: BridgeSpinePresentation
     let retryEnabled: Bool
     let speechCTA: Bool
+    let showsSpecDownload: Bool
     let accessibilityValue: String
 
     static func make(
@@ -97,7 +120,8 @@ struct MacInboxItemPresentation: Equatable {
                 tone: .confirmed,
                 spine: macConfirmed("received by Mac"),
                 retryEnabled: false,
-                speechCTA: false
+                speechCTA: false,
+                showsSpecDownload: hasSpec(item)
             )
         case .transcribing:
             return phase(
@@ -106,7 +130,8 @@ struct MacInboxItemPresentation: Equatable {
                 tone: .active,
                 spine: macActive("processing locally on Mac"),
                 retryEnabled: false,
-                speechCTA: false
+                speechCTA: false,
+                showsSpecDownload: hasSpec(item)
             )
         case .readyForCodex:
             return phase(
@@ -115,7 +140,8 @@ struct MacInboxItemPresentation: Equatable {
                 tone: .active,
                 spine: macConfirmed("prepared by Mac; ready for Codex"),
                 retryEnabled: true,
-                speechCTA: false
+                speechCTA: false,
+                showsSpecDownload: hasSpec(item)
             )
         case .inserting:
             return phase(
@@ -124,7 +150,8 @@ struct MacInboxItemPresentation: Equatable {
                 tone: .active,
                 spine: codexActive("inserting into Codex"),
                 retryEnabled: false,
-                speechCTA: false
+                speechCTA: false,
+                showsSpecDownload: hasSpec(item)
             )
         case .reconciling:
             return phase(
@@ -133,14 +160,13 @@ struct MacInboxItemPresentation: Equatable {
                 tone: .active,
                 spine: codexActive("reconciling Codex delivery"),
                 retryEnabled: false,
-                speechCTA: false
+                speechCTA: false,
+                showsSpecDownload: hasSpec(item)
             )
         case .delivered:
             return phase(
                 status: "Saved to local Inbox",
-                detail: item.isRetained
-                    ? "Confirmed in this Mac’s Codex Inbox thread. Audio is in the Mac recovery archive."
-                    : "Confirmed in this Mac’s Codex Inbox thread.",
+                detail: deliveredDetail(item),
                 tone: .confirmed,
                 spine: BridgeSpinePresentation(
                     watch: .confirmed,
@@ -149,7 +175,8 @@ struct MacInboxItemPresentation: Equatable {
                     accessibilityValue: "Saved on Watch; received by Mac; saved to local Inbox"
                 ),
                 retryEnabled: false,
-                speechCTA: false
+                speechCTA: false,
+                showsSpecDownload: hasSpec(item)
             )
         case .needsAttention:
             if speechBlocksTranscription, item.transcript == nil {
@@ -159,7 +186,8 @@ struct MacInboxItemPresentation: Equatable {
                     tone: .attention,
                     spine: macAttention("Speech Recognition is not authorized"),
                     retryEnabled: true,
-                    speechCTA: true
+                    speechCTA: true,
+                    showsSpecDownload: hasSpec(item)
                 )
             }
             return phase(
@@ -170,7 +198,8 @@ struct MacInboxItemPresentation: Equatable {
                 tone: .attention,
                 spine: macAttention("Mac processing needs attention"),
                 retryEnabled: item.transcript == nil,
-                speechCTA: false
+                speechCTA: false,
+                showsSpecDownload: hasSpec(item)
             )
         case .saved, .uploading:
             return phase(
@@ -184,9 +213,30 @@ struct MacInboxItemPresentation: Equatable {
                     accessibilityValue: "Saved on Watch; waiting for Mac; Codex pending"
                 ),
                 retryEnabled: false,
-                speechCTA: false
+                speechCTA: false,
+                showsSpecDownload: hasSpec(item)
             )
         }
+    }
+
+    private static func deliveredDetail(_ item: MacInboxItem) -> String {
+        var detail = item.isRetained
+            ? "Confirmed in this Mac’s Codex Inbox thread. Audio is in the Mac recovery archive."
+            : "Confirmed in this Mac’s Codex Inbox thread."
+        if hasSpec(item) {
+            switch item.specProvenance {
+            case .appServer:
+                detail += " Spec is ready to save."
+            case .localFallback, nil:
+                detail += " Spec is an unverified local wrapper."
+            }
+        }
+        return detail
+    }
+
+    private static func hasSpec(_ item: MacInboxItem) -> Bool {
+        guard let specMarkdown = item.specMarkdown else { return false }
+        return !specMarkdown.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     private static func phase(
@@ -195,7 +245,8 @@ struct MacInboxItemPresentation: Equatable {
         tone: BridgeExperienceTone,
         spine: BridgeSpinePresentation,
         retryEnabled: Bool,
-        speechCTA: Bool
+        speechCTA: Bool,
+        showsSpecDownload: Bool
     ) -> Self {
         Self(
             status: status,
@@ -204,6 +255,7 @@ struct MacInboxItemPresentation: Equatable {
             spine: spine,
             retryEnabled: retryEnabled,
             speechCTA: speechCTA,
+            showsSpecDownload: showsSpecDownload,
             accessibilityValue: "\(status). \(detail). \(spine.accessibilityValue)"
         )
     }
@@ -400,26 +452,42 @@ enum BridgeSpeechCopy {
     }
 }
 
+enum MemoSpecCopy {
+    static func provenanceLabel(_ provenance: MemoSpecProvenance?) -> String {
+        switch provenance {
+        case .appServer:
+            "Improved by Codex App Server"
+        case .localFallback, nil:
+            "Unverified local wrapper"
+        }
+    }
+}
+
 enum MacInboxSnapshot {
     static func items(
         intake: [CommittedIntakeRecord],
         journals: [MemoID: DeliveryRecord],
-        retained: [RetainedIntakeRecord]
+        retained: [RetainedIntakeRecord],
+        specs: [MemoID: MemoSpec] = [:]
     ) -> [MacInboxItem] {
         var items: [MacInboxItem] = intake.map { record in
             let journal = journals[record.memoID]
+            let spec = specs[record.memoID]
             return MacInboxItem(
                 id: record.memoID,
                 capturedAt: journal?.capturedAt ?? record.receipt.capturedAt,
                 state: journal?.state ?? .received,
                 transcript: journal?.transcript,
                 audioIsPresent: true,
-                isRetained: false
+                isRetained: false,
+                specMarkdown: spec?.markdown,
+                specProvenance: spec?.provenance
             )
         }
         let intakeIDs = Set(intake.map(\.memoID))
         for record in retained where !intakeIDs.contains(record.memoID) {
             let journal = journals[record.memoID]
+            let spec = specs[record.memoID]
             items.append(
                 MacInboxItem(
                     id: record.memoID,
@@ -427,7 +495,9 @@ enum MacInboxSnapshot {
                     state: journal?.state ?? .delivered,
                     transcript: journal?.transcript,
                     audioIsPresent: true,
-                    isRetained: true
+                    isRetained: true,
+                    specMarkdown: spec?.markdown,
+                    specProvenance: spec?.provenance
                 )
             )
         }
@@ -483,7 +553,7 @@ struct BridgeSpineView: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Delivery path")
         .accessibilityValue(presentation.accessibilityValue)
-        .animation(reduceMotion ? nil : .easeOut(duration: 0.24), value: presentation)
+        .animation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 1.0), value: presentation)
     }
 
     private func segmentColor(after index: Int) -> Color {

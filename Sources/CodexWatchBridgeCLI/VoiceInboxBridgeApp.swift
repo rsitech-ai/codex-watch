@@ -29,6 +29,15 @@ struct VoiceInboxBridgeApp: App {
                     Task { await model.retrySelected() }
                 }
                 .keyboardShortcut(.return, modifiers: [.command])
+                Divider()
+                Button("Save Spec…") {
+                    model.saveSelectedSpec(asHTML: false)
+                }
+                .keyboardShortcut("s", modifiers: [.command])
+                Button("Save HTML…") {
+                    model.saveSelectedSpec(asHTML: true)
+                }
+                .keyboardShortcut("s", modifiers: [.command, .shift])
             }
         }
 

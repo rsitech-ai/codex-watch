@@ -1,4 +1,5 @@
 @testable import CodexWatchBridgeCLI
+import CodexBridgeService
 import CodexBridgeShared
 import Foundation
 import Testing
@@ -101,6 +102,31 @@ import Testing
     #expect(header.primaryTitle == nil)
     #expect(presentation.retryEnabled == true)
     #expect(header.spine.codex == .pending)
+}
+
+@Test func deliveredPresentationShowsSpecDownloadWhenSpecExists() throws {
+    let item = MacInboxItem(
+        id: try MemoID("11111111-1111-1111-1111-111111111111"),
+        capturedAt: Date(timeIntervalSince1970: 0),
+        state: .delivered,
+        transcript: "Far far away from the watch",
+        audioIsPresent: true,
+        isRetained: true,
+        specMarkdown: """
+        # Far far away from the watch
+
+        ## Summary
+        Capture the thought.
+        """,
+        specProvenance: .appServer
+    )
+    let presentation = MacInboxItemPresentation.make(item: item, speech: .authorized)
+
+    #expect(presentation.showsSpecDownload == true)
+    #expect(presentation.status == "Saved to local Inbox")
+    #expect(presentation.detail.contains("Spec is ready to save"))
+    #expect(presentation.detail.contains("Codex Inbox thread"))
+    #expect(!presentation.detail.contains("ChatGPT"))
 }
 
 @Test func deliveredCopyNamesLocalInboxNotOfficialClient() throws {

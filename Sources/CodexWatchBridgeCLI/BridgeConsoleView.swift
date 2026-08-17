@@ -1,4 +1,3 @@
-import AppKit
 import CodexBridgeShared
 import SwiftUI
 
@@ -9,95 +8,200 @@ struct BridgeConsoleView: View {
     @Environment(\.colorSchemeContrast) private var contrast
 
     var body: some View {
-        VStack(spacing: 0) {
-            header
-            Divider()
-            NavigationSplitView {
-                inboxList
-                    .navigationSplitViewColumnWidth(min: 220, ideal: 280, max: 360)
-            } detail: {
-                detail
-            }
+        NavigationSplitView {
+            inboxList
+                .navigationSplitViewColumnWidth(min: 220, ideal: 280, max: 360)
+        } detail: {
+            detail
         }
         .background(consoleBackground)
         .navigationTitle(CodexWatchBrand.productName)
+        .navigationSubtitle(model.header.headline)
         .toolbar { toolbar }
-        .onAppear { model.start() }
+        .onAppear {
+            model.start()
+            Task { await model.improveSelectedSpecIfNeeded() }
+        }
+        .onChange(of: model.selectedMemoID) {
+            Task { await model.improveSelectedSpecIfNeeded() }
+        }
     }
 
-    private var header: some View {
-        let presentation = model.header
-        return VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .top, spacing: 24) {
-                BridgeSpineView(presentation: presentation.spine)
-                    .accessibilitySortPriority(3)
-
-                VStack(alignment: .leading, spacing: 4) {
-                    if presentation.kicker.caseInsensitiveCompare(presentation.headline) != .orderedSame {
-                        Text(presentation.kicker.uppercased())
-                            .font(.system(size: 11, weight: .bold, design: .rounded))
-                            .tracking(0.8)
-                            .foregroundStyle(BridgeExperienceTheme.ColorToken.forTone(presentation.tone))
-                    }
-                    Text(presentation.headline)
-                        .font(.system(.title2, design: .rounded, weight: .bold))
-                    Text(presentation.detail)
-                        .font(.callout)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                    if let statusMessage = model.statusMessage {
-                        Text(statusMessage)
-                            .font(.callout)
-                            .foregroundStyle(BridgeExperienceTheme.ColorToken.attention)
+    private var inboxList: some View {
+        List(model.items, selection: $model.selectedMemoID) { item in
+            let presentation = MacInboxItemPresentation.make(item: item, speech: model.speech)
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(spacing: 8) {
+                    inboxGlyph(for: presentation.tone)
+                    Text(presentation.status)
+                        .font(.headline)
+                        .foregroundStyle(BridgeExperienceTheme.ColorToken.forTone(presentation.tone))
+                }
+                Text(item.capturedAt, style: .relative)
+                    .font(.caption2.monospacedDigit())
+                    .foregroundStyle(.tertiary)
+            }
+            .tag(item.id)
+            .accessibilityLabel(presentation.accessibilityValue)
+            .contextMenu {
+                if presentation.retryEnabled {
+                    Button(item.transcript == nil ? "Retry transcription" : "Retry Codex insert") {
+                        model.selectedMemoID = item.id
+                        Task { await model.retrySelected() }
                     }
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .accessibilitySortPriority(4)
-
-                if let title = presentation.primaryTitle {
-                    Button {
-                        Task { await model.performHeaderAction() }
-                    } label: {
-                        Label(title, systemImage: headerSymbol(for: title))
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(BridgeExperienceTheme.ColorToken.forTone(presentation.tone))
-                    .disabled(model.speechBusy || model.pairingBusy)
-                    .accessibilityHint(presentation.primaryHint ?? "")
-                    .accessibilitySortPriority(2)
+                if presentation.showsSpecDownload {
+                    Button("Save spec…") { model.saveSelectedSpec(asHTML: false) }
+                    Button("Save HTML…") { model.saveSelectedSpec(asHTML: true) }
                 }
             }
-
-            metaRow
-            pairingStrip
         }
-        .padding(20)
+        .overlay {
+            if model.items.isEmpty {
+                ContentUnavailableView {
+                    Label("Inbox empty", systemImage: "point.3.connected.trianglepath.dotted")
+                } description: {
+                    Text("Memos appear here after the Watch delivers audio to this Mac.")
+                }
+            }
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            sidebarChrome
+        }
+    }
+
+    private var sidebarChrome: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 16) {
+                labeledValue("Watch", model.watchPaired ? "Paired" : "Not paired")
+                labeledValue("Listener", listenerLabel)
+                labeledValue("Speech", BridgeSpeechCopy.menuStatus(for: model.speech))
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .background {
             if reduceTransparency {
-                Color(nsColor: .controlBackgroundColor)
+                Color(nsColor: .windowBackgroundColor)
             } else {
-                Rectangle().fill(.thinMaterial)
+                Rectangle().fill(.ultraThinMaterial)
             }
         }
-    }
-
-    private var metaRow: some View {
-        HStack(spacing: 16) {
-            labeledValue("Watch", model.watchPaired ? "Paired" : "Not paired")
-            labeledValue("Listener", listenerLabel)
-            labeledValue("Speech", BridgeSpeechCopy.menuStatus(for: model.speech))
-            labeledValue("Advertised", model.advertisedName)
-            labeledValue("Host", model.advertisedHost)
-            Spacer()
-        }
-        .font(.caption)
-        .foregroundStyle(.secondary)
         .accessibilityElement(children: .contain)
     }
 
     private var listenerLabel: String {
         if model.listenerPaused { return "Paused" }
         return model.listenerOnline ? "Online" : "Offline"
+    }
+
+    @ViewBuilder
+    private var detail: some View {
+        if let item = model.selectedItem {
+            memoInspector(item: item)
+        } else {
+            emptyDetail
+        }
+    }
+
+    private func memoInspector(item: MacInboxItem) -> some View {
+        let presentation = MacInboxItemPresentation.make(item: item, speech: model.speech)
+        return ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                BridgeSpineView(presentation: presentation.spine)
+                    .accessibilitySortPriority(3)
+
+                if presentation.status != model.header.headline {
+                    Text(presentation.status)
+                        .font(.title2.weight(.bold))
+                }
+                Text(presentation.detail)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                if let statusMessage = model.statusMessage {
+                    Text(statusMessage)
+                        .font(.callout)
+                        .foregroundStyle(BridgeExperienceTheme.ColorToken.attention)
+                }
+
+                pairingStrip
+
+                LabeledContent("Captured", value: item.capturedAt.formatted(date: .abbreviated, time: .standard))
+                LabeledContent("Audio") {
+                    Text(item.audioIsPresent ? "On this Mac" : "Not on this Mac")
+                }
+
+                if let transcript = item.transcript {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Transcript")
+                            .font(.headline)
+                        Text(transcript)
+                            .textSelection(.enabled)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
+
+                if let specMarkdown = item.specMarkdown {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Spec")
+                            .font(.headline)
+                        Text(MemoSpecCopy.provenanceLabel(item.specProvenance))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Text(specMarkdown)
+                            .textSelection(.enabled)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
+
+                if presentation.retryEnabled, !presentation.speechCTA {
+                    let retryTitle = item.transcript == nil
+                        ? "Retry transcription"
+                        : "Retry Codex insert"
+                    Button(retryTitle) {
+                        Task { await model.retrySelected() }
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(BridgeExperienceTheme.ColorToken.attention)
+                    .disabled(item.transcript == nil && model.speech != .authorized)
+                    .accessibilityLabel(retryTitle)
+                }
+            }
+            .padding(24)
+            .frame(maxWidth: 720, alignment: .leading)
+        }
+    }
+
+    @ViewBuilder
+    private var emptyDetail: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            BridgeSpineView(presentation: model.header.spine)
+            Text(model.header.detail)
+                .foregroundStyle(.secondary)
+            if let statusMessage = model.statusMessage {
+                Text(statusMessage)
+                    .font(.callout)
+                    .foregroundStyle(BridgeExperienceTheme.ColorToken.attention)
+            }
+            pairingStrip
+            if model.items.isEmpty {
+                ContentUnavailableView {
+                    Label("Waiting for the Watch", systemImage: "applewatch")
+                } description: {
+                    Text("Pairing, Speech, and listener status stay in the sidebar.")
+                }
+            } else {
+                ContentUnavailableView {
+                    Label("Select a memo", systemImage: "waveform")
+                } description: {
+                    Text("The Watch-to-Mac-to-Codex path for that recording appears here.")
+                }
+            }
+        }
+        .padding(24)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 
     @ViewBuilder
@@ -135,97 +239,6 @@ struct BridgeConsoleView: View {
         }
     }
 
-    private var inboxList: some View {
-        List(model.items, selection: $model.selectedMemoID) { item in
-            let presentation = MacInboxItemPresentation.make(item: item, speech: model.speech)
-            VStack(alignment: .leading, spacing: 3) {
-                HStack(spacing: 8) {
-                    inboxGlyph(for: presentation.tone)
-                    Text(presentation.status)
-                        .font(.headline)
-                        .foregroundStyle(BridgeExperienceTheme.ColorToken.forTone(presentation.tone))
-                }
-                Text(item.capturedAt, style: .relative)
-                    .font(.caption2.monospacedDigit())
-                    .foregroundStyle(.tertiary)
-            }
-            .tag(item.id)
-            .accessibilityLabel(presentation.accessibilityValue)
-            .contextMenu {
-                if presentation.retryEnabled {
-                    Button(item.transcript == nil ? "Retry transcription" : "Retry Codex insert") {
-                        model.selectedMemoID = item.id
-                        Task { await model.retrySelected() }
-                    }
-                }
-            }
-        }
-        .overlay {
-            if model.items.isEmpty {
-                ContentUnavailableView {
-                    Label("Relay ledger empty", systemImage: "point.3.connected.trianglepath.dotted")
-                } description: {
-                    Text("Memos appear here after the Watch delivers audio to this Mac.")
-                }
-            }
-        }
-    }
-
-    @ViewBuilder
-    private var detail: some View {
-        if let item = model.selectedItem {
-            let presentation = MacInboxItemPresentation.make(item: item, speech: model.speech)
-            ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    if presentation.spine != model.header.spine {
-                        BridgeSpineView(presentation: presentation.spine)
-                    }
-                    if item.id != model.items.first?.id {
-                        Text(presentation.status)
-                            .font(.title2.weight(.bold))
-                        Text(presentation.detail)
-                            .foregroundStyle(.secondary)
-                    }
-                    LabeledContent("Captured", value: item.capturedAt.formatted(date: .abbreviated, time: .standard))
-                    LabeledContent("Audio") {
-                        Text(item.audioIsPresent ? "On this Mac" : "Not on this Mac")
-                    }
-                    if let transcript = item.transcript {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text("Transcript")
-                                .font(.headline)
-                            Text(transcript)
-                                .textSelection(.enabled)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                        }
-                    }
-                    HStack {
-                        if presentation.retryEnabled, !presentation.speechCTA {
-                            let retryTitle = item.transcript == nil
-                                ? "Retry transcription"
-                                : "Retry Codex insert"
-                            Button(retryTitle) {
-                                Task { await model.retrySelected() }
-                            }
-                            .buttonStyle(.borderedProminent)
-                            .tint(BridgeExperienceTheme.ColorToken.attention)
-                            .disabled(item.transcript == nil && model.speech != .authorized)
-                            .accessibilityLabel(retryTitle)
-                        }
-                    }
-                }
-                .padding(24)
-                .frame(maxWidth: 640, alignment: .leading)
-            }
-        } else {
-            ContentUnavailableView {
-                Label("Select a memo", systemImage: "waveform")
-            } description: {
-                Text("The Watch-to-Mac-to-Codex path for that recording appears here.")
-            }
-        }
-    }
-
     @ToolbarContentBuilder
     private var toolbar: some ToolbarContent {
         ToolbarItemGroup {
@@ -247,6 +260,42 @@ struct BridgeConsoleView: View {
             .help("Ask macOS for Speech Recognition so memos can transcribe locally")
             .disabled(model.speechBusy)
         }
+
+        if let item = model.selectedItem {
+            let presentation = MacInboxItemPresentation.make(item: item, speech: model.speech)
+            if presentation.showsSpecDownload {
+                ToolbarItem {
+                    Button("Save HTML…", systemImage: "doc.richtext") {
+                        model.saveSelectedSpec(asHTML: true)
+                    }
+                    .labelStyle(.titleAndIcon)
+                    .help("Save a simple HTML document of the spec")
+                    .disabled(model.specBusy)
+                }
+            }
+        }
+
+        if let title = model.header.primaryTitle {
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    Task { await model.performHeaderAction() }
+                } label: {
+                    Label(title, systemImage: headerSymbol(for: title))
+                }
+                .help(model.header.primaryHint ?? title)
+                .disabled(model.speechBusy || model.pairingBusy)
+            }
+        } else if let item = model.selectedItem,
+                  MacInboxItemPresentation.make(item: item, speech: model.speech).showsSpecDownload
+        {
+            ToolbarItem(placement: .primaryAction) {
+                Button("Save spec…", systemImage: "doc.badge.arrow.up") {
+                    model.saveSelectedSpec(asHTML: false)
+                }
+                .labelStyle(.titleAndIcon)
+                .disabled(model.specBusy)
+            }
+        }
     }
 
     private var consoleBackground: some View {
@@ -261,7 +310,11 @@ struct BridgeConsoleView: View {
 
     private var pairingBackground: some View {
         RoundedRectangle(cornerRadius: 10, style: .continuous)
-            .fill(reduceTransparency ? Color(nsColor: .windowBackgroundColor) : Color.primary.opacity(contrast == .increased ? 0.12 : 0.06))
+            .fill(
+                reduceTransparency
+                    ? Color(nsColor: .controlBackgroundColor)
+                    : Color.primary.opacity(contrast == .increased ? 0.12 : 0.06)
+            )
     }
 
     private func labeledValue(_ title: String, _ value: String) -> some View {
@@ -344,4 +397,33 @@ enum BridgeMenuStatusCopy {
         let speech = BridgeSpeechCopy.menuStatus(for: model.speech)
         return "\(watch) · \(mac) · \(speech)"
     }
+}
+
+#Preview("Delivered") {
+    previewConsole(.delivered)
+}
+
+#Preview("Needs attention") {
+    previewConsole(.needsAttention)
+}
+
+#Preview("Unpaired") {
+    previewConsole(.unpaired)
+}
+
+#Preview("Empty") {
+    previewConsole(.empty)
+}
+
+#Preview("Delivered dark") {
+    previewConsole(.delivered)
+        .preferredColorScheme(.dark)
+}
+
+@MainActor
+private func previewConsole(_ kind: BridgeAppModel.PreviewKind) -> some View {
+    let model = BridgeAppModel(pollsRuntime: false)
+    model.seedPreview(kind)
+    return BridgeConsoleView(model: model)
+        .frame(minWidth: 960, minHeight: 640)
 }
