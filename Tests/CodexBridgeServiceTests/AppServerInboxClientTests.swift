@@ -10,7 +10,7 @@ import Testing
         .object([
             "data": .array([.object([
                 "id": .string("thr_inbox"),
-                "name": .string("Codex Voice Inbox"),
+                "name": .string("Codex Watch"),
                 "cwd": .string(neutral.path),
             ])]),
             "nextCursor": .null,
@@ -88,25 +88,37 @@ import Testing
     ]))
     #expect(methods[2].params == .object([
         "threadId": .string("thr_new"),
-        "name": .string("Codex Voice Inbox"),
+        "name": .string("Codex Watch"),
     ]))
 }
 
-@Test func inboxClientRejectsSameNamedThreadOutsideNeutralDirectory() async throws {
+@Test func inboxClientIgnoresSameNamedThreadOutsideNeutralDirectory() async throws {
     let neutral = try privateNeutralDirectory()
-    let session = AppServerSessionStub(responses: [.object([
-        "data": .array([.object([
-            "id": .string("thr_wrong"),
-            "name": .string("Codex Voice Inbox"),
-            "cwd": .string("/private/tmp/not-the-owned-inbox"),
+    let session = AppServerSessionStub(responses: [
+        .object([
+            "data": .array([.object([
+                "id": .string("thr_stale"),
+                "name": .string("Codex Watch"),
+                "cwd": .string("/private/tmp/cw-inbox-neutral.stale"),
+            ])]),
+            "nextCursor": .null,
+        ]),
+        .object(["thread": .object([
+            "id": .string("thr_new"),
+            "cwd": .string(neutral.path),
         ])]),
-        "nextCursor": .null,
-    ])])
+        .object([:]),
+        .object(["turn": .object(["id": .string("turn_new")])]),
+    ], notifications: [completionNotification(threadID: "thr_new", turnID: "turn_new")])
     let client = AppServerInboxClient(session: session, neutralDirectory: neutral)
+    let memoID = try MemoID("77777777-7777-7777-7777-777777777777")
 
-    await #expect(throws: AppServerInboxError.targetMismatch) {
-        _ = try await client.history(containing: "marker")
-    }
+    try await client.submit(memoID: memoID, marker: "marker", text: "marker idea")
+
+    let methods = await session.methods
+    #expect(methods.map(\.name) == [
+        "thread/list", "thread/start", "thread/name/set", "turn/start",
+    ])
 }
 
 @Test func inboxClientReconnectsForAuthoritativeHistoryAfterAmbiguousSubmitLoss() async throws {
@@ -306,7 +318,7 @@ private func inboxPage(id: String, cwd: String) -> JSONValue {
     .object([
         "data": .array([.object([
             "id": .string(id),
-            "name": .string("Codex Voice Inbox"),
+            "name": .string("Codex Watch"),
             "cwd": .string(cwd),
         ])]),
         "nextCursor": .null,

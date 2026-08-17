@@ -153,7 +153,7 @@ struct BridgeConsoleView: View {
             .accessibilityLabel(presentation.accessibilityValue)
             .contextMenu {
                 if presentation.retryEnabled {
-                    Button("Retry transcription") {
+                    Button(item.transcript == nil ? "Retry transcription" : "Retry Codex insert") {
                         model.selectedMemoID = item.id
                         Task { await model.retrySelected() }
                     }
@@ -201,13 +201,16 @@ struct BridgeConsoleView: View {
                     }
                     HStack {
                         if presentation.retryEnabled, !presentation.speechCTA {
-                            Button("Retry transcription") {
+                            let retryTitle = item.transcript == nil
+                                ? "Retry transcription"
+                                : "Retry Codex insert"
+                            Button(retryTitle) {
                                 Task { await model.retrySelected() }
                             }
                             .buttonStyle(.borderedProminent)
                             .tint(BridgeExperienceTheme.ColorToken.attention)
-                            .disabled(model.speech != .authorized)
-                            .accessibilityLabel("Retry transcription")
+                            .disabled(item.transcript == nil && model.speech != .authorized)
+                            .accessibilityLabel(retryTitle)
                         }
                     }
                 }

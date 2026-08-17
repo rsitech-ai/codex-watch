@@ -48,7 +48,7 @@
 | Settings | open Settings | Codex Watch → Settings… | native form of live runtime | App/Advertised/host/Watch/Listener/Speech | verified | screenshot 13:11 |
 | Window | resize | set size 720×520 then 1100×720 | window resizes | size 1100,720 | verified | AppleScript |
 | Sidebar | select row | click row 1 | selection remains | single row selected | verified | AX |
-| Codex insert | after transcript | wait for delivered | Codex confirmed | stayed `readyForCodex` (insert not confirmed) | failed | journal state |
+| Codex insert | after transcript | Retry Codex insert | Codex confirmed | journal `delivered` rev 19; spine WATCH/MAC/CODEX confirmed | verified | journal + screenshot 13:40 |
 | Watch capture | new on-wrist memo this pass | record on Ultra 2 | new capture+delivery | not run this pass | not applicable | existing 17 Aug memo reused |
 | Destructive | uninstall/rotate/revoke/purge | — | not clicked | not clicked | not applicable | — |
 
@@ -88,7 +88,7 @@ Coverage notes:
 | objective defect | high | Hierarchy | status triple-repeated | unreadable dominant state | one header headline; sidebar age only; detail facts/Retry | verified | screenshot 13:08 vs user shots |
 | objective defect | medium | Toolbar | icon-only unlabeled | unknown actions | titleAndIcon + `.help` | verified | AX |
 | objective defect | medium | Branding | `CodexWatch` | not requested product name | `Codex Watch` | verified | window/menu/settings |
-| objective defect | high | Codex insert | `readyForCodex` after local transcript | Inbox not confirmed | not fixed this pass (App Server rejection) | failed | journal |
+| objective defect | high | Codex insert | stale `Codex Voice Inbox` thread on `/tmp` cwd made `resolveInbox` throw `targetMismatch` | Inbox never confirmed | skip same-name threads whose cwd is not this Mac’s inbox; retry insert from the memo | verified | journal `delivered` |
 | contextual quality risk | polish | Header kicker | small “MAC” beside headline | mild redundancy with spine | deferred | deferred | — |
 
 ## Findings
@@ -97,7 +97,7 @@ Coverage notes:
 | --- | --- | --- | --- | --- | --- |
 | blocker | pairing | sidecar Keychain TLS blocked `pair` | user screenshot | fingerprint file + PairingStore | generated live code |
 | blocker | speech | locale `en_PL` unsupported; CAF named `.m4a`; old listener ignores mailbox | journal + `afinfo` caff + strings of installed binary | fallback + `.caf` copy + GUI `retryMemoNow` | transcript local |
-| high | Codex | insert not confirmed | journal `readyForCodex` | none this pass | still `readyForCodex` |
+| high | Codex | stale named thread on `/tmp` cwd | live `thread/list` | ignore foreign cwd; retry insert | journal `delivered` |
 | polish | header | kicker “MAC” | screenshot | deferred | — |
 
 ## Blocked Or Risky Actions
@@ -105,13 +105,12 @@ Coverage notes:
 | Action | Why blocked / needs confirmation | Next step |
 | --- | --- | --- |
 | Replace installed LaunchAgent binary | new signature cannot load existing Keychain TLS; no PKCS#12 export | keep pid 14830; persist p12 when a process that can read the identity is running |
-| Codex Inbox confirmation | App Server did not confirm insert | inspect Codex App Server separately |
-| New Watch capture this pass | not run | capture synthetic memo on Ultra 2 to raise hardware label |
+| New Watch capture this pass | CoreDevice preflight `SUPPORTING_PHONE_UNAVAILABLE` | hold iPhone tunnel, then capture |
 | Merge / mark ready PR #4 | user forbid | leave draft |
 
 ## Final Readiness Label
 
 - Label: `unverified`
-- Evidence: existing Watch memo transcribed locally in the Codex Watch window; Codex delivery not confirmed; no new on-wrist capture this pass. TLS pin unchanged. Draft PR #4 untouched.
-- Remaining blockers: installed listener still old (no mailbox drain / no locale/CAF fix) until identity-safe reinstall; Codex insert unconfirmed.
-- Next audit pass: persist PKCS#12 from a binary that can load the current identity, reinstall listener, new Watch capture, Codex confirmation.
+- Evidence: existing Watch memo transcribed and Codex Inbox insert confirmed (`delivered`) in the Codex Watch window. No new on-wrist capture this pass (`SUPPORTING_PHONE_UNAVAILABLE`). Isolated CLI smoke remains unverified for official-client UX. TLS pin unchanged. Draft PR #4 untouched.
+- Remaining blockers: installed listener still old until identity-safe reinstall; new Watch capture blocked on the iPhone CoreDevice tunnel.
+- Next audit pass: persist PKCS#12, reinstall listener, new Watch capture.

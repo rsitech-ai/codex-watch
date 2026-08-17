@@ -103,6 +103,32 @@ import Testing
     #expect(header.spine.codex == .pending)
 }
 
+@Test func readyForCodexKeepsInsertRetryOnTheMemo() throws {
+    let item = MacInboxItem(
+        id: try MemoID("11111111-1111-1111-1111-111111111111"),
+        capturedAt: Date(timeIntervalSince1970: 0),
+        state: .readyForCodex,
+        transcript: "local transcript",
+        audioIsPresent: true,
+        isRetained: false
+    )
+    let presentation = MacInboxItemPresentation.make(item: item, speech: .authorized)
+    let header = BridgeConsoleHeaderPresentation.make(
+        installed: true,
+        listenerOnline: true,
+        listenerPaused: false,
+        watchPaired: true,
+        speech: .authorized,
+        advertisedName: CodexWatchBrand.productName,
+        latest: item
+    )
+
+    #expect(presentation.retryEnabled == true)
+    #expect(header.primaryTitle == nil)
+    #expect(header.spine.codex == .pending)
+    #expect(header.headline == "Ready for Codex")
+}
+
 @Test func consoleHeaderUsesSpeechCTAWhenAuthorizationIsNotDetermined() {
     let header = BridgeConsoleHeaderPresentation.make(
         installed: true,

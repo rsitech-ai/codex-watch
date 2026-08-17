@@ -137,24 +137,31 @@ final class BridgeAppModel: ObservableObject {
     }
 
     func retrySelected() async {
-        guard let item = selectedItem, item.transcript == nil else { return }
+        guard let item = selectedItem else { return }
+        let needsTranscription = item.transcript == nil
+        let needsCodexInsert = item.state == .readyForCodex && item.transcript != nil
+        guard needsTranscription || needsCodexInsert else { return }
         do {
             let install = try BridgeInstallPaths.production(
                 home: FileManager.default.homeDirectoryForCurrentUser
             )
             let paths = try BridgeRuntimePaths(root: install.state)
-            if speech == .authorized,
-               let runtime = LaunchAgentRuntimeConfiguration.load(plist: install.launchAgent)
+            if let runtime = LaunchAgentRuntimeConfiguration.load(plist: install.launchAgent),
+               !needsTranscription || speech == .authorized
             {
-                statusMessage = "Transcribing on this Mac…"
+                statusMessage = needsTranscription
+                    ? "Transcribing on this Mac…"
+                    : "Submitting the local transcript to Codex…"
                 try await BridgeCommand.retryMemoNow(
                     memoID: item.id,
                     stateRoot: install.state,
                     codexPath: runtime.codexExecutable.path
                 )
                 await refresh()
-                if selectedItem?.transcript == nil {
+                if needsTranscription, selectedItem?.transcript == nil {
                     statusMessage = "Transcription still did not finish. Speech in this window is allowed; the local recognizer rejected the audio or locale."
+                } else if selectedItem?.state == .readyForCodex {
+                    statusMessage = "Codex did not confirm the Inbox item. The official Codex app and App Server must accept a local insert."
                 } else {
                     statusMessage = nil
                 }

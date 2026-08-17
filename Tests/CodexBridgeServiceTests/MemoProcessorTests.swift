@@ -117,6 +117,28 @@ private let processorMemoID = try! MemoID("44444444-4444-4444-4444-444444444444"
     #expect(await unknown.historyCallCount == 0)
 }
 
+@Test func retryResubmitsReadyForCodexWithoutRetranscribing() async throws {
+    let fixture = try ProcessorFixture()
+    let transcriber = TranscriberStub(result: .success("must not run again"))
+    let inbox = ScriptedInbox(
+        submissions: [.failure(.definitelyNotAccepted), .success(())],
+        histories: [.success(.init(
+            texts: [MemoProcessor.marker(for: processorMemoID)],
+            authoritative: true
+        ))]
+    )
+    let processor = MemoProcessor(
+        journal: fixture.journal,
+        transcriber: transcriber,
+        inbox: inbox
+    )
+    #expect(try await processor.process(fixture.request) == .retryable)
+    #expect(try fixture.journal.load(memoID: processorMemoID).state == .readyForCodex)
+    #expect(try await processor.retry(fixture.request) == .delivered)
+    #expect(await transcriber.callCount == 1)
+    #expect(await inbox.submittedMemoIDs == [processorMemoID, processorMemoID])
+}
+
 @Test func duplicateOrIncompleteHistoryBecomesTerminalAttentionOnNextReconciliationPass() async throws {
     for history in [
         InboxHistory(

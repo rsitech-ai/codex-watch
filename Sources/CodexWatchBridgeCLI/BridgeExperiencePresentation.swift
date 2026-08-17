@@ -114,7 +114,7 @@ struct MacInboxItemPresentation: Equatable {
                 detail: "Transcript is local. Codex insertion has not been confirmed.",
                 tone: .active,
                 spine: macConfirmed("prepared by Mac; ready for Codex"),
-                retryEnabled: false,
+                retryEnabled: true,
                 speechCTA: false
             )
         case .inserting:

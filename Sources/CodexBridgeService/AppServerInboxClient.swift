@@ -3,6 +3,7 @@ import CodexAppServerProtocol
 import CodexBridgeShared
 import Darwin
 import Foundation
+import os
 
 public enum AppServerInboxError: Error, Equatable, Sendable {
     case invalidConfiguration
@@ -26,7 +27,11 @@ public protocol AppServerRequesting: Sendable {
 extension AppServerClient: AppServerRequesting {}
 
 public actor AppServerInboxClient: InboxDeliveryClient {
-    public static let exactThreadName = "Codex Voice Inbox"
+    private static let logger = Logger(
+        subsystem: "ai.rsitech.voiceinbox.bridge",
+        category: "inbox"
+    )
+    public static let exactThreadName = "Codex Watch"
 
     private typealias SessionFactory = @Sendable () throws -> any AppServerRequesting
 
@@ -82,6 +87,7 @@ public actor AppServerInboxClient: InboxDeliveryClient {
         do {
             session = try sessionFactory()
         } catch {
+            Self.logger.error("inbox session factory failed \(String(describing: error), privacy: .public)")
             throw InboxSubmissionFailure.definitelyNotAccepted
         }
         var turnStartIssued = false
@@ -107,6 +113,10 @@ public actor AppServerInboxClient: InboxDeliveryClient {
             await session.close()
         } catch {
             await session.close()
+            let ns = error as NSError
+            Self.logger.error(
+                "inbox submit failed turnStartIssued=\(turnStartIssued) domain=\(ns.domain, privacy: .public) code=\(ns.code) \(String(describing: error), privacy: .public)"
+            )
             throw turnStartIssued
                 ? InboxSubmissionFailure.acceptanceUnknown
                 : InboxSubmissionFailure.definitelyNotAccepted
@@ -139,7 +149,7 @@ public actor AppServerInboxClient: InboxDeliveryClient {
     private func initialize(_ session: any AppServerRequesting) async throws {
         try await session.initialize(
             clientName: "codex-watch-bridge",
-            title: "RSI Voice Inbox",
+            title: "Codex Watch",
             version: "0.1.0"
         )
     }
@@ -152,7 +162,11 @@ public actor AppServerInboxClient: InboxDeliveryClient {
         for _ in 0 ..< 64 {
             let response = try await session.call(.threadListPage(cursor: cursor, sourceKinds: nil))
             let page = try Self.decodePage(response)
-            matches.append(contentsOf: page.matches)
+            // Isolated smokes leave a same-named thread on a /tmp cwd.
+            // That is not this Mac's inbox; skip it instead of failing closed.
+            matches.append(contentsOf: page.matches.filter {
+                URL(fileURLWithPath: $0.cwd).standardizedFileURL == neutralDirectory
+            })
             guard let next = page.nextCursor else {
                 catalogComplete = true
                 break

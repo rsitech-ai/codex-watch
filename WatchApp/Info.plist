@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleDisplayName</key>
-	<string>CodexWatch</string>
+	<string>Codex Watch</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -24,9 +24,9 @@
 		<true/>
 	</dict>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>CodexWatch finds your paired Mac bridge on your local network.</string>
+	<string>Codex Watch finds your paired Mac bridge on your local network.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>CodexWatch records the voice ideas you explicitly choose to capture.</string>
+	<string>Codex Watch records the voice ideas you explicitly choose to capture.</string>
 	<key>WKApplication</key>
 	<true/>
 	<key>WKWatchOnly</key>

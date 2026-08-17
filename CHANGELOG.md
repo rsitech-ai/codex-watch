@@ -11,6 +11,7 @@ All notable public releases are documented here.
   the listener; opening the app does not start a second daemon. Retry of a
   stalled memo transcribes in the window that already has Speech permission
   when the installed listener is an older binary that ignores the retry mailbox.
+  Ready-for-Codex memos can retry Inbox insert without re-transcribing.
 
 ## 0.1.0 - 2026-07-20
 

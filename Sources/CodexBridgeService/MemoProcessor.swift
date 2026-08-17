@@ -151,6 +151,12 @@ public struct MemoProcessor: Sendable {
     }
 
     public func retry(_ request: MemoProcessingRequest) async throws -> MemoProcessingOutcome {
+        if let existing = try? journal.load(memoID: request.memoID),
+           existing.state == .readyForCodex,
+           existing.transcript != nil
+        {
+            return try await process(request)
+        }
         do {
             _ = try journal.retry(memoID: request.memoID)
         } catch {
@@ -255,7 +261,7 @@ public struct MemoProcessor: Sendable {
         Voice idea:
         \(transcript)
 
-        Capture this idea in Codex Voice Inbox. Do not execute the idea, inspect files, use the network, or request approval.
+        Capture this idea in Codex Watch. Do not execute the idea, inspect files, use the network, or request approval.
         """
     }
 }

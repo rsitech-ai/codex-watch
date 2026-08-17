@@ -348,7 +348,7 @@ final class VoiceCaptureModel: ObservableObject {
         case .interruptedRecordingFound, .failed(.recorderStop), .failed(.queueCommit):
             return "Audio is still preserved locally"
         case .preparing, .saving:
-            return "Keep CodexWatch open"
+            return "Keep Codex Watch open"
         default:
             return "Ideas stay on your devices"
         }
