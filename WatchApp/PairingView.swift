@@ -129,7 +129,18 @@ struct PairingView: View {
                     .onChange(of: pairingCode) { _, newValue in
                         pairingCode = PairingCode.sanitizeInput(newValue)
                     }
+                if let localError {
+                    Text(localError)
+                        .font(.caption2)
+                        .foregroundStyle(WatchExperienceTheme.ColorToken.destructive)
+                        .multilineTextAlignment(.center)
+                        .accessibilityLabel("Pairing error: \(localError)")
+                }
                 Button(model.bridgeState == .pairing ? "Pairing…" : "Pair with Mac") {
+                    if let error = PairingSubmitPolicy.errorIfInvalidCode(pairingCode) {
+                        localError = error
+                        return
+                    }
                     Task {
                         guard let confirmedPin else { return }
                         let paired = await model.pair(
@@ -140,15 +151,7 @@ struct PairingView: View {
                         localError = paired ? nil : "Couldn’t pair. Check the bridge, phrase, and code."
                     }
                 }
-                .disabled(PairingCode(rawValue: pairingCode) == nil || model.bridgeState == .pairing)
-            }
-
-            if let localError {
-                Text(localError)
-                    .font(.caption2)
-                    .foregroundStyle(WatchExperienceTheme.ColorToken.destructive)
-                    .multilineTextAlignment(.center)
-                    .accessibilityLabel("Pairing error: \(localError)")
+                .disabled(model.bridgeState == .pairing)
             }
 
             Button("Choose Another Mac") {
@@ -166,6 +169,14 @@ struct PairingView: View {
 enum PairingDiscoveryPolicy {
     static func shouldRun(hasSavedCredential: Bool) -> Bool {
         !hasSavedCredential
+    }
+}
+
+enum PairingSubmitPolicy {
+    static let invalidCodeMessage = "Enter the 6-digit code from your Mac."
+
+    static func errorIfInvalidCode(_ code: String) -> String? {
+        PairingCode(rawValue: code) == nil ? invalidCodeMessage : nil
     }
 }
 

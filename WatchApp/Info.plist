@@ -18,6 +18,11 @@
 	<array>
 		<string>_voiceinbox._tcp</string>
 	</array>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>Voice Inbox finds your paired Mac bridge on your local network.</string>
 	<key>NSMicrophoneUsageDescription</key>

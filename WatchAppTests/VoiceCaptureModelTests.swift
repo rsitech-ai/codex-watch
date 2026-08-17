@@ -133,6 +133,18 @@ final class VoiceCaptureModelTests: XCTestCase {
         )
     }
 
+    func testPairingSubmitSurfacesInvalidCodeInsteadOfNoOp() {
+        XCTAssertEqual(
+            PairingSubmitPolicy.errorIfInvalidCode(""),
+            PairingSubmitPolicy.invalidCodeMessage
+        )
+        XCTAssertEqual(
+            PairingSubmitPolicy.errorIfInvalidCode("32447"),
+            PairingSubmitPolicy.invalidCodeMessage
+        )
+        XCTAssertNil(PairingSubmitPolicy.errorIfInvalidCode("324479"))
+    }
+
     func testPairingDiscoveryRunsExactlyWhenNoCredentialIsSaved() {
         XCTAssertTrue(PairingDiscoveryPolicy.shouldRun(hasSavedCredential: false))
         XCTAssertFalse(PairingDiscoveryPolicy.shouldRun(hasSavedCredential: true))
