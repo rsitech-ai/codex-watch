@@ -50,7 +50,7 @@ struct InstallManifestTests {
 
     #expect(info["NSLocalNetworkUsageDescription"] as? String == "Voice Inbox Bridge receives voice ideas from your paired Apple Watch on your local network.")
     #expect(info["NSBonjourServices"] as? [String] == ["_voiceinbox._tcp"])
-    #expect(info["LSBackgroundOnly"] as? Bool == true)
+    #expect(info["LSBackgroundOnly"] as? Bool == false)
     #expect(info["LSMinimumSystemVersion"] as? String == "15.0")
     #expect(info["NSMainNibFile"] == nil)
     #expect(info["NSMainStoryboardFile"] == nil)
@@ -62,7 +62,7 @@ struct InstallManifestTests {
     #expect(manifest["AssociatedBundleIdentifiers"] as? [String] == ["ai.rsitech.voiceinbox.bridge"])
 }
 
-@Test func buildProducesBackgroundOnlyBundleWithoutVisibleMacUISurfaces() throws {
+@Test func buildProducesInteractiveBundleWithoutNibOrStoryboardSurfaces() throws {
     let fixture = try InstallFixture()
     try fixture.run("Scripts/build-bridge-app.sh", "--output", fixture.buildRoot.path)
 
@@ -70,7 +70,7 @@ struct InstallManifestTests {
     let infoURL = app.appending(path: "Contents/Info.plist")
     let info = try #require(NSDictionary(contentsOf: infoURL) as? [String: Any])
 
-    #expect(info["LSBackgroundOnly"] as? Bool == true)
+    #expect(info["LSBackgroundOnly"] as? Bool == false)
     #expect(!(info["NSSpeechRecognitionUsageDescription"] as? String ?? "").isEmpty)
     #expect(info["NSMainNibFile"] == nil)
     #expect(info["NSMainStoryboardFile"] == nil)

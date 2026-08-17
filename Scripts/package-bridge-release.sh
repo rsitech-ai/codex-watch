@@ -5,7 +5,7 @@ usage() {
   cat <<'USAGE'
 usage: package-bridge-release.sh --output ABSOLUTE_DIRECTORY --sign-identity IDENTITY [--notary-profile PROFILE]
 
-Builds the headless macOS bridge, applies the requested code-signing identity,
+Builds the macOS Voice Inbox Bridge app, applies the requested code-signing identity,
 notarizes and staples public builds, and writes a versioned zip, manifest, and
 SHA256SUMS into a new output directory. The source checkout must be clean. Use
 `-` as IDENTITY only for local ad-hoc validation; a public release requires a

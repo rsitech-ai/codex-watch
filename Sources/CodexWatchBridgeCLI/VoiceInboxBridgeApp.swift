@@ -1,0 +1,68 @@
+import AppKit
+import SwiftUI
+
+struct VoiceInboxBridgeApp: App {
+    @StateObject private var model = BridgeAppModel()
+
+    var body: some Scene {
+        WindowGroup("Voice Inbox Bridge", id: "bridge") {
+            BridgeConsoleView(model: model)
+                .frame(minWidth: 760, minHeight: 480)
+        }
+        .defaultSize(width: 960, height: 640)
+        .commands {
+            CommandGroup(replacing: .newItem) {}
+            CommandMenu("Bridge") {
+                Button("Refresh") {
+                    Task { await model.refresh() }
+                }
+                .keyboardShortcut("r", modifiers: [.command])
+                Button("Generate Pairing Code") {
+                    Task { await model.generatePairingCode() }
+                }
+                .keyboardShortcut("p", modifiers: [.command])
+                Button("Allow Speech Recognition") {
+                    Task { await model.authorizeSpeech() }
+                }
+                .keyboardShortcut("s", modifiers: [.command, .option])
+                Button("Retry Transcription") {
+                    Task { await model.retrySelected() }
+                }
+                .keyboardShortcut(.return, modifiers: [.command])
+            }
+        }
+
+        MenuBarExtra("Voice Inbox Bridge", systemImage: "point.3.connected.trianglepath.dotted") {
+            BridgeMenuBarContent(model: model)
+        }
+
+        Settings {
+            BridgeSettingsView(model: model)
+        }
+    }
+}
+
+private struct BridgeMenuBarContent: View {
+    @ObservedObject var model: BridgeAppModel
+    @Environment(\.openWindow) private var openWindow
+
+    var body: some View {
+        Text(BridgeMenuStatusCopy.line(model: model))
+        Text(model.header.detail)
+            .foregroundStyle(.secondary)
+            .onAppear { model.start() }
+        Divider()
+        Button("Open Voice Inbox Bridge") {
+            openWindow(id: "bridge")
+            NSApplication.shared.activate(ignoringOtherApps: true)
+        }
+        Button("Generate Pairing Code") {
+            Task { await model.generatePairingCode() }
+            openWindow(id: "bridge")
+        }
+        Button("Allow Speech Recognition") {
+            Task { await model.authorizeSpeech() }
+            openWindow(id: "bridge")
+        }
+    }
+}

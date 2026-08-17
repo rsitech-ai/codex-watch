@@ -2,6 +2,14 @@
 
 All notable public releases are documented here.
 
+## Unreleased
+
+### Added
+
+- User-facing macOS Voice Inbox Bridge window and menu bar for pairing, Speech
+  authorization, inbox status, and operator retry. The LaunchAgent still owns
+  the listener; opening the app does not start a second daemon.
+
 ## 0.1.0 - 2026-07-20
 
 ### Added

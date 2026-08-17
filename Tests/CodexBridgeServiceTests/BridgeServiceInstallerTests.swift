@@ -258,16 +258,11 @@ struct BridgeServiceInstallerTests {
         #expect(!FileManager.default.fileExists(atPath: fixture.paths.application.path))
     }
 
-    @Test func installRejectsMissingExpectedExecutableAndNonBackgroundBundle() async throws {
+    @Test func installRejectsMissingExpectedExecutable() async throws {
         let fixture = try InstallerFixture()
         let missingExecutable = try fixture.makeBundle(version: "missing", executable: "different")
         await #expect(throws: BridgeServiceInstallerError.self) {
             try await fixture.install(bundle: missingExecutable)
-        }
-
-        let visibleBundle = try fixture.makeBundle(version: "visible", backgroundOnly: false)
-        await #expect(throws: BridgeServiceInstallerError.self) {
-            try await fixture.install(bundle: visibleBundle)
         }
         #expect(!(await fixture.signatureVerifier.wasCalled()))
     }

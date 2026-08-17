@@ -8,15 +8,14 @@ maintained at [info@rsitech.ai](mailto:info@rsitech.ai).
 
 Voice Inbox is a standalone Apple Watch voice-capture app. It records an idea,
 keeps the audio durably on the Watch while the Mac is unavailable, and sends it
-over authenticated local HTTPS to an invisible macOS bridge. The bridge
+over authenticated local HTTPS to the macOS Voice Inbox Bridge. The bridge
 transcribes locally and prepares the transcript for a dedicated `Codex Voice
 Inbox` through a separately owned local Codex App Server.
 
-There is no iPhone target, WatchConnectivity relay, visible Mac application,
-menu-bar item, settings window, or cloud-audio fallback. The macOS component is
-background infrastructure packaged with `LSBackgroundOnly=true`; raw audio is
-never submitted to Codex. This project is not affiliated with or endorsed by
-OpenAI.
+There is no iPhone target, WatchConnectivity relay, extra chat client, or
+cloud-audio fallback. The macOS bridge is a user-facing app that still runs the
+existing LaunchAgent listener; raw audio is never submitted to Codex. This
+project is not affiliated with or endorsed by OpenAI.
 
 ## Release status
 
@@ -46,14 +45,14 @@ OpenAI.
 
 ## Repository layout
 
-- `WatchApp/` and `CodexWatch.xcodeproj`: the only user-visible product and its
-  Watch-hosted tests. The Xcode project has no iOS application target.
+- `WatchApp/` and `CodexWatch.xcodeproj`: the Watch app and its hosted tests.
+  The Xcode project has no iOS application target.
 - `Sources/CodexWatchCore`: durable Watch queue and transfer state machine.
 - `Sources/CodexBridgeService` and `Sources/CodexBridgeDelivery`: authenticated
   intake, local Speech transcription, recovery journal, and Codex Inbox adapter.
-- `Sources/CodexWatchBridgeCLI`: the headless bridge commands and lifecycle.
-- `Bridge/` and `Scripts/`: background-only bundle metadata, lifecycle
-  delegates, and release packaging.
+- `Sources/CodexWatchBridgeCLI`: the Mac app, bridge commands, and lifecycle.
+- `Bridge/` and `Scripts/`: app bundle metadata, LaunchAgent template, and
+  release packaging.
 
 ## Local build and verification
 
@@ -74,7 +73,7 @@ bridge_output="$(mktemp -d /private/tmp/codex-watch-bridge-build.XXXXXX)"
 Scripts/build-bridge-app.sh --output "$bridge_output"
 plutil -lint "$bridge_output/VoiceInboxBridge.app/Contents/Info.plist"
 test "$(/usr/libexec/PlistBuddy -c 'Print :LSBackgroundOnly' \
-  "$bridge_output/VoiceInboxBridge.app/Contents/Info.plist")" = true
+  "$bridge_output/VoiceInboxBridge.app/Contents/Info.plist")" = false
 
 Scripts/run-watch-bridge-smoke.sh
 
@@ -136,6 +135,7 @@ cd /absolute/path/VoiceInboxBridge-0.1.0-macos-arm64
   --advertised-host 192.168.1.42
 
 "$HOME/Library/Application Support/VoiceInboxBridge/Service/VoiceInboxBridge.app/Contents/MacOS/codex-watch-bridge" status
+open "$HOME/Library/Application Support/VoiceInboxBridge/Service/VoiceInboxBridge.app"
 ./uninstall-bridge.sh
 ./uninstall-bridge.sh --purge-data # explicitly removes installer-owned state
 ```
@@ -171,12 +171,17 @@ the model not to inspect files or execute the captured idea; that instruction
 is not a technical no-tools boundary. Use the bridge only with a trusted Codex
 installation and review the privacy boundary below.
 
-## Pairing from the headless bridge
+## Pairing from the Mac app
 
-The installed bridge reads its per-user identity directly from Keychain. No
-PKCS#12 path or password file is used for production pairing. The command prints
-the human-comparable phrase first and the one-time code second; the Watch must
-show that exact phrase before the code is entered.
+Open the installed app to show the certificate phrase and a one-time 6-digit
+code. Compare that exact phrase on the Watch before entering the code. The
+code expires after ten minutes and is accepted once.
+
+```bash
+open "$HOME/Library/Application Support/VoiceInboxBridge/Service/VoiceInboxBridge.app"
+```
+
+The CLI still prints the same phrase first and code second if you need it:
 
 ```bash
 "$HOME/Library/Application Support/VoiceInboxBridge/Service/VoiceInboxBridge.app/Contents/MacOS/codex-watch-bridge" pair \
@@ -189,8 +194,7 @@ the executable and invoke that source-built path with the same `pair` and
 `--identity-password-file` options are fixture/compatibility inputs only; they
 are not the installed production flow.
 
-The raw 256-bit fingerprint and identity password are not printed. The code
-expires after ten minutes and is accepted once.
+The raw 256-bit fingerprint and identity password are not printed.
 
 ## Delivered-memo retention
 
@@ -227,24 +231,21 @@ retention maintenance failures.
 
 ## Local Speech permission
 
-The bridge never falls back to cloud transcription. Check permission without
-showing a prompt:
+The bridge never falls back to cloud transcription. Open Voice Inbox Bridge and
+choose **Allow Speech Recognition**. That prompt must come from the app window;
+the LaunchAgent `run` process cannot show it.
+
+The CLI still reports status without prompting:
 
 ```bash
 VoiceInboxBridge.app/Contents/MacOS/codex-watch-bridge speech-status \
   --state-root /absolute/private/bridge-state
 ```
 
-On first setup, explicitly request the macOS Speech Recognition permission:
-
-```bash
-VoiceInboxBridge.app/Contents/MacOS/codex-watch-bridge authorize-speech \
-  --state-root /absolute/private/bridge-state
-```
-
-`authorize-speech` is the only bridge command that requests this permission.
-If access is denied, the bridge reports the System Settings action and keeps
-the committed recording for recovery instead of using a network recognizer.
+`authorize-speech` remains available as a Terminal fallback. If access is
+denied, enable Speech Recognition for Voice Inbox Bridge in System Settings.
+Committed recordings stay on this Mac for retry instead of using a network
+recognizer.
 
 ## Operational status
 

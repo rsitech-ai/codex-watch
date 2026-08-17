@@ -96,7 +96,7 @@ enum BridgeCommand {
                 for: BridgeSpeechAuthorizationStatus(SFSpeechRecognizer.authorizationStatus())
             ))
         case "authorize-speech":
-            let status = await requestSpeechAuthorization()
+            let status = await requestSystemSpeechAuthorization()
             print(speechAuthorizationInstructions(for: status))
             guard status == .authorized else {
                 throw BridgeCommandError.speechAuthorizationDenied
@@ -126,6 +126,11 @@ enum BridgeCommand {
             try await runService(paths: paths, options: options, retryMemoID: nil)
         case "retry":
             guard let retryMemoID else { throw BridgeCommandError.usage }
+            if BridgeServiceLease.isLive(stateDirectory: paths.service) {
+                try OperatorRetryMailbox(stateDirectory: paths.service).enqueue(retryMemoID)
+                print("retry-queued=ok")
+                return
+            }
             try await runService(paths: paths, options: options, retryMemoID: retryMemoID)
         default:
             throw BridgeCommandError.usage
@@ -287,6 +292,7 @@ enum BridgeCommand {
         let pendingProcessor = BoundedIntakeMemoProcessor(
             intakeStore: intake,
             processor: processor,
+            retryMailbox: OperatorRetryMailbox(stateDirectory: paths.service),
             onDelivered: { memoID in
                 try await completionPublisher.publishAndRetain(memoID)
             }
@@ -637,7 +643,7 @@ enum BridgeCommand {
         }
     }
 
-    private static func requestSpeechAuthorization() async -> BridgeSpeechAuthorizationStatus {
+    static func requestSystemSpeechAuthorization() async -> BridgeSpeechAuthorizationStatus {
         await requestSpeechAuthorization { completion in
             SFSpeechRecognizer.requestAuthorization { status in
                 completion(BridgeSpeechAuthorizationStatus(status))
@@ -645,4 +651,55 @@ enum BridgeCommand {
         }
     }
 
+}
+
+enum BridgeLaunchMode {
+    static func isCommandLine(arguments: [String]) -> Bool {
+        arguments.contains { argument in
+            !argument.hasPrefix("-psn_") && argument != "-NSDocumentRevisionsDebugMode"
+        }
+    }
+}
+
+struct LaunchAgentRuntimeConfiguration: Equatable, Sendable {
+    var bindHost: String
+    var advertisedHost: String
+    var stateRoot: URL
+    var codexExecutable: URL
+
+    static func parse(programArguments: [String]) -> Self? {
+        let arguments: [String]
+        if programArguments.first == "run" {
+            arguments = Array(programArguments.dropFirst())
+        } else if programArguments.count > 1, programArguments[1] == "run" {
+            arguments = Array(programArguments.dropFirst(2))
+        } else {
+            return nil
+        }
+        guard arguments.count.isMultiple(of: 2) else { return nil }
+        var options: [String: String] = [:]
+        for index in stride(from: 0, to: arguments.count, by: 2) {
+            let key = arguments[index]
+            guard key.hasPrefix("--"), options[key] == nil else { return nil }
+            options[key] = arguments[index + 1]
+        }
+        guard let stateRoot = options["--state-root"], stateRoot.hasPrefix("/"),
+              let codex = options["--codex"], codex.hasPrefix("/"),
+              let bindHost = options["--bind-host"], !bindHost.isEmpty,
+              let advertisedHost = options["--advertised-host"], !advertisedHost.isEmpty
+        else { return nil }
+        return Self(
+            bindHost: bindHost,
+            advertisedHost: advertisedHost,
+            stateRoot: URL(fileURLWithPath: stateRoot, isDirectory: true),
+            codexExecutable: URL(fileURLWithPath: codex)
+        )
+    }
+
+    static func load(plist url: URL) -> Self? {
+        guard let dictionary = NSDictionary(contentsOf: url) as? [String: Any],
+              let arguments = dictionary["ProgramArguments"] as? [String]
+        else { return nil }
+        return parse(programArguments: arguments)
+    }
 }

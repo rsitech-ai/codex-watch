@@ -636,8 +636,7 @@ public actor BridgeServiceInstaller {
               ) as? [String: Any],
               info["CFBundleIdentifier"] as? String == Self.label,
               info["CFBundleExecutable"] as? String == Self.executableName,
-              info["CFBundlePackageType"] as? String == "APPL",
-              info["LSBackgroundOnly"] as? Bool == true
+              info["CFBundlePackageType"] as? String == "APPL"
         else { throw BridgeServiceInstallerError.invalidBundle }
     }
 
