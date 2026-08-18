@@ -44,7 +44,7 @@ private let listenerToken = Data(repeating: 0x44, count: 32)
         advertisedHost: "mac.local"
     )
 
-    #expect(listener.advertisement.serviceType == "_voiceinbox._tcp")
+    #expect(listener.advertisement.serviceType == "_codexwatch._tcp")
     #expect(listener.advertisement.serviceName == "Codex Bridge Test")
     #expect(listener.advertisement.txtRecord(port: 42424) == [
         "host": "mac.local",

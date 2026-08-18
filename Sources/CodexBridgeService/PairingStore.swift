@@ -123,6 +123,11 @@ public actor PairingStore {
         try await secretStore.removeSecret(named: Self.challengeKey)
     }
 
+    /// Clears the Mac-displayed pairing challenge without touching the Watch Keychain credential.
+    public func clearDisplayedChallenge() async throws {
+        try await secretStore.removeSecret(named: Self.challengeKey)
+    }
+
     public func currentCredential() async throws -> PairingCredential? {
         guard let secret = try await secretStore.readSecret(named: Self.credentialKey) else {
             return nil

@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security report
+    url: https://github.com/rsitech-ai/codex-watch/security/advisories/new
+    about: Report a vulnerability privately. Do not attach audio, transcripts, or pairing material.
+  - name: Support boundaries
+    url: https://github.com/rsitech-ai/codex-watch/blob/HEAD/SUPPORT.md
+    about: How to ask a non-sensitive question and what this project does not support.

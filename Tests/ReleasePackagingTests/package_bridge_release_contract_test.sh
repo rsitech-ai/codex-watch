@@ -24,7 +24,7 @@ if [[ "$existing_error" != *"refusing to overwrite existing release output"* ]];
   exit 1
 fi
 
-developer_output="/private/tmp/voice-inbox-release-contract-$RANDOM-$RANDOM"
+developer_output="/private/tmp/codex-watch-release-contract-$RANDOM-$RANDOM"
 developer_error="$($packager --output "$developer_output" --sign-identity "Developer ID Application: Fixture" 2>&1 || true)"
 if [[ "$developer_error" != *"public Developer ID releases require --notary-profile"* ]]; then
   print -u2 "Developer ID release without notarization profile unexpectedly succeeded"

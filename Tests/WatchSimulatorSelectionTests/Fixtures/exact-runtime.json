@@ -1,0 +1,12 @@
+{
+  "activeSDK":"26.5",
+  "runtimeInventory":{"runtimes":[
+    {"identifier":"com.apple.CoreSimulator.SimRuntime.watchOS-26-5","version":"26.5","platform":"watchOS","isAvailable":true},
+    {"identifier":"com.apple.CoreSimulator.SimRuntime.watchOS-27-0","version":"27.0","platform":"watchOS","isAvailable":true}
+  ]},
+  "deviceInventory":{"devices":{"com.apple.CoreSimulator.SimRuntime.watchOS-26-5":[
+    {"name":"Apple Watch Ultra 3 (49mm)","udid":"00000000-0000-0000-0000-000000000049","isAvailable":true,"deviceTypeIdentifier":"com.apple.CoreSimulator.SimDeviceType.Apple-Watch-Ultra-3-49mm"},
+    {"name":"Apple Watch SE 3 (40mm)","udid":"00000000-0000-0000-0000-000000000040","isAvailable":true,"deviceTypeIdentifier":"com.apple.CoreSimulator.SimDeviceType.Apple-Watch-SE-3-40mm"},
+    {"name":"Apple Watch SE 3 (44mm)","udid":"00000000-0000-0000-0000-000000000044","isAvailable":true,"deviceTypeIdentifier":"com.apple.CoreSimulator.SimDeviceType.Apple-Watch-SE-3-44mm"}
+  ]}}
+}

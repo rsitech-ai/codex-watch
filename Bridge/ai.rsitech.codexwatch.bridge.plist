@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>ai.rsitech.voiceinbox.bridge</string>
+    <string>ai.rsitech.codexwatch.bridge</string>
     <key>ProgramArguments</key>
     <array>
         <string>__BRIDGE_EXECUTABLE__</string>
@@ -30,7 +30,7 @@
     <string>Background</string>
     <key>AssociatedBundleIdentifiers</key>
     <array>
-        <string>ai.rsitech.voiceinbox.bridge</string>
+        <string>ai.rsitech.codexwatch.bridge</string>
     </array>
 </dict>
 </plist>

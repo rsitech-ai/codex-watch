@@ -1,6 +1,6 @@
 name: CodexWatch
 options:
-  bundleIdPrefix: ai.rsitech.voiceinbox
+  bundleIdPrefix: ai.rsitech.codexwatch
   deploymentTarget:
     watchOS: "10.0"
 settings:
@@ -27,7 +27,7 @@ targets:
       - sdk: AVFAudio.framework
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: ai.rsitech.voiceinbox
+        PRODUCT_BUNDLE_IDENTIFIER: ai.rsitech.codexwatch
         # Keep the target's internal executable name stable for hosted Watch
         # tests. CFBundleDisplayName remains the public product name.
         PRODUCT_NAME: $(TARGET_NAME)
@@ -46,7 +46,7 @@ targets:
       - target: CodexWatch
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: ai.rsitech.voiceinbox.tests
+        PRODUCT_BUNDLE_IDENTIFIER: ai.rsitech.codexwatch.tests
         GENERATE_INFOPLIST_FILE: YES
         SDKROOT: watchos
 schemes:

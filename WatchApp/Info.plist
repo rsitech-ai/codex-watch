@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleDisplayName</key>
-	<string>Voice Inbox</string>
+	<string>Codex Watch</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -16,12 +16,17 @@
 	<string>Copyright © 2026 Rafal Sikora. Licensed under Apache-2.0.</string>
 	<key>NSBonjourServices</key>
 	<array>
-		<string>_voiceinbox._tcp</string>
+		<string>_codexwatch._tcp</string>
 	</array>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>Voice Inbox finds your paired Mac bridge on your local network.</string>
+	<string>Codex Watch finds your paired Mac bridge on your local network.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Voice Inbox records the voice ideas you explicitly choose to capture.</string>
+	<string>Codex Watch records the voice ideas you explicitly choose to capture.</string>
 	<key>WKApplication</key>
 	<true/>
 	<key>WKWatchOnly</key>

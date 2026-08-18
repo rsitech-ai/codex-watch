@@ -3,11 +3,11 @@ import Foundation
 import Security
 import Testing
 
-@Suite(.serialized) struct TLSIdentityProvisionerTests {
+extension TLSIdentitySecurityTests {
     @Test func provisionerCreatesOncePreservesOnUpdateAndRotatesExplicitly() async throws {
         let keychain = InMemoryTLSIdentityKeychain()
         let mutationLock = RecordingTLSIdentityMutationLock()
-        let provisioner = TLSIdentityProvisioner(keychain: keychain, mutationLock: mutationLock)
+        let provisioner = makeTestTLSIdentityProvisioner(keychain: keychain, mutationLock: mutationLock)
 
         let first = try await provisioner.loadOrCreate()
         let update = try await provisioner.loadOrCreate()
@@ -28,7 +28,7 @@ import Testing
 
     @Test func loadExistingNeverCreatesAndRotationReceiptRestoresExactPriorIdentity() async throws {
         let keychain = InMemoryTLSIdentityKeychain()
-        let provisioner = TLSIdentityProvisioner(
+        let provisioner = makeTestTLSIdentityProvisioner(
             keychain: keychain,
             mutationLock: RecordingTLSIdentityMutationLock()
         )
@@ -49,7 +49,7 @@ import Testing
 
     @Test func invalidStagedIdentityIsRemovedWithoutDisturbingPriorIdentity() async throws {
         let keychain = InMemoryTLSIdentityKeychain()
-        let provisioner = TLSIdentityProvisioner(
+        let provisioner = makeTestTLSIdentityProvisioner(
             keychain: keychain,
             mutationLock: RecordingTLSIdentityMutationLock()
         )
@@ -67,7 +67,7 @@ import Testing
 
     @Test func invalidStageWithCleanupFailureReturnsDistinctRecoveryFailure() async throws {
         let keychain = InMemoryTLSIdentityKeychain()
-        let provisioner = TLSIdentityProvisioner(
+        let provisioner = makeTestTLSIdentityProvisioner(
             keychain: keychain,
             mutationLock: RecordingTLSIdentityMutationLock()
         )
@@ -84,7 +84,7 @@ import Testing
 
     @Test func oldRemovalFailureLeavesPriorActiveAndCleansStage() async throws {
         let keychain = InMemoryTLSIdentityKeychain()
-        let provisioner = TLSIdentityProvisioner(
+        let provisioner = makeTestTLSIdentityProvisioner(
             keychain: keychain,
             mutationLock: RecordingTLSIdentityMutationLock()
         )
@@ -102,7 +102,7 @@ import Testing
 
     @Test func partialOldRemovalRestoresExactPriorIdentityBeforeReportingRotationFailure() async throws {
         let keychain = InMemoryTLSIdentityKeychain()
-        let provisioner = TLSIdentityProvisioner(
+        let provisioner = makeTestTLSIdentityProvisioner(
             keychain: keychain,
             mutationLock: RecordingTLSIdentityMutationLock()
         )
@@ -123,7 +123,7 @@ import Testing
 
     @Test func partialOldRemovalWithFailedRestorationReportsRecoveryFailure() async throws {
         let keychain = InMemoryTLSIdentityKeychain()
-        let provisioner = TLSIdentityProvisioner(
+        let provisioner = makeTestTLSIdentityProvisioner(
             keychain: keychain,
             mutationLock: RecordingTLSIdentityMutationLock()
         )
@@ -146,7 +146,7 @@ import Testing
             certificate: expired.certificate
         )
         try keychain.seedActive(expiredIdentity)
-        let provisioner = TLSIdentityProvisioner(
+        let provisioner = makeTestTLSIdentityProvisioner(
             keychain: keychain,
             mutationLock: RecordingTLSIdentityMutationLock()
         )
@@ -171,7 +171,7 @@ import Testing
         let priorPublicKey = try publicKeyData(expiredIdentity)
         try keychain.seedActive(expiredIdentity)
         keychain.failNextActiveInsertion = true
-        let provisioner = TLSIdentityProvisioner(
+        let provisioner = makeTestTLSIdentityProvisioner(
             keychain: keychain,
             mutationLock: RecordingTLSIdentityMutationLock()
         )
@@ -200,7 +200,7 @@ import Testing
         )
         let priorCertificate = try certificateData(expiredIdentity)
         try keychain.seedActive(expiredIdentity)
-        let provisioner = TLSIdentityProvisioner(
+        let provisioner = makeTestTLSIdentityProvisioner(
             keychain: keychain,
             mutationLock: RecordingTLSIdentityMutationLock()
         )
@@ -233,7 +233,7 @@ import Testing
 
     @Test func finalInsertionFailureRestoresPriorIdentityAndReportsRotationFailure() async throws {
         let keychain = InMemoryTLSIdentityKeychain()
-        let provisioner = TLSIdentityProvisioner(
+        let provisioner = makeTestTLSIdentityProvisioner(
             keychain: keychain,
             mutationLock: RecordingTLSIdentityMutationLock()
         )
@@ -251,7 +251,7 @@ import Testing
 
     @Test func priorRestoreFailureReturnsDistinctRecoveryFailure() async throws {
         let keychain = InMemoryTLSIdentityKeychain()
-        let provisioner = TLSIdentityProvisioner(
+        let provisioner = makeTestTLSIdentityProvisioner(
             keychain: keychain,
             mutationLock: RecordingTLSIdentityMutationLock()
         )
@@ -267,7 +267,7 @@ import Testing
     @Test func firstRotationPromotionFailureReturnsRecoveryFailureWhenNoPriorIdentityExists() async throws {
         let keychain = InMemoryTLSIdentityKeychain()
         keychain.failNextActiveInsertion = true
-        let provisioner = TLSIdentityProvisioner(
+        let provisioner = makeTestTLSIdentityProvisioner(
             keychain: keychain,
             mutationLock: RecordingTLSIdentityMutationLock()
         )
@@ -281,7 +281,7 @@ import Testing
 
     @Test func successfulFinalInsertionWithStageCleanupFailureKeepsNewActiveAndReportsCleanup() async throws {
         let keychain = InMemoryTLSIdentityKeychain()
-        let provisioner = TLSIdentityProvisioner(
+        let provisioner = makeTestTLSIdentityProvisioner(
             keychain: keychain,
             mutationLock: RecordingTLSIdentityMutationLock()
         )
@@ -299,8 +299,8 @@ import Testing
     @Test func twoProvisionersShareOneWholeTransactionLockAndPreserveOneIdentity() async throws {
         let keychain = InMemoryTLSIdentityKeychain(insertDelayMicroseconds: 20_000)
         let mutationLock = RecordingTLSIdentityMutationLock()
-        let first = TLSIdentityProvisioner(keychain: keychain, mutationLock: mutationLock)
-        let second = TLSIdentityProvisioner(keychain: keychain, mutationLock: mutationLock)
+        let first = makeTestTLSIdentityProvisioner(keychain: keychain, mutationLock: mutationLock)
+        let second = makeTestTLSIdentityProvisioner(keychain: keychain, mutationLock: mutationLock)
 
         async let firstIdentity = first.loadOrCreate()
         async let secondIdentity = second.loadOrCreate()
@@ -315,7 +315,7 @@ import Testing
         let keychain = InMemoryTLSIdentityKeychain()
         keychain.failEveryInsertion = true
         do {
-            _ = try await TLSIdentityProvisioner(
+            _ = try await makeTestTLSIdentityProvisioner(
                 keychain: keychain,
                 mutationLock: RecordingTLSIdentityMutationLock()
             ).loadOrCreate()
@@ -325,6 +325,36 @@ import Testing
             let description = String(describing: error)
             #expect(!description.contains(privateBytes.base64EncodedString()))
             #expect(!description.contains(privateBytes.map { String(format: "%02x", $0) }.joined()))
+        }
+    }
+}
+
+private func makeTestTLSIdentityProvisioner(
+    keychain: InMemoryTLSIdentityKeychain,
+    mutationLock: any TLSIdentityMutationLock
+) -> TLSIdentityProvisioner {
+    let sequence = TestX509CertificateSequence()
+    return TLSIdentityProvisioner(
+        keychain: keychain,
+        mutationLock: mutationLock,
+        buildCertificate: sequence.next
+    )
+}
+
+private final class TestX509CertificateSequence: @unchecked Sendable {
+    private static let materials = Result<[GeneratedX509Certificate], Error> {
+        let builder = X509CertificateBuilder()
+        return [try builder.build(), try builder.build()]
+    }
+
+    private let lock = NSLock()
+    private var index = 0
+
+    func next() throws -> GeneratedX509Certificate {
+        let available = try Self.materials.get()
+        return lock.withLock {
+            defer { index += 1 }
+            return available[index % available.count]
         }
     }
 }
@@ -354,10 +384,12 @@ private final class InMemoryTLSIdentityKeychain: TLSIdentityKeychain, @unchecked
     enum Failure: Error { case injected }
     private enum InsertAction { case normal, invalidIdentity, fail }
 
+    private static let sharedIdentityCacheLock = NSLock()
+    nonisolated(unsafe) private static var sharedIdentityByCertificate: [Data: SecIdentity] = [:]
+
     private let lock = NSLock()
     private let insertDelayMicroseconds: useconds_t
     private var identities: [String: SecIdentity] = [:]
-    private var identityByCertificate: [Data: SecIdentity] = [:]
     private var recordedOperations: [String] = []
     private var activeInsertCount = 0
     private var awaitingRestore = false
@@ -380,9 +412,11 @@ private final class InMemoryTLSIdentityKeychain: TLSIdentityKeychain, @unchecked
 
     func seedActive(_ identity: SecIdentity) throws {
         let data = try certificateData(identity)
+        Self.sharedIdentityCacheLock.withLock {
+            Self.sharedIdentityByCertificate[data] = identity
+        }
         lock.withLock {
             identities[TLSIdentityProvisioner.defaultLabel] = identity
-            identityByCertificate[data] = identity
             activeInsertCount = 1
         }
     }
@@ -432,7 +466,9 @@ private final class InMemoryTLSIdentityKeychain: TLSIdentityKeychain, @unchecked
         }
 
         let certificateData = SecCertificateCopyData(certificate) as Data
-        if let cached = lock.withLock({ identityByCertificate[certificateData] }) {
+        if let cached = Self.sharedIdentityCacheLock.withLock({
+            Self.sharedIdentityByCertificate[certificateData]
+        }) {
             lock.withLock { identities[label] = cached }
             return cached
         }
@@ -440,8 +476,10 @@ private final class InMemoryTLSIdentityKeychain: TLSIdentityKeychain, @unchecked
             privateKey: privateKey,
             certificate: certificate
         )
+        Self.sharedIdentityCacheLock.withLock {
+            Self.sharedIdentityByCertificate[certificateData] = identity
+        }
         lock.withLock {
-            identityByCertificate[certificateData] = identity
             identities[label] = identity
         }
         return identity

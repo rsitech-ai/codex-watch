@@ -912,6 +912,38 @@ import Testing
     await worker.stop()
 }
 
+@Test func boundedProcessorDrainsOperatorRetryMailboxBeforeDurableRefill() async throws {
+    let root = FileManager.default.temporaryDirectory.appending(
+        path: "bridge-retry-mailbox-drain-\(UUID().uuidString)",
+        directoryHint: .isDirectory
+    )
+    defer { try? FileManager.default.removeItem(at: root) }
+    let intake = root.appending(path: "intake", directoryHint: .isDirectory)
+    let service = root.appending(path: "service", directoryHint: .isDirectory)
+    try FileManager.default.createDirectory(
+        at: service,
+        withIntermediateDirectories: true,
+        attributes: [.posixPermissions: NSNumber(value: 0o700)]
+    )
+    let store = try IntakeStore(rootURL: intake)
+    let memoID = try MemoID("8a8a8a8a-8a8a-8a8a-8a8a-8a8a8a8a8a8a")
+    _ = try await commitRecord(id: memoID, store: store)
+    let mailbox = OperatorRetryMailbox(stateDirectory: service)
+    try mailbox.enqueue(memoID)
+    let processor = CountingRetryProcessor()
+    let worker = BoundedIntakeMemoProcessor(
+        intakeStore: store,
+        processor: processor,
+        sleep: { _ in try? await Task.sleep(for: .milliseconds(10)) },
+        retryMailbox: mailbox
+    )
+
+    try await worker.recoverPendingMemos()
+    #expect(await processor.retryCount == 1)
+    #expect(try mailbox.takeAll() == [])
+    await worker.stop()
+}
+
 @Test func boundedProcessorPublishesConcurrentDeliveredOutcomeOnlyOnce() async throws {
     let root = FileManager.default.temporaryDirectory.appending(
         path: "bridge-concurrent-delivery-\(UUID().uuidString)",
@@ -1684,6 +1716,21 @@ private actor DeliveredRetryProcessor: BridgeMemoProcessing, BridgeMemoRetrying 
     }
 
     func retry(_ request: MemoProcessingRequest) async throws -> MemoProcessingOutcome {
+        _ = request
+        return .delivered
+    }
+}
+
+private actor CountingRetryProcessor: BridgeMemoProcessing, BridgeMemoRetrying {
+    private(set) var retryCount = 0
+
+    func process(_ request: MemoProcessingRequest) async throws -> MemoProcessingOutcome {
+        _ = request
+        return .delivered
+    }
+
+    func retry(_ request: MemoProcessingRequest) async throws -> MemoProcessingOutcome {
+        retryCount += 1
         _ = request
         return .delivered
     }

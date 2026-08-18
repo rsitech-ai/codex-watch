@@ -31,7 +31,7 @@ import Testing
     #expect(AppServerMethod.threadRead(threadID: "thr_1", includeTurns: true).name == "thread/read")
     #expect(AppServerMethod.threadStart(cwd: "/tmp/inbox", ephemeral: false).name == "thread/start")
     #expect(AppServerMethod.threadResume(threadID: "thr_1").name == "thread/resume")
-    #expect(AppServerMethod.threadSetName(threadID: "thr_1", name: "Codex Voice Inbox").name == "thread/name/set")
+    #expect(AppServerMethod.threadSetName(threadID: "thr_1", name: "Codex Watch").name == "thread/name/set")
     #expect(AppServerMethod.turnStart(threadID: "thr_1", clientMessageID: "memo_1", text: "note").name == "turn/start")
     #expect(AppServerMethod.threadInjectItems(threadID: "thr_1", items: []).name == "thread/inject_items")
     #expect(AppServerMethod.turnSteer(threadID: "thr_1", expectedTurnID: "turn_1", clientMessageID: "memo_1", text: "note").name == "turn/steer")
@@ -72,9 +72,9 @@ import Testing
     #expect(AppServerMethod.threadResume(threadID: "thr_1").params == .object([
         "threadId": .string("thr_1"),
     ]))
-    #expect(AppServerMethod.threadSetName(threadID: "thr_1", name: "Codex Voice Inbox").params == .object([
+    #expect(AppServerMethod.threadSetName(threadID: "thr_1", name: "Codex Watch").params == .object([
         "threadId": .string("thr_1"),
-        "name": .string("Codex Voice Inbox"),
+        "name": .string("Codex Watch"),
     ]))
     #expect(AppServerMethod.turnStart(threadID: "thr_1", clientMessageID: "memo_1", text: "note").params == .object([
         "threadId": .string("thr_1"),

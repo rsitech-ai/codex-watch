@@ -265,4 +265,18 @@ public final class BridgeDiagnosticLog: @unchecked Sendable {
     private static func unlink(_ name: String, directoryDescriptor: Int32) -> Int32 {
         name.withCString { unlinkat(directoryDescriptor, $0, 0) }
     }
+
+    public static func lastEvent(in directory: URL) -> BridgeDiagnosticEvent? {
+        let url = directory.standardizedFileURL.appendingPathComponent(activeName)
+        guard let text = try? String(contentsOf: url, encoding: .utf8),
+              let line = text.split(whereSeparator: \.isNewline).last.map(String.init),
+              let data = line.data(using: .utf8),
+              let parsed = try? JSONDecoder().decode(EventLine.self, from: data)
+        else { return nil }
+        return BridgeDiagnosticEvent(rawValue: parsed.event)
+    }
+
+    private struct EventLine: Decodable {
+        let event: String
+    }
 }

@@ -71,7 +71,7 @@ struct X509CertificateBuilder: @unchecked Sendable {
             DER.set([
                 DER.sequence([
                     try DER.objectIdentifier("2.5.4.3"),
-                    DER.utf8String("Voice Inbox Bridge"),
+                    DER.utf8String("Codex Watch"),
                 ]),
             ]),
         ])

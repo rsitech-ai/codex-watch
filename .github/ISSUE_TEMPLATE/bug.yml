@@ -1,0 +1,48 @@
+name: Bug report
+description: Report a reproducible defect without private capture data.
+title: "[bug] "
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not attach recordings, transcripts, pairing codes, certificate phrases,
+        screenshots of private memos, or Codex thread identifiers.
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      placeholder: v0.1.0 or a 40-character commit
+    validations:
+      required: true
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Surface
+      options:
+        - Apple Watch app
+        - macOS Codex Watch window
+        - Bridge CLI / LaunchAgent
+        - Build, test, or packaging
+        - Documentation
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Observed behavior
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Minimal reproduction
+      description: Synthetic, non-confidential steps only.
+    validations:
+      required: true

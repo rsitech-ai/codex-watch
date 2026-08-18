@@ -14,12 +14,12 @@ import Testing
     #expect(try BridgeCommand.parseLifecycle(arguments: ["rotate-identity"]) == .rotateIdentity)
     #expect(try BridgeCommand.parseLifecycle(arguments: [
         "install",
-        "--bundle", "/private/tmp/VoiceInboxBridge.app",
+        "--bundle", "/private/tmp/CodexWatch.app",
         "--codex", "/usr/bin/true",
         "--bind-host", "192.168.1.42",
         "--advertised-host", "192.168.1.42",
     ]) == .install(
-        bundle: URL(fileURLWithPath: "/private/tmp/VoiceInboxBridge.app"),
+        bundle: URL(fileURLWithPath: "/private/tmp/CodexWatch.app"),
         codexExecutable: URL(fileURLWithPath: "/usr/bin/true"),
         bindHost: "192.168.1.42",
         advertisedHost: "192.168.1.42"
@@ -33,7 +33,7 @@ import Testing
     #expect(throws: BridgeCommandError.usage) {
         _ = try BridgeCommand.parseLifecycle(arguments: [
             "install",
-            "--bundle", "/private/tmp/VoiceInboxBridge.app",
+            "--bundle", "/private/tmp/CodexWatch.app",
             "--codex", "/usr/bin/true",
             "--bind-host", "127.0.0.1",
             "--advertised-host", "bridge.local",
@@ -42,7 +42,7 @@ import Testing
     #expect(throws: BridgeCommandError.usage) {
         _ = try BridgeCommand.parseLifecycle(arguments: [
             "install",
-            "--bundle", "/private/tmp/VoiceInboxBridge.app",
+            "--bundle", "/private/tmp/CodexWatch.app",
             "--codex", "/usr/bin/true",
             "--bind-host", "192.168.1.42",
             "--advertised-host", "127.0.0.1",
@@ -51,7 +51,7 @@ import Testing
     #expect(throws: BridgeCommandError.usage) {
         _ = try BridgeCommand.parseLifecycle(arguments: [
             "install",
-            "--bundle", "/private/tmp/VoiceInboxBridge.app",
+            "--bundle", "/private/tmp/CodexWatch.app",
             "--codex", "/usr/bin/true",
             "--bind-host", "127.0.0.2",
             "--advertised-host", "localhost.",
@@ -253,7 +253,7 @@ import Testing
     )
     #expect(
         BridgeCommand.speechAuthorizationInstructions(for: .denied)
-            == "Speech authorization: denied. Enable Speech Recognition for Voice Inbox Bridge in System Settings."
+            == "Speech authorization: denied. Enable Speech Recognition for Codex Watch in System Settings."
     )
     #expect(
         BridgeCommand.speechAuthorizationInstructions(for: .restricted)
@@ -614,7 +614,7 @@ private struct BridgeRunProcessFixture {
     private static func runOpenSSL(_ arguments: [String]) throws {
         let process = Process()
         let standardErrorURL = FileManager.default.temporaryDirectory.appending(
-            path: "voice-inbox-openssl-\(UUID().uuidString).log"
+            path: "codex-watch-openssl-\(UUID().uuidString).log"
         )
         guard FileManager.default.createFile(atPath: standardErrorURL.path, contents: nil) else {
             throw BridgeRunProcessFixtureError.opensslFailed("could not create stderr capture")

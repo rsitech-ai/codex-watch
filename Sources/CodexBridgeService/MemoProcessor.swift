@@ -57,15 +57,24 @@ public struct MemoProcessor: Sendable {
     private let journal: DeliveryJournal
     private let transcriber: any TranscriptionEngine
     private let inbox: any InboxDeliveryClient
+    private let specImprover: (any SpecImproving)?
+    private let specStore: MemoSpecStore?
+    private let foundationModelsImprover: (any SpecImproving)?
 
     public init(
         journal: DeliveryJournal,
         transcriber: any TranscriptionEngine,
-        inbox: any InboxDeliveryClient
+        inbox: any InboxDeliveryClient,
+        specImprover: (any SpecImproving)? = nil,
+        specStore: MemoSpecStore? = nil,
+        foundationModelsImprover: (any SpecImproving)? = nil
     ) {
         self.journal = journal
         self.transcriber = transcriber
         self.inbox = inbox
+        self.specImprover = specImprover
+        self.specStore = specStore
+        self.foundationModelsImprover = foundationModelsImprover
     }
 
     public func process(_ request: MemoProcessingRequest) async throws -> MemoProcessingOutcome {
@@ -94,6 +103,11 @@ public struct MemoProcessor: Sendable {
                     to: .readyForCodex,
                     transcript: transcript
                 )
+                await persistSpec(
+                    memoID: request.memoID,
+                    transcript: transcript,
+                    capturedAt: record.capturedAt
+                )
             } catch {
                 _ = try transition(request.memoID, to: .needsAttention)
                 return .needsAttention
@@ -103,8 +117,14 @@ public struct MemoProcessor: Sendable {
             guard let transcript = record.transcript else {
                 throw MemoProcessorError.journalFailure
             }
+            await persistSpec(
+                memoID: request.memoID,
+                transcript: transcript,
+                capturedAt: record.capturedAt
+            )
             record = try transition(request.memoID, to: .inserting)
             let marker = Self.marker(for: request.memoID)
+            let spec = specStore?.load(memoID: request.memoID)
             do {
                 try await inbox.submit(
                     memoID: request.memoID,
@@ -112,6 +132,7 @@ public struct MemoProcessor: Sendable {
                     text: Self.captureText(
                         marker: marker,
                         transcript: transcript,
+                        spec: spec,
                         capturedAt: record.capturedAt,
                         localeHint: record.localeHint
                     )
@@ -151,6 +172,12 @@ public struct MemoProcessor: Sendable {
     }
 
     public func retry(_ request: MemoProcessingRequest) async throws -> MemoProcessingOutcome {
+        if let existing = try? journal.load(memoID: request.memoID),
+           existing.state == .readyForCodex,
+           existing.transcript != nil
+        {
+            return try await process(request)
+        }
         do {
             _ = try journal.retry(memoID: request.memoID)
         } catch {
@@ -240,22 +267,67 @@ public struct MemoProcessor: Sendable {
         }
     }
 
+    private func persistSpec(
+        memoID: MemoID,
+        transcript: String,
+        capturedAt: Date
+    ) async {
+        guard let specStore else { return }
+        if specStore.load(memoID: memoID) != nil {
+            return
+        }
+        let spec = await MemoSpecImprover(
+            foundationModels: foundationModelsImprover,
+            appServer: specImprover
+        ).improve(
+            transcript: transcript,
+            capturedAt: capturedAt,
+            memoID: memoID
+        )
+        try? specStore.save(spec, memoID: memoID)
+    }
+
     private static func captureText(
         marker: String,
         transcript: String,
+        spec: MemoSpec?,
         capturedAt: Date,
         localeHint: String?
     ) -> String {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime]
+        let body: String
+        if let spec {
+            switch spec.provenance {
+            case .appServer:
+                body = """
+                Spec (Codex App Server):
+                \(spec.markdown)
+                """
+            case .foundationModels:
+                body = """
+                Spec (on-device Foundation Models):
+                \(spec.markdown)
+                """
+            case .localFallback:
+                body = """
+                Voice idea:
+                \(transcript)
+                """
+            }
+        } else {
+            body = """
+            Voice idea:
+            \(transcript)
+            """
+        }
         return """
         \(marker)
         Captured at: \(formatter.string(from: capturedAt))
         Locale: \(localeHint ?? "unspecified")
-        Voice idea:
-        \(transcript)
+        \(body)
 
-        Capture this idea in Codex Voice Inbox. Do not execute the idea, inspect files, use the network, or request approval.
+        Capture this idea in Codex Watch. Do not execute the idea, inspect files, use the network, or request approval.
         """
     }
 }

@@ -3,7 +3,7 @@ import Foundation
 import Security
 import Testing
 
-@Suite struct SystemTLSIdentityKeychainTests {
+extension TLSIdentitySecurityTests {
     @Test func systemTLSIdentityQueriesUseLoginKeychainWithoutInventingAccessGroup() throws {
         let generated = try X509CertificateBuilder().build()
         let label = TLSIdentityProvisioner.defaultLabel
@@ -197,7 +197,10 @@ import Testing
             if child.isRunning { child.terminate() }
             child.waitUntilExit()
         }
-        try #require(ready.wait(timeout: .now() + 2) == .success)
+        // Hosted runners can take several seconds to cold-start Python while the
+        // rest of the Swift test process is under load. This wait bounds only the
+        // fixture startup; the lock contention assertion retains its 100 ms bound.
+        try #require(ready.wait(timeout: .now() + 10) == .success)
         let contender = SystemTLSIdentityMutationLock(lockURL: lockURL, timeout: 0.1)
 
         #expect(throws: TLSIdentityProvisionerError.transactionUnavailable) {

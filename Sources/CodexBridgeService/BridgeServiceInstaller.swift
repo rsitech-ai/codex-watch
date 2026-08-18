@@ -19,17 +19,17 @@ public struct BridgeInstallPaths: Equatable, Sendable {
         }
         let canonicalHome = home.standardizedFileURL
         let support = canonicalHome.appending(
-            path: "Library/Application Support/VoiceInboxBridge",
+            path: "Library/Application Support/CodexWatch",
             directoryHint: .isDirectory
         )
         return Self(
             application: support
                 .appending(path: "Service", directoryHint: .isDirectory)
-                .appending(path: "VoiceInboxBridge.app", directoryHint: .isDirectory),
+                .appending(path: "CodexWatch.app", directoryHint: .isDirectory),
             state: support.appending(path: "State", directoryHint: .isDirectory),
             launchAgent: canonicalHome
                 .appending(path: "Library/LaunchAgents", directoryHint: .isDirectory)
-                .appending(path: "ai.rsitech.voiceinbox.bridge.plist")
+                .appending(path: "ai.rsitech.codexwatch.bridge.plist")
         )
     }
 }
@@ -168,7 +168,8 @@ final class BridgeInstallerLifecycleLease: @unchecked Sendable {
 }
 
 public actor BridgeServiceInstaller {
-    public static let label = "ai.rsitech.voiceinbox.bridge"
+    // ponytail: unload leftover ai.rsitech.voiceinbox.bridge after this label is bootstrapped
+    public static let label = "ai.rsitech.codexwatch.bridge"
     private static let executableName = "codex-watch-bridge"
     private static let maximumHealthTimeout: Duration = .seconds(15)
 
@@ -263,13 +264,13 @@ public actor BridgeServiceInstaller {
 
         let token = UUID().uuidString
         let stagedApplication = paths.application.deletingLastPathComponent()
-            .appending(path: ".VoiceInboxBridge.app.staged-\(token)", directoryHint: .isDirectory)
+            .appending(path: ".CodexWatch.app.staged-\(token)", directoryHint: .isDirectory)
         let stagedManifest = paths.launchAgent.deletingLastPathComponent()
-            .appending(path: ".ai.rsitech.voiceinbox.bridge.plist.staged-\(token)")
+            .appending(path: ".ai.rsitech.codexwatch.bridge.plist.staged-\(token)")
         let backupApplication = paths.application.deletingLastPathComponent()
-            .appending(path: ".VoiceInboxBridge.app.backup-\(token)", directoryHint: .isDirectory)
+            .appending(path: ".CodexWatch.app.backup-\(token)", directoryHint: .isDirectory)
         let backupManifest = paths.launchAgent.deletingLastPathComponent()
-            .appending(path: ".ai.rsitech.voiceinbox.bridge.plist.backup-\(token)")
+            .appending(path: ".ai.rsitech.codexwatch.bridge.plist.backup-\(token)")
         let backupFingerprint = paths.state
             .appending(path: ".identity-public-key-sha256.backup-\(token)")
 
@@ -296,8 +297,9 @@ public actor BridgeServiceInstaller {
             )
             priorLoaded = try await serviceIsLoaded()
             let fingerprint: String
-            do { fingerprint = try await identityLifecycle.ensureFingerprint() }
-            catch {
+            do {
+                fingerprint = try await reusedOrCreatedFingerprint()
+            } catch {
                 throw BridgeServiceInstallerError.transactionFailed
             }
             if itemExists(fingerprintURL) {
@@ -365,6 +367,85 @@ public actor BridgeServiceInstaller {
         }
     }
 
+    /// Rewrites LaunchAgent bind/advertised hosts without replacing the app or rotating TLS.
+    public func rebind(bindHost: String, advertisedHost: String) async throws {
+        try validatePathContract()
+        let lifecycleLease = try acquireLifecycleLease()
+        defer { lifecycleLease.release() }
+        await afterLifecycleLeaseAcquired()
+        try validateSharedLaunchAgentsDirectoryIfPresent()
+        try await validateInstalledArtifacts(allowPartial: false)
+        guard itemExists(paths.application), itemExists(paths.launchAgent) else {
+            throw BridgeServiceInstallerError.invalidConfiguration
+        }
+        try validateInstalledManifest()
+        let arguments = try installedProgramArguments()
+        let codex = URL(fileURLWithPath: arguments[5])
+        try validateConfiguration(
+            codexExecutable: codex,
+            bindHost: bindHost,
+            advertisedHost: advertisedHost
+        )
+
+        let token = UUID().uuidString
+        let stagedManifest = paths.launchAgent.deletingLastPathComponent()
+            .appending(path: ".ai.rsitech.codexwatch.bridge.plist.rebind-\(token)")
+        let backupManifest = paths.launchAgent.deletingLastPathComponent()
+            .appending(path: ".ai.rsitech.codexwatch.bridge.plist.rebind-backup-\(token)")
+        let priorLoaded = try await serviceIsLoaded()
+        var manifestBackedUp = false
+        var manifestInstalled = false
+        var bootstrapped = false
+        do {
+            try writeManifest(
+                at: stagedManifest,
+                codexExecutable: codex,
+                bindHost: bindHost,
+                advertisedHost: advertisedHost
+            )
+            if priorLoaded {
+                try await bootoutIfPresent()
+            }
+            try atomicRename(paths.launchAgent, backupManifest)
+            manifestBackedUp = true
+            try atomicRename(stagedManifest, paths.launchAgent)
+            manifestInstalled = true
+            try await bootstrapNewService()
+            bootstrapped = true
+            guard try await waitForHealth() else {
+                throw BridgeServiceInstallerError.healthCheckFailed
+            }
+            try? removeIfPresent(backupManifest)
+        } catch {
+            if let installerError = error as? BridgeServiceInstallerError,
+               case .childStillRunning = installerError
+            {
+                throw installerError
+            }
+            do {
+                if bootstrapped || manifestInstalled {
+                    try await bootoutIfPresent()
+                }
+                if manifestInstalled {
+                    try removeIfPresent(paths.launchAgent)
+                }
+                if manifestBackedUp {
+                    try atomicRename(backupManifest, paths.launchAgent)
+                }
+                try removeIfPresent(stagedManifest)
+                if priorLoaded {
+                    try await restorePriorServiceOrFail()
+                }
+            } catch {
+                throw BridgeServiceInstallerError.rollbackFailed
+            }
+            if let installerError = error as? BridgeServiceInstallerError {
+                throw installerError
+            }
+            throw BridgeServiceInstallerError.transactionFailed
+        }
+    }
+
     public func status() async throws -> BridgeInstallationStatus {
         try validatePathContract()
         let lifecycleLease = try acquireLifecycleLease()
@@ -402,9 +483,9 @@ public actor BridgeServiceInstaller {
         }
         let token = UUID().uuidString
         let stagedApplication = paths.application.deletingLastPathComponent()
-            .appending(path: ".VoiceInboxBridge.app.uninstall-\(token)", directoryHint: .isDirectory)
+            .appending(path: ".CodexWatch.app.uninstall-\(token)", directoryHint: .isDirectory)
         let stagedManifest = paths.launchAgent.deletingLastPathComponent()
-            .appending(path: ".ai.rsitech.voiceinbox.bridge.plist.uninstall-\(token)")
+            .appending(path: ".ai.rsitech.codexwatch.bridge.plist.uninstall-\(token)")
         var applicationStaged = false
         do {
             if itemExists(paths.application) {
@@ -545,14 +626,14 @@ public actor BridgeServiceInstaller {
         let home = library.deletingLastPathComponent()
         guard paths.application == bridgeRoot
             .appending(path: "Service", directoryHint: .isDirectory)
-            .appending(path: "VoiceInboxBridge.app", directoryHint: .isDirectory),
+            .appending(path: "CodexWatch.app", directoryHint: .isDirectory),
             paths.state == bridgeRoot.appending(path: "State", directoryHint: .isDirectory),
             paths.launchAgent == home
                 .appending(path: "Library/LaunchAgents", directoryHint: .isDirectory)
-                .appending(path: "ai.rsitech.voiceinbox.bridge.plist"),
+                .appending(path: "ai.rsitech.codexwatch.bridge.plist"),
             library.lastPathComponent == "Library",
             support.lastPathComponent == "Application Support",
-            bridgeRoot.lastPathComponent == "VoiceInboxBridge"
+            bridgeRoot.lastPathComponent == "CodexWatch"
         else { throw BridgeServiceInstallerError.invalidPath }
 
         try requireDirectory(home)
@@ -636,8 +717,7 @@ public actor BridgeServiceInstaller {
               ) as? [String: Any],
               info["CFBundleIdentifier"] as? String == Self.label,
               info["CFBundleExecutable"] as? String == Self.executableName,
-              info["CFBundlePackageType"] as? String == "APPL",
-              info["LSBackgroundOnly"] as? Bool == true
+              info["CFBundlePackageType"] as? String == "APPL"
         else { throw BridgeServiceInstallerError.invalidBundle }
     }
 
@@ -722,6 +802,26 @@ public actor BridgeServiceInstaller {
                       || $0 == "--identity" || $0 == "--identity-file"
               })
         else { throw BridgeServiceInstallerError.invalidConfiguration }
+    }
+
+    private func installedProgramArguments() throws -> [String] {
+        let propertyList: [String: Any]
+        do {
+            guard let decoded = try PropertyListSerialization.propertyList(
+                from: Data(contentsOf: paths.launchAgent), options: [], format: nil
+            ) as? [String: Any] else {
+                throw BridgeServiceInstallerError.invalidConfiguration
+            }
+            propertyList = decoded
+        } catch let error as BridgeServiceInstallerError {
+            throw error
+        } catch {
+            throw BridgeServiceInstallerError.invalidConfiguration
+        }
+        guard let arguments = propertyList["ProgramArguments"] as? [String],
+              arguments.count == 10
+        else { throw BridgeServiceInstallerError.invalidConfiguration }
+        return arguments
     }
 
     private func stageBundle(from source: URL, at destination: URL) throws {
@@ -857,6 +957,22 @@ public actor BridgeServiceInstaller {
         } catch {
             throw BridgeServiceInstallerError.launchctlFailed
         }
+    }
+
+    private func reusedOrCreatedFingerprint() async throws -> String {
+        if let existing = try await identityLifecycle.existingFingerprint() {
+            return existing
+        }
+        if let persisted = readFingerprint() {
+            let service = paths.state.appending(path: "service", directoryHint: .isDirectory)
+            // Keychain ACL is per code signature. Reinstall must keep the pin
+            // without minting; the listener loads PKCS#12 from this directory.
+            guard PersistedTLSIdentity.exists(stateDirectory: service) else {
+                throw BridgeServiceInstallerError.transactionFailed
+            }
+            return persisted
+        }
+        return try await identityLifecycle.ensureFingerprint()
     }
 
     private var fingerprintURL: URL {

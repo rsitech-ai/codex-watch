@@ -4,8 +4,10 @@ import Foundation
 import Security
 import Testing
 
-@Suite(.serialized) struct TLSIdentityValidationTests {
-    private let now = utcValidationDate("20400101000000Z")
+@Suite(.serialized) struct TLSIdentitySecurityTests {}
+
+extension TLSIdentitySecurityTests {
+    private var now: Date { utcValidationDate("20400101000000Z") }
 
     @Test func fixtureImportRetriesTransientFailuresWithinItsBound() throws {
         var attempts = 0

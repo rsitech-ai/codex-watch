@@ -18,6 +18,7 @@ public actor StdioProcessTransport: AppServerTransport {
     private let executable: String
     private let arguments: [String]
     private let environment: [String: String]
+    private let inheritEnvironment: Bool
     private let currentDirectory: URL?
     private let processFactory: @Sendable () -> Process
     private let shutdown: OwnedChildShutdown
@@ -36,6 +37,7 @@ public actor StdioProcessTransport: AppServerTransport {
         executable: String,
         arguments: [String],
         environment: [String: String] = [:],
+        inheritEnvironment: Bool = true,
         currentDirectory: URL? = nil,
         processFactory: @escaping @Sendable () -> Process = Process.init,
         shutdown: OwnedChildShutdown = OwnedChildShutdown(),
@@ -44,6 +46,7 @@ public actor StdioProcessTransport: AppServerTransport {
         self.executable = executable
         self.arguments = arguments
         self.environment = environment
+        self.inheritEnvironment = inheritEnvironment
         self.currentDirectory = currentDirectory
         self.processFactory = processFactory
         self.shutdown = shutdown
@@ -68,8 +71,10 @@ public actor StdioProcessTransport: AppServerTransport {
 
         child.executableURL = URL(fileURLWithPath: executable)
         child.arguments = arguments
-        if !environment.isEmpty {
+        if inheritEnvironment, !environment.isEmpty {
             child.environment = ProcessInfo.processInfo.environment.merging(environment) { _, supplied in supplied }
+        } else if !inheritEnvironment {
+            child.environment = environment
         }
         child.currentDirectoryURL = currentDirectory
         child.standardInput = input

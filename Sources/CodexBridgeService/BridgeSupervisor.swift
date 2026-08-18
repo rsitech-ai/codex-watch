@@ -945,8 +945,10 @@ public actor BoundedIntakeMemoProcessor: BridgePendingMemoProcessing, BridgePend
     private var accepting = false
     private var workerTask: Task<Void, Never>?
     private var retryTask: Task<Void, Never>?
+    private var mailboxTask: Task<Void, Never>?
     private var retryableIDs: Set<MemoID> = []
     private var retryAttempt: UInt64 = 0
+    private let retryMailbox: OperatorRetryMailbox?
 
     public init(
         intakeStore: any BridgeIntakeRecordSource,
@@ -956,12 +958,14 @@ public actor BoundedIntakeMemoProcessor: BridgePendingMemoProcessing, BridgePend
         sleep: @escaping @Sendable (TimeInterval) async -> Void = { delay in
             try? await Task.sleep(for: .seconds(delay))
         },
+        retryMailbox: OperatorRetryMailbox? = nil,
         onDelivered: @escaping @Sendable (MemoID) async throws -> Void = { _ in }
     ) {
         self.intakeStore = intakeStore
         self.processor = processor
         self.sample = sample
         self.sleep = sleep
+        self.retryMailbox = retryMailbox
         do {
             retryBackoff = try FullJitterBackoff(baseDelay: 5, maximumDelay: 900)
         } catch {
@@ -979,7 +983,9 @@ public actor BoundedIntakeMemoProcessor: BridgePendingMemoProcessing, BridgePend
         retryAttempt = 0
         scanCursor = nil
         scanEpoch &+= 1
+        await drainRetryMailbox()
         try await refillFromDurableIntake()
+        scheduleMailboxPollIfNeeded()
         scheduleWorkerIfNeeded()
     }
 
@@ -999,12 +1005,16 @@ public actor BoundedIntakeMemoProcessor: BridgePendingMemoProcessing, BridgePend
         accepting = false
         let worker = workerTask
         let retry = retryTask
+        let mailbox = mailboxTask
         worker?.cancel()
         retry?.cancel()
+        mailbox?.cancel()
         await worker?.value
         await retry?.value
+        await mailbox?.value
         workerTask = nil
         retryTask = nil
+        mailboxTask = nil
         queuedIDs.removeAll()
         queuedIDSet.removeAll()
         retryableIDs.removeAll()
@@ -1196,6 +1206,39 @@ public actor BoundedIntakeMemoProcessor: BridgePendingMemoProcessing, BridgePend
         guard retryableIDs.isEmpty, retryTask == nil else { return }
         retryAttempt = 0
     }
+
+    private func scheduleMailboxPollIfNeeded() {
+        guard retryMailbox != nil, accepting, mailboxTask == nil else { return }
+        mailboxTask = Task { [weak self] in
+            await self?.runMailboxPoll()
+        }
+    }
+
+    private func runMailboxPoll() async {
+        defer { mailboxTask = nil }
+        while accepting, !Task.isCancelled {
+            await drainRetryMailbox()
+            guard accepting, !Task.isCancelled else { return }
+            await sleep(1)
+        }
+    }
+
+    private func drainRetryMailbox() async {
+        guard accepting, let retryMailbox else { return }
+        let ids: [MemoID]
+        do {
+            ids = try retryMailbox.takeAll()
+        } catch {
+            return
+        }
+        for memoID in ids {
+            do {
+                try await retryCommitted(memoID)
+            } catch {
+                try? retryMailbox.enqueue(memoID)
+            }
+        }
+    }
 }
 
 public final class NetworkBridgeListenerController: BridgeListenerControlling, @unchecked Sendable {
@@ -1225,7 +1268,7 @@ public enum KeychainSecretStoreError: Error, Equatable, Sendable {
 public actor KeychainSecretStore: SecretStore {
     private let service: String
 
-    public init(service: String = "ai.rsitech.voiceinbox.bridge") {
+    public init(service: String = "ai.rsitech.codexwatch.bridge") {
         self.service = service
     }
 
