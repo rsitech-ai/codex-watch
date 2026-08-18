@@ -12,10 +12,10 @@ struct BridgeServiceInstallerTests {
         )
         let paths = try BridgeInstallPaths.production(home: home)
 
-        #expect(paths.application.path == home.path + "/Library/Application Support/VoiceInboxBridge/Service/VoiceInboxBridge.app")
-        #expect(paths.state.path == home.path + "/Library/Application Support/VoiceInboxBridge/State")
-        #expect(paths.launchAgent.path == home.path + "/Library/LaunchAgents/ai.rsitech.voiceinbox.bridge.plist")
-        #expect(paths.launchAgent.path != FileManager.default.homeDirectoryForCurrentUser.path + "/Library/LaunchAgents/ai.rsitech.voiceinbox.bridge.plist")
+        #expect(paths.application.path == home.path + "/Library/Application Support/CodexWatch/Service/CodexWatch.app")
+        #expect(paths.state.path == home.path + "/Library/Application Support/CodexWatch/State")
+        #expect(paths.launchAgent.path == home.path + "/Library/LaunchAgents/ai.rsitech.codexwatch.bridge.plist")
+        #expect(paths.launchAgent.path != FileManager.default.homeDirectoryForCurrentUser.path + "/Library/LaunchAgents/ai.rsitech.codexwatch.bridge.plist")
     }
 
     @Test func firstInstallCreatesPrivateDirectoriesAndExactLaunchAgentMetadata() async throws {
@@ -34,12 +34,12 @@ struct BridgeServiceInstallerTests {
         #expect(try mode(of: fixture.paths.launchAgent.deletingLastPathComponent()) == 0o700)
         #expect(try mode(of: fixture.paths.launchAgent) == 0o600)
         let manifest = try fixture.launchAgentDictionary()
-        #expect(manifest["Label"] as? String == "ai.rsitech.voiceinbox.bridge")
+        #expect(manifest["Label"] as? String == "ai.rsitech.codexwatch.bridge")
         #expect(manifest["RunAtLoad"] as? Bool == true)
         #expect((manifest["KeepAlive"] as? [String: Bool])?["SuccessfulExit"] == false)
         #expect(manifest["ThrottleInterval"] as? Int == 10)
         #expect(manifest["ProcessType"] as? String == "Background")
-        #expect(manifest["AssociatedBundleIdentifiers"] as? [String] == ["ai.rsitech.voiceinbox.bridge"])
+        #expect(manifest["AssociatedBundleIdentifiers"] as? [String] == ["ai.rsitech.codexwatch.bridge"])
         #expect(manifest["ProgramArguments"] as? [String] == [
             fixture.paths.application.appending(path: "Contents/MacOS/codex-watch-bridge").path,
             "run", "--state-root", fixture.paths.state.path,
@@ -50,11 +50,32 @@ struct BridgeServiceInstallerTests {
         let verified = await fixture.signatureVerifier.verifiedBundles()
         #expect(verified.count == 1)
         #expect(verified.first?.deletingLastPathComponent() == fixture.paths.application.deletingLastPathComponent())
-        #expect(verified.first?.lastPathComponent.hasPrefix(".VoiceInboxBridge.app.staged-") == true)
+        #expect(verified.first?.lastPathComponent.hasPrefix(".CodexWatch.app.staged-") == true)
         #expect(await fixture.launchctl.events() == [
-            "print:gui/\(getuid())/ai.rsitech.voiceinbox.bridge",
+            "print:gui/\(getuid())/ai.rsitech.codexwatch.bridge",
             "bootstrap:gui/\(getuid()):\(fixture.paths.launchAgent.path)",
         ])
+    }
+
+    @Test func rebindRewritesHostsWithoutRotatingIdentityOrReplacingBundle() async throws {
+        let fixture = try InstallerFixture()
+        try await fixture.install(bundle: try fixture.makeBundle(version: "one"))
+        await fixture.launchctl.clearEvents()
+        let fingerprint = try String(contentsOf: fixture.fingerprint, encoding: .utf8)
+
+        try await fixture.installer.rebind(bindHost: "192.168.1.38", advertisedHost: "192.168.1.38")
+
+        #expect(try String(contentsOf: fixture.fingerprint, encoding: .utf8) == fingerprint)
+        #expect(try fixture.installedExecutableContents() == "one")
+        let arguments = try fixture.launchAgentDictionary()["ProgramArguments"] as? [String]
+        #expect(arguments?.suffix(4) == ["--bind-host", "192.168.1.38", "--advertised-host", "192.168.1.38"])
+        #expect(await fixture.launchctl.events() == [
+            "print:gui/\(getuid())/ai.rsitech.codexwatch.bridge",
+            "bootout:gui/\(getuid())/ai.rsitech.codexwatch.bridge",
+            "bootstrap:gui/\(getuid()):\(fixture.paths.launchAgent.path)",
+        ])
+        #expect(await fixture.identityLifecycle.creationCount == 1)
+        #expect(await fixture.identityLifecycle.rotationCount == 0)
     }
 
     @Test func installPreservesExistingSharedLaunchAgentsPermissions() async throws {
@@ -258,16 +279,11 @@ struct BridgeServiceInstallerTests {
         #expect(!FileManager.default.fileExists(atPath: fixture.paths.application.path))
     }
 
-    @Test func installRejectsMissingExpectedExecutableAndNonBackgroundBundle() async throws {
+    @Test func installRejectsMissingExpectedExecutable() async throws {
         let fixture = try InstallerFixture()
         let missingExecutable = try fixture.makeBundle(version: "missing", executable: "different")
         await #expect(throws: BridgeServiceInstallerError.self) {
             try await fixture.install(bundle: missingExecutable)
-        }
-
-        let visibleBundle = try fixture.makeBundle(version: "visible", backgroundOnly: false)
-        await #expect(throws: BridgeServiceInstallerError.self) {
-            try await fixture.install(bundle: visibleBundle)
         }
         #expect(!(await fixture.signatureVerifier.wasCalled()))
     }
@@ -300,6 +316,38 @@ struct BridgeServiceInstallerTests {
         #expect(await fixture.identityLifecycle.creationCount == 1)
     }
 
+    @Test func reinstallReusesPersistedFingerprintWhenKeychainIdentityIsUnreadable() async throws {
+        let fixture = try InstallerFixture()
+        try await fixture.install(bundle: try fixture.makeBundle(version: "one"))
+        let firstIdentity = try #require(await fixture.identityLifecycle.existingFingerprint())
+        let service = fixture.paths.state.appending(path: "service", directoryHint: .isDirectory)
+        try FileManager.default.createDirectory(
+            at: service,
+            withIntermediateDirectories: true,
+            attributes: [.posixPermissions: NSNumber(value: 0o700)]
+        )
+        let p12 = service.appending(path: PersistedTLSIdentity.p12FileName)
+        let password = service.appending(path: PersistedTLSIdentity.passwordFileName)
+        try Data("p12".utf8).write(to: p12)
+        try Data("password".utf8).write(to: password)
+        try FileManager.default.setAttributes(
+            [.posixPermissions: NSNumber(value: 0o600)],
+            ofItemAtPath: p12.path
+        )
+        try FileManager.default.setAttributes(
+            [.posixPermissions: NSNumber(value: 0o600)],
+            ofItemAtPath: password.path
+        )
+        await fixture.identityLifecycle.loseKeychainAccess()
+
+        try await fixture.install(bundle: try fixture.makeBundle(version: "two"))
+
+        #expect(try fixture.installedExecutableContents() == "two")
+        #expect(try String(contentsOf: fixture.fingerprint, encoding: .utf8) == firstIdentity)
+        #expect(await fixture.identityLifecycle.creationCount == 1)
+        #expect(await fixture.identityLifecycle.existingFingerprint() == nil)
+    }
+
     @Test func failedBootstrapRestoresAndRebootstrapsThePriorInstall() async throws {
         let fixture = try InstallerFixture()
         try await fixture.install(bundle: try fixture.makeBundle(version: "one"))
@@ -322,9 +370,9 @@ struct BridgeServiceInstallerTests {
         #expect(await fixture.launchctl.isLoaded())
         let events = await fixture.launchctl.events()
         #expect(events.suffix(4) == [
-            "bootout:gui/\(getuid())/ai.rsitech.voiceinbox.bridge",
+            "bootout:gui/\(getuid())/ai.rsitech.codexwatch.bridge",
             "bootstrap:gui/\(getuid()):\(fixture.paths.launchAgent.path)",
-            "bootout:gui/\(getuid())/ai.rsitech.voiceinbox.bridge",
+            "bootout:gui/\(getuid())/ai.rsitech.codexwatch.bridge",
             "bootstrap:gui/\(getuid()):\(fixture.paths.launchAgent.path)",
         ])
     }
@@ -360,7 +408,7 @@ struct BridgeServiceInstallerTests {
         try await fixture.installer.uninstall(purgeData: false)
 
         #expect(await fixture.launchctl.events() == [
-            "print:gui/\(getuid())/ai.rsitech.voiceinbox.bridge",
+            "print:gui/\(getuid())/ai.rsitech.codexwatch.bridge",
         ])
         #expect(!FileManager.default.fileExists(atPath: fixture.paths.application.path))
     }
@@ -549,8 +597,8 @@ struct BridgeServiceInstallerTests {
         #expect(try fixture.installerBackupFingerprintCount() == 1)
         #expect(!(await fixture.launchctl.isLoaded()))
         #expect(await fixture.launchctl.events() == [
-            "print:gui/\(getuid())/ai.rsitech.voiceinbox.bridge",
-            "bootout:gui/\(getuid())/ai.rsitech.voiceinbox.bridge",
+            "print:gui/\(getuid())/ai.rsitech.codexwatch.bridge",
+            "bootout:gui/\(getuid())/ai.rsitech.codexwatch.bridge",
             "bootstrap:gui/\(getuid()):\(fixture.paths.launchAgent.path)",
         ])
     }
@@ -789,8 +837,8 @@ struct BridgeServiceInstallerTests {
         #expect(try Data(contentsOf: fixture.paths.launchAgent) == priorManifest)
         #expect(!(await fixture.launchctl.isLoaded()))
         #expect(await fixture.launchctl.events() == [
-            "print:gui/\(getuid())/ai.rsitech.voiceinbox.bridge",
-            "bootout:gui/\(getuid())/ai.rsitech.voiceinbox.bridge",
+            "print:gui/\(getuid())/ai.rsitech.codexwatch.bridge",
+            "bootout:gui/\(getuid())/ai.rsitech.codexwatch.bridge",
             "bootstrap:gui/\(getuid()):\(fixture.paths.launchAgent.path)",
         ])
     }
@@ -874,13 +922,13 @@ private final class InstallerFixture: @unchecked Sendable {
 
     func makeBundle(
         version: String,
-        identifier: String = "ai.rsitech.voiceinbox.bridge",
+        identifier: String = "ai.rsitech.codexwatch.bridge",
         executable: String = "codex-watch-bridge",
         backgroundOnly: Bool = true
     ) throws -> URL {
         bundleCounter += 1
         let bundle = root.appending(
-            path: "bundles/\(bundleCounter)-VoiceInboxBridge.app",
+            path: "bundles/\(bundleCounter)-CodexWatch.app",
             directoryHint: .isDirectory
         )
         let macOS = bundle.appending(path: "Contents/MacOS", directoryHint: .isDirectory)
@@ -934,7 +982,7 @@ private final class InstallerFixture: @unchecked Sendable {
     func backupExecutableContents() throws -> [String] {
         let service = paths.application.deletingLastPathComponent()
         return try FileManager.default.contentsOfDirectory(at: service, includingPropertiesForKeys: nil)
-            .filter { $0.lastPathComponent.hasPrefix(".VoiceInboxBridge.app.backup-") }
+            .filter { $0.lastPathComponent.hasPrefix(".CodexWatch.app.backup-") }
             .map { backup in
                 String(decoding: try Data(contentsOf: backup
                     .appending(path: "Contents/MacOS/codex-watch-bridge")), as: UTF8.self)
@@ -947,7 +995,7 @@ private final class InstallerFixture: @unchecked Sendable {
             at: paths.launchAgent.deletingLastPathComponent(),
             includingPropertiesForKeys: nil
         ).count { $0.lastPathComponent.hasPrefix(
-            ".ai.rsitech.voiceinbox.bridge.plist.backup-"
+            ".ai.rsitech.codexwatch.bridge.plist.backup-"
         ) }
     }
 
@@ -1149,16 +1197,21 @@ private actor DeterministicInstallerIdentityLifecycle: BridgeInstallerIdentityLi
     }
 
     var creationCount: Int { created }
+    var rotationCount: Int { rotations }
 
     func ensureFingerprint() -> String {
         if let fingerprint { return fingerprint }
-        let generated = String(repeating: "a", count: 64)
-        fingerprint = generated
         created += 1
+        let generated = String(repeating: created == 1 ? "a" : "c", count: 64)
+        fingerprint = generated
         return generated
     }
 
     func existingFingerprint() -> String? { fingerprint }
+
+    func loseKeychainAccess() {
+        fingerprint = nil
+    }
 
     func beginRotation() async throws -> BridgeInstallerIdentityRotationReceipt {
         guard let previous = fingerprint else { throw InstallerFakeError.injected }

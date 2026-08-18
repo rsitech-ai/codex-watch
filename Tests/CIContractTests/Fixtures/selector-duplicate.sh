@@ -1,0 +1,4 @@
+#!/bin/zsh
+set -euo pipefail
+print "identifier=00000000-0000-0000-0000-000000000040"
+print "identifier=00000000-0000-0000-0000-000000000041"

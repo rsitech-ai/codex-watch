@@ -44,7 +44,7 @@ public final class SystemTLSIdentityMutationLock: TLSIdentityMutationLock, @unch
     public init(timeout: TimeInterval = 5) {
         lockURL = FileManager.default.homeDirectoryForCurrentUser
             .appending(path: "Library/Application Support", directoryHint: .isDirectory)
-            .appending(path: "ai.rsitech.voiceinbox.bridge", directoryHint: .isDirectory)
+            .appending(path: "ai.rsitech.codexwatch.bridge", directoryHint: .isDirectory)
             .appending(path: "tls-identity.lock")
         self.timeout = timeout
         beforeFinalPathValidation = {}
@@ -564,12 +564,12 @@ private struct X509DERReader {
 }
 
 public actor TLSIdentityProvisioner {
-    public static let defaultLabel = "ai.rsitech.voiceinbox.bridge.tls"
+    public static let defaultLabel = "ai.rsitech.codexwatch.bridge.tls"
 
     private let keychain: any TLSIdentityKeychain
     private let label: String
-    private let builder: X509CertificateBuilder
     private let mutationLock: any TLSIdentityMutationLock
+    private let buildCertificate: @Sendable () throws -> GeneratedX509Certificate
 
     public init(
         keychain: any TLSIdentityKeychain,
@@ -579,7 +579,19 @@ public actor TLSIdentityProvisioner {
         self.keychain = keychain
         self.label = label
         self.mutationLock = mutationLock
-        builder = X509CertificateBuilder()
+        buildCertificate = { try X509CertificateBuilder().build() }
+    }
+
+    init(
+        keychain: any TLSIdentityKeychain,
+        label: String = TLSIdentityProvisioner.defaultLabel,
+        mutationLock: any TLSIdentityMutationLock,
+        buildCertificate: @escaping @Sendable () throws -> GeneratedX509Certificate
+    ) {
+        self.keychain = keychain
+        self.label = label
+        self.mutationLock = mutationLock
+        self.buildCertificate = buildCertificate
     }
 
     public func loadOrCreate() throws -> ProvisionedTLSIdentity {
@@ -650,7 +662,7 @@ public actor TLSIdentityProvisioner {
         if let existing = try sanitized({ try keychain.load(label: label) }) {
                 return try Self.provisioned(existing)
         }
-        let generated = try builder.build()
+        let generated = try buildCertificate()
         let inserted = try sanitized {
             try keychain.insert(
                 privateKey: generated.privateKey,
@@ -675,7 +687,7 @@ public actor TLSIdentityProvisioner {
     private func rotateLocked() throws -> ProvisionedTLSIdentity {
         let previous = try sanitized { try keychain.load(label: label) }
         let previousSnapshot = try previous.map(TLSIdentitySnapshot.init)
-        let generated = try builder.build()
+        let generated = try buildCertificate()
         let expectedFingerprint = try Self.publicKeyFingerprint(generated.privateKey)
         let stagingLabel = "\(label).staged.\(UUID().uuidString)"
         let staged = try sanitized {
@@ -824,6 +836,11 @@ public struct KeychainTLSIdentityProvider: BridgeTLSIdentityProvider, Sendable {
         }
         let provisioned = try TLSIdentityProvisioner.provisioned(identity)
         return try BridgeTLSIdentity(secIdentity: provisioned.secIdentity)
+    }
+
+    public func persistToStateDirectory(_ directory: URL) throws {
+        guard let identity = try keychain.load(label: label) else { return }
+        try PersistedTLSIdentity.persist(identity: identity, stateDirectory: directory)
     }
 }
 

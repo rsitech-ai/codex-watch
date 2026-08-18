@@ -82,7 +82,10 @@ enum BridgeCommand {
         case "rotate-identity":
             throw BridgeCommandError.usage
         case "pair":
-            let identity = try tlsIdentityProvider(options: options).loadIdentity()
+            let identity = try tlsIdentityProvider(
+                options: options,
+                stateDirectory: paths.service
+            ).loadIdentity()
             let pairing = try PairingStore(secretStore: KeychainSecretStore())
             let challenge = try await pairing.beginPairing(
                 validFor: pairingChallengeLifetime
@@ -96,7 +99,7 @@ enum BridgeCommand {
                 for: BridgeSpeechAuthorizationStatus(SFSpeechRecognizer.authorizationStatus())
             ))
         case "authorize-speech":
-            let status = await requestSpeechAuthorization()
+            let status = await requestSystemSpeechAuthorization()
             print(speechAuthorizationInstructions(for: status))
             guard status == .authorized else {
                 throw BridgeCommandError.speechAuthorizationDenied
@@ -126,6 +129,11 @@ enum BridgeCommand {
             try await runService(paths: paths, options: options, retryMemoID: nil)
         case "retry":
             guard let retryMemoID else { throw BridgeCommandError.usage }
+            if BridgeServiceLease.isLive(stateDirectory: paths.service) {
+                try OperatorRetryMailbox(stateDirectory: paths.service).enqueue(retryMemoID)
+                print("retry-queued=ok")
+                return
+            }
             try await runService(paths: paths, options: options, retryMemoID: retryMemoID)
         default:
             throw BridgeCommandError.usage
@@ -230,11 +238,14 @@ enum BridgeCommand {
         options: [String: String],
         retryMemoID: MemoID?
     ) async throws {
-        guard let codexPath = options["codex"],
-              let bindHost = options["bind-host"],
-              let advertisedHost = options["advertised-host"]
-        else { throw BridgeCommandError.invalidConfiguration }
-        let identityProvider = try tlsIdentityProvider(options: options)
+        guard let codexPath = options["codex"] else {
+            throw BridgeCommandError.invalidConfiguration
+        }
+        if retryMemoID == nil {
+            guard options["bind-host"] != nil, options["advertised-host"] != nil else {
+                throw BridgeCommandError.invalidConfiguration
+            }
+        }
 
         try paths.prepareRoot()
         try paths.prepareCodexInbox()
@@ -256,19 +267,29 @@ enum BridgeCommand {
             intakeStore: intake,
             journal: journal
         )
-        do {
-            _ = try await withExclusiveRetentionLease(stateDirectory: paths.service) {
-                try await retention.performMaintenance()
+        if retryMemoID == nil {
+            do {
+                _ = try await withExclusiveRetentionLease(stateDirectory: paths.service) {
+                    try await retention.performMaintenance()
+                }
+            } catch {
+                _ = diagnostics.append(.retentionMaintenanceFailed)
+                throw error
             }
-        } catch {
-            _ = diagnostics.append(.retentionMaintenanceFailed)
-            throw error
         }
         let inbox = try AppServerInboxClient(
             codexExecutableURL: URL(fileURLWithPath: codexPath),
             neutralDirectory: paths.codexInbox
         )
-        let processor = MemoProcessor(journal: journal, transcriber: AppleSpeechTranscriber(), inbox: inbox)
+        let specStore = MemoSpecStore(root: paths.delivery)
+        let processor = MemoProcessor(
+            journal: journal,
+            transcriber: AppleSpeechTranscriber(),
+            inbox: inbox,
+            specImprover: inbox,
+            specStore: specStore,
+            foundationModelsImprover: FoundationModelsSpecImprover.liveIfAvailable()
+        )
         let completionPublisher = DeliveryCompletionPublisher(
             intakeStore: intake,
             journal: journal,
@@ -287,14 +308,24 @@ enum BridgeCommand {
         let pendingProcessor = BoundedIntakeMemoProcessor(
             intakeStore: intake,
             processor: processor,
+            retryMailbox: OperatorRetryMailbox(stateDirectory: paths.service),
             onDelivered: { memoID in
                 try await completionPublisher.publishAndRetain(memoID)
             }
         )
         if let retryMemoID {
+            // ponytail: operator retry does not take the listener lease; it
+            // transcribes one durable memo in this process (GUI Speech TCC).
             try await pendingProcessor.retryCommitted(retryMemoID)
             return
         }
+        guard let bindHost = options["bind-host"],
+              let advertisedHost = options["advertised-host"]
+        else { throw BridgeCommandError.invalidConfiguration }
+        let identityProvider = try tlsIdentityProvider(
+            options: options,
+            stateDirectory: paths.service
+        )
         let pairing = try PairingStore(secretStore: KeychainSecretStore())
         let configuration = try BridgeConfiguration()
         let replayStore = try DurableReplayNonceStore(
@@ -322,7 +353,7 @@ enum BridgeCommand {
                     configuration: configuration,
                     router: router,
                     identityProvider: identityProvider,
-                    serviceName: "Voice Inbox Bridge",
+                    serviceName: CodexWatchBrand.productName,
                     bindHost: bindHost,
                     advertisedHost: advertisedHost
                 )
@@ -383,12 +414,24 @@ enum BridgeCommand {
 
     static func tlsIdentityProvider(
         options: [String: String],
-        keychain: (any TLSIdentityKeychain)? = nil
+        keychain: (any TLSIdentityKeychain)? = nil,
+        stateDirectory: URL? = nil
     ) throws -> any BridgeTLSIdentityProvider {
         let p12Path = options["identity-p12"]
         let passwordPath = options["identity-password-file"]
         if p12Path == nil, passwordPath == nil {
-            return KeychainTLSIdentityProvider(keychain: keychain ?? SystemTLSIdentityKeychain())
+            if let stateDirectory, let persisted = try PersistedTLSIdentity.provider(
+                stateDirectory: stateDirectory
+            ) {
+                return persisted
+            }
+            let provider = KeychainTLSIdentityProvider(
+                keychain: keychain ?? SystemTLSIdentityKeychain()
+            )
+            if let stateDirectory {
+                persistKeychainIdentity(provider, to: stateDirectory)
+            }
+            return provider
         }
         guard let p12Path, let passwordPath else {
             throw BridgeCommandError.invalidConfiguration
@@ -401,6 +444,13 @@ enum BridgeCommand {
             p12URL: URL(fileURLWithPath: p12Path),
             password: password
         )
+    }
+
+    private static func persistKeychainIdentity(
+        _ provider: KeychainTLSIdentityProvider,
+        to stateDirectory: URL
+    ) {
+        try? provider.persistToStateDirectory(stateDirectory)
     }
 
     static func rotateIdentityWhileServiceStopped(
@@ -555,7 +605,7 @@ enum BridgeCommand {
         case .authorized:
             return "Speech authorization: authorized. On-device recognition availability is checked per locale and memo."
         case .denied:
-            return "Speech authorization: denied. Enable Speech Recognition for Voice Inbox Bridge in System Settings."
+            return "Speech authorization: denied. Enable Speech Recognition for \(CodexWatchBrand.productName) in System Settings."
         case .restricted:
             return "Speech authorization: restricted by macOS policy."
         }
@@ -637,7 +687,20 @@ enum BridgeCommand {
         }
     }
 
-    private static func requestSpeechAuthorization() async -> BridgeSpeechAuthorizationStatus {
+    static func retryMemoNow(
+        memoID: MemoID,
+        stateRoot: URL,
+        codexPath: String
+    ) async throws {
+        let paths = try BridgeRuntimePaths(root: stateRoot)
+        try await runService(
+            paths: paths,
+            options: ["codex": codexPath],
+            retryMemoID: memoID
+        )
+    }
+
+    static func requestSystemSpeechAuthorization() async -> BridgeSpeechAuthorizationStatus {
         await requestSpeechAuthorization { completion in
             SFSpeechRecognizer.requestAuthorization { status in
                 completion(BridgeSpeechAuthorizationStatus(status))
@@ -645,4 +708,55 @@ enum BridgeCommand {
         }
     }
 
+}
+
+enum BridgeLaunchMode {
+    static func isCommandLine(arguments: [String]) -> Bool {
+        arguments.contains { argument in
+            !argument.hasPrefix("-psn_") && argument != "-NSDocumentRevisionsDebugMode"
+        }
+    }
+}
+
+struct LaunchAgentRuntimeConfiguration: Equatable, Sendable {
+    var bindHost: String
+    var advertisedHost: String
+    var stateRoot: URL
+    var codexExecutable: URL
+
+    static func parse(programArguments: [String]) -> Self? {
+        let arguments: [String]
+        if programArguments.first == "run" {
+            arguments = Array(programArguments.dropFirst())
+        } else if programArguments.count > 1, programArguments[1] == "run" {
+            arguments = Array(programArguments.dropFirst(2))
+        } else {
+            return nil
+        }
+        guard arguments.count.isMultiple(of: 2) else { return nil }
+        var options: [String: String] = [:]
+        for index in stride(from: 0, to: arguments.count, by: 2) {
+            let key = arguments[index]
+            guard key.hasPrefix("--"), options[key] == nil else { return nil }
+            options[key] = arguments[index + 1]
+        }
+        guard let stateRoot = options["--state-root"], stateRoot.hasPrefix("/"),
+              let codex = options["--codex"], codex.hasPrefix("/"),
+              let bindHost = options["--bind-host"], !bindHost.isEmpty,
+              let advertisedHost = options["--advertised-host"], !advertisedHost.isEmpty
+        else { return nil }
+        return Self(
+            bindHost: bindHost,
+            advertisedHost: advertisedHost,
+            stateRoot: URL(fileURLWithPath: stateRoot, isDirectory: true),
+            codexExecutable: URL(fileURLWithPath: codex)
+        )
+    }
+
+    static func load(plist url: URL) -> Self? {
+        guard let dictionary = NSDictionary(contentsOf: url) as? [String: Any],
+              let arguments = dictionary["ProgramArguments"] as? [String]
+        else { return nil }
+        return parse(programArguments: arguments)
+    }
 }

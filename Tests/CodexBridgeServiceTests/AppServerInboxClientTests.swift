@@ -4,13 +4,61 @@ import CodexBridgeShared
 import Foundation
 import Testing
 
+@Test func inboxClientImproveSpecReadsAssistantMarkdown() async throws {
+    let neutral = try privateNeutralDirectory()
+    let session = AppServerSessionStub(responses: [
+        inboxPage(id: "thr_inbox", cwd: neutral.path),
+        .object(["turn": .object(["id": .string("turn_spec")])]),
+        .object(["thread": .object([
+            "id": .string("thr_inbox"),
+            "cwd": .string(neutral.path),
+            "turns": .array([.object([
+                "items": .array([
+                    .object([
+                        "type": .string("userMessage"),
+                        "text": .string("Turn this Watch voice transcript into a markdown spec."),
+                    ]),
+                    .object([
+                        "type": .string("agentMessage"),
+                        "text": .string("# Quiet capture\n\n## Summary\nKeep the raw transcript visible."),
+                    ]),
+                ]),
+            ])]),
+        ])]),
+    ], notifications: [completionNotification(threadID: "thr_inbox", turnID: "turn_spec")])
+    let client = AppServerInboxClient(session: session, neutralDirectory: neutral)
+    let memoID = try MemoID("12121212-3434-5656-7878-909090909090")
+
+    let markdown = try await client.improveSpec(
+        memoID: memoID,
+        transcript: "Keep the raw transcript visible."
+    )
+
+    #expect(markdown.contains("# Quiet capture"))
+    let methods = await session.methods
+    #expect(methods.map(\.name) == ["thread/list", "turn/start", "thread/read"])
+    #expect(methods[1].params["clientUserMessageId"] == .string("\(memoID.rawValue)-spec"))
+}
+
+@Test func inboxClientImproveSpecFailsClosedWhenSessionCannotStart() async throws {
+    let client = AppServerInboxClient(
+        sessionFactory: { throw AppServerInboxError.unavailable },
+        neutralDirectory: try privateNeutralDirectory()
+    )
+    let memoID = try MemoID("13131313-1414-1515-1616-171717171717")
+
+    await #expect(throws: AppServerInboxError.unavailable) {
+        _ = try await client.improveSpec(memoID: memoID, transcript: "idea")
+    }
+}
+
 @Test func inboxClientReusesExactInboxAndUsesCaptureOnlyTurnPolicy() async throws {
     let neutral = try privateNeutralDirectory()
     let session = AppServerSessionStub(responses: [
         .object([
             "data": .array([.object([
                 "id": .string("thr_inbox"),
-                "name": .string("Codex Voice Inbox"),
+                "name": .string("Codex Watch"),
                 "cwd": .string(neutral.path),
             ])]),
             "nextCursor": .null,
@@ -88,25 +136,37 @@ import Testing
     ]))
     #expect(methods[2].params == .object([
         "threadId": .string("thr_new"),
-        "name": .string("Codex Voice Inbox"),
+        "name": .string("Codex Watch"),
     ]))
 }
 
-@Test func inboxClientRejectsSameNamedThreadOutsideNeutralDirectory() async throws {
+@Test func inboxClientIgnoresSameNamedThreadOutsideNeutralDirectory() async throws {
     let neutral = try privateNeutralDirectory()
-    let session = AppServerSessionStub(responses: [.object([
-        "data": .array([.object([
-            "id": .string("thr_wrong"),
-            "name": .string("Codex Voice Inbox"),
-            "cwd": .string("/private/tmp/not-the-owned-inbox"),
+    let session = AppServerSessionStub(responses: [
+        .object([
+            "data": .array([.object([
+                "id": .string("thr_stale"),
+                "name": .string("Codex Watch"),
+                "cwd": .string("/private/tmp/cw-inbox-neutral.stale"),
+            ])]),
+            "nextCursor": .null,
+        ]),
+        .object(["thread": .object([
+            "id": .string("thr_new"),
+            "cwd": .string(neutral.path),
         ])]),
-        "nextCursor": .null,
-    ])])
+        .object([:]),
+        .object(["turn": .object(["id": .string("turn_new")])]),
+    ], notifications: [completionNotification(threadID: "thr_new", turnID: "turn_new")])
     let client = AppServerInboxClient(session: session, neutralDirectory: neutral)
+    let memoID = try MemoID("77777777-7777-7777-7777-777777777777")
 
-    await #expect(throws: AppServerInboxError.targetMismatch) {
-        _ = try await client.history(containing: "marker")
-    }
+    try await client.submit(memoID: memoID, marker: "marker", text: "marker idea")
+
+    let methods = await session.methods
+    #expect(methods.map(\.name) == [
+        "thread/list", "thread/start", "thread/name/set", "turn/start",
+    ])
 }
 
 @Test func inboxClientReconnectsForAuthoritativeHistoryAfterAmbiguousSubmitLoss() async throws {
@@ -306,7 +366,7 @@ private func inboxPage(id: String, cwd: String) -> JSONValue {
     .object([
         "data": .array([.object([
             "id": .string(id),
-            "name": .string("Codex Voice Inbox"),
+            "name": .string("Codex Watch"),
             "cwd": .string(cwd),
         ])]),
         "nextCursor": .null,

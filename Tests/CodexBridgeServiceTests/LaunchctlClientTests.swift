@@ -17,17 +17,17 @@ struct LaunchctlClientTests {
         let plist = fixture.root.appending(path: "agent.plist")
 
         try await client.bootstrap(domain: "gui/501", plist: plist)
-        try await client.bootout(domain: "gui/501", label: "ai.rsitech.voiceinbox.bridge")
+        try await client.bootout(domain: "gui/501", label: "ai.rsitech.codexwatch.bridge")
         #expect(try await client.printService(
             domain: "gui/501",
-            label: "ai.rsitech.voiceinbox.bridge"
+            label: "ai.rsitech.codexwatch.bridge"
         ) == "loaded")
 
         #expect(try String(contentsOf: fixture.capture, encoding: .utf8)
             .split(separator: "\n").map(String.init) == [
             "bootstrap", "gui/501", plist.path,
-            "bootout", "gui/501/ai.rsitech.voiceinbox.bridge",
-            "print", "gui/501/ai.rsitech.voiceinbox.bridge",
+            "bootout", "gui/501/ai.rsitech.codexwatch.bridge",
+            "print", "gui/501/ai.rsitech.codexwatch.bridge",
         ])
     }
 

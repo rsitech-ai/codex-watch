@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "identity": {
+    "slug": "codex-watch",
+    "name": "Codex Watch",
+    "repository": "rsitech-ai/codex-watch"
+  },
+  "positioning": {
+    "oneLine": "Apple Watch voice capture with a local macOS Codex Watch companion.",
+    "description": "Records on Apple Watch, keeps audio on-wrist until a paired Mac is available, transfers over authenticated local HTTPS, transcribes with on-device Apple Speech, and inserts the transcript into a local Codex App Server Inbox thread named Codex Watch. The Mac companion is a user-facing window plus the existing LaunchAgent listener. This is not ChatGPT.app delivery and is not affiliated with OpenAI.",
+    "category": "Knowledge and capture"
+  },
+  "lifecycle": {
+    "stage": "public-preview",
+    "version": "0.1.0"
+  },
+  "platforms": ["watchOS", "macOS"],
+  "languages": ["Swift"],
+  "links": {
+    "repository": "https://github.com/rsitech-ai/codex-watch",
+    "documentation": null,
+    "release": "https://github.com/rsitech-ai/codex-watch/releases/tag/v0.1.0",
+    "download": "https://github.com/rsitech-ai/codex-watch/releases/latest",
+    "appStore": null
+  },
+  "media": {
+    "cardImage": "WatchApp/Assets.xcassets/AppIcon.appiconset/AppIcon-watch-marketing-1024x1024-1x.png",
+    "screenshots": []
+  },
+  "openSource": {
+    "license": "Apache-2.0",
+    "readme": "README.md",
+    "contributing": "CONTRIBUTING.md",
+    "security": "SECURITY.md",
+    "support": "SUPPORT.md",
+    "codeOfConduct": "CODE_OF_CONDUCT.md"
+  },
+  "capabilities": [
+    {
+      "claim": "Records a voice memo on Apple Watch and keeps it in a durable on-wrist queue while the Mac is unavailable.",
+      "evidence": [
+        "WatchAppTests/VoiceCaptureModelTests.swift",
+        "Sources/CodexWatchCore/WatchStatusCopy.swift"
+      ]
+    },
+    {
+      "claim": "Pairs over local network with a certificate phrase and one-time code, then uploads over authenticated HTTPS.",
+      "evidence": [
+        "Tests/CodexBridgeServiceTests/PairingStoreTests.swift",
+        "WatchApp/PairingView.swift",
+        "WatchApp/WatchPrimaryActionView.swift"
+      ]
+    },
+    {
+      "claim": "Transcribes on-device with Apple Speech and never falls back to cloud audio recognition.",
+      "evidence": [
+        "Tests/CodexBridgeServiceTests/AppleSpeechTranscriberTests.swift",
+        "SECURITY.md",
+        "PRIVACY.md"
+      ]
+    },
+    {
+      "claim": "Shows a user-facing macOS Codex Watch window for pairing, Speech authorization, inbox status, and retry while the LaunchAgent owns the listener.",
+      "evidence": [
+        "Tests/CodexWatchBridgeCLITests/BridgeConsoleContractTests.swift",
+        "Sources/CodexWatchBridgeCLI/BridgeExperiencePresentation.swift"
+      ]
+    },
+    {
+      "claim": "Inserts transcript text into a local Codex App Server Inbox thread; raw audio is not part of that request.",
+      "evidence": [
+        "Tests/CodexBridgeServiceTests/AppServerInboxClientTests.swift",
+        "README.md",
+        "SECURITY.md"
+      ]
+    }
+  ],
+  "limitations": [
+    "Physical Apple Watch capture and the complete Watch-to-Mac workflow remain blocked:external.",
+    "Codex delivery is a local App Server Inbox thread named Codex Watch, not ChatGPT.app.",
+    "Speech recognition must be authorized for the installed Mac app signature; the LaunchAgent cannot show that prompt.",
+    "The Watch app is distributed as source; App Store, TestFlight, and review are unverified.",
+    "The user-facing Mac window and current Watch pairing copy live on unmerged branch work until merged to main."
+  ],
+  "safetyBoundaries": [
+    "Never submits raw audio to Codex.",
+    "Never falls back to cloud transcription.",
+    "Pairing credentials stay in Watch Keychain; do not rotate the live Mac TLS identity as a pairing reset.",
+    "Diagnostic logs must not contain memo content, transcripts, paths, or pairing secrets.",
+    "Not affiliated with or endorsed by OpenAI."
+  ]
+}

@@ -53,6 +53,22 @@ import Testing
     #expect(try await reloaded.matchesBearerToken(rotated.tokenHex))
 }
 
+@Test func clearDisplayedChallengeKeepsCredential() async throws {
+    let secrets = InMemorySecretStore()
+    let pairing = try PairingStore(
+        secretStore: secrets,
+        codeGenerator: { "111222" },
+        tokenGenerator: { Data(repeating: 0x33, count: 32) }
+    )
+    _ = try await pairing.beginPairing(validFor: 60)
+    _ = try await pairing.redeem(code: "111222")
+    try await pairing.clearDisplayedChallenge()
+    #expect(try await pairing.currentCredential() != nil)
+    await #expect(throws: PairingError.noActiveCode) {
+        _ = try await pairing.redeem(code: "111222")
+    }
+}
+
 private final class MutableClock: @unchecked Sendable {
     private let lock = NSLock()
     private var value: Date

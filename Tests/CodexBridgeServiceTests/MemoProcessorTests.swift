@@ -117,6 +117,28 @@ private let processorMemoID = try! MemoID("44444444-4444-4444-4444-444444444444"
     #expect(await unknown.historyCallCount == 0)
 }
 
+@Test func retryResubmitsReadyForCodexWithoutRetranscribing() async throws {
+    let fixture = try ProcessorFixture()
+    let transcriber = TranscriberStub(result: .success("must not run again"))
+    let inbox = ScriptedInbox(
+        submissions: [.failure(.definitelyNotAccepted), .success(())],
+        histories: [.success(.init(
+            texts: [MemoProcessor.marker(for: processorMemoID)],
+            authoritative: true
+        ))]
+    )
+    let processor = MemoProcessor(
+        journal: fixture.journal,
+        transcriber: transcriber,
+        inbox: inbox
+    )
+    #expect(try await processor.process(fixture.request) == .retryable)
+    #expect(try fixture.journal.load(memoID: processorMemoID).state == .readyForCodex)
+    #expect(try await processor.retry(fixture.request) == .delivered)
+    #expect(await transcriber.callCount == 1)
+    #expect(await inbox.submittedMemoIDs == [processorMemoID, processorMemoID])
+}
+
 @Test func duplicateOrIncompleteHistoryBecomesTerminalAttentionOnNextReconciliationPass() async throws {
     for history in [
         InboxHistory(
@@ -185,6 +207,130 @@ private let processorMemoID = try! MemoID("44444444-4444-4444-4444-444444444444"
     #expect(await inbox.historyCallCount == 2)
 }
 
+@Test func processorPersistsLocalSpecWhenImproverFailsAndStillInsertsRawTranscript() async throws {
+    let fixture = try ProcessorFixture()
+    let specRoot = fixture.audioURL.deletingLastPathComponent().appending(
+        path: "specs",
+        directoryHint: .isDirectory
+    )
+    let specStore = MemoSpecStore(root: specRoot)
+    let transcriber = TranscriberStub(result: .success("Remember to test the onboarding flow"))
+    let inbox = InboxStub(
+        journal: fixture.journal,
+        memoID: processorMemoID,
+        histories: [.init(texts: [MemoProcessor.marker(for: processorMemoID)], authoritative: true)]
+    )
+    let processor = MemoProcessor(
+        journal: fixture.journal,
+        transcriber: transcriber,
+        inbox: inbox,
+        specImprover: SpecImproverStub(result: .failure(AppServerInboxError.unavailable)),
+        specStore: specStore
+    )
+
+    let outcome = try await processor.process(fixture.request)
+
+    #expect(outcome == .delivered)
+    let spec = try #require(specStore.load(memoID: processorMemoID))
+    #expect(spec.provenance == .localFallback)
+    #expect(spec.markdown.contains("unverified local wrapper"))
+    let submissions = await inbox.submissions
+    #expect(submissions.count == 1)
+    #expect(submissions[0].text.contains("Voice idea:"))
+    #expect(submissions[0].text.contains("Remember to test the onboarding flow"))
+    #expect(!submissions[0].text.contains("Spec (Codex App Server):"))
+}
+
+@Test func processorInsertsAppServerSpecWhenImprovementSucceeds() async throws {
+    let fixture = try ProcessorFixture()
+    let specRoot = fixture.audioURL.deletingLastPathComponent().appending(
+        path: "specs",
+        directoryHint: .isDirectory
+    )
+    let specStore = MemoSpecStore(root: specRoot)
+    let transcriber = TranscriberStub(result: .success("Remember to test the onboarding flow"))
+    let inbox = InboxStub(
+        journal: fixture.journal,
+        memoID: processorMemoID,
+        histories: [.init(texts: [MemoProcessor.marker(for: processorMemoID)], authoritative: true)]
+    )
+    let processor = MemoProcessor(
+        journal: fixture.journal,
+        transcriber: transcriber,
+        inbox: inbox,
+        specImprover: SpecImproverStub(result: .success("""
+        # Onboarding flow
+
+        ## Summary
+        Cover the first-run path.
+        """)),
+        specStore: specStore
+    )
+
+    let outcome = try await processor.process(fixture.request)
+
+    #expect(outcome == .delivered)
+    let spec = try #require(specStore.load(memoID: processorMemoID))
+    #expect(spec.provenance == .appServer)
+    #expect(spec.title == "Onboarding flow")
+    let submissions = await inbox.submissions
+    #expect(submissions[0].text.contains("Spec (Codex App Server):"))
+    #expect(submissions[0].text.contains("# Onboarding flow"))
+    #expect(submissions[0].text.contains(MemoProcessor.marker(for: processorMemoID)))
+}
+
+@Test func processorPersistsFoundationModelsSpecWhenAvailable() async throws {
+    let fixture = try ProcessorFixture()
+    let specRoot = fixture.audioURL.deletingLastPathComponent().appending(
+        path: "specs",
+        directoryHint: .isDirectory
+    )
+    let specStore = MemoSpecStore(root: specRoot)
+    let transcriber = TranscriberStub(result: .success("Remember to test the onboarding flow"))
+    let inbox = InboxStub(
+        journal: fixture.journal,
+        memoID: processorMemoID,
+        histories: [.init(texts: [MemoProcessor.marker(for: processorMemoID)], authoritative: true)]
+    )
+    let processor = MemoProcessor(
+        journal: fixture.journal,
+        transcriber: transcriber,
+        inbox: inbox,
+        specImprover: SpecImproverStub(result: .failure(AppServerInboxError.unavailable)),
+        specStore: specStore,
+        foundationModelsImprover: SpecImproverStub(result: .success("""
+        # Onboarding flow
+
+        ## Summary
+        Cover the first-run path.
+        """))
+    )
+
+    let outcome = try await processor.process(fixture.request)
+
+    #expect(outcome == .delivered)
+    let spec = try #require(specStore.load(memoID: processorMemoID))
+    #expect(spec.provenance == .foundationModels)
+    let submissions = await inbox.submissions
+    #expect(submissions[0].text.contains("Spec (on-device Foundation Models):"))
+}
+
+@Test func specImproverFallsBackWhenFoundationModelsUnavailable() async {
+    let improver = MemoSpecImprover(
+        foundationModels: nil,
+        appServer: SpecImproverStub(result: .failure(AppServerInboxError.unavailable))
+    )
+    let memoID = try! MemoID("44444444-4444-4444-4444-444444444444")
+    let spec = await improver.improve(
+        transcript: "Capture this quietly.",
+        capturedAt: Date(timeIntervalSince1970: 1),
+        memoID: memoID
+    )
+    #expect(spec.provenance == .localFallback)
+    #expect(spec.markdown.contains("unverified local wrapper"))
+    #expect(FoundationModelsAvailability.unavailable("Apple Intelligence is not enabled.").isAvailable == false)
+}
+
 private struct ProcessorFixture {
     let journal: DeliveryJournal
     let audioURL: URL
@@ -225,6 +371,20 @@ private struct ProcessorFixture {
             transcriber: TranscriberStub(result: .success("Idea")),
             inbox: inbox
         )
+    }
+}
+
+private actor SpecImproverStub: SpecImproving {
+    private let result: Result<String, AppServerInboxError>
+
+    init(result: Result<String, AppServerInboxError>) {
+        self.result = result
+    }
+
+    func improveSpec(memoID: MemoID, transcript: String) async throws -> String {
+        _ = memoID
+        _ = transcript
+        return try result.get()
     }
 }
 

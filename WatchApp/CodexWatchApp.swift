@@ -139,9 +139,24 @@ struct CodexWatchApp: App {
     var body: some Scene {
         WindowGroup {
             NavigationStack {
-                ContentView()
+                rootView
             }
             .environmentObject(appDelegate.model)
         }
+    }
+
+    @ViewBuilder
+    private var rootView: some View {
+#if DEBUG
+        if let scenario = WatchRenderScenario.parse(
+            environment: ProcessInfo.processInfo.environment
+        ) {
+            WatchRenderScenarioRoot(scenario: scenario)
+        } else {
+            ContentView()
+        }
+#else
+        ContentView()
+#endif
     }
 }

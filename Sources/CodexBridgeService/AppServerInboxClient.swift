@@ -3,6 +3,7 @@ import CodexAppServerProtocol
 import CodexBridgeShared
 import Darwin
 import Foundation
+import os
 
 public enum AppServerInboxError: Error, Equatable, Sendable {
     case invalidConfiguration
@@ -25,8 +26,12 @@ public protocol AppServerRequesting: Sendable {
 
 extension AppServerClient: AppServerRequesting {}
 
-public actor AppServerInboxClient: InboxDeliveryClient {
-    public static let exactThreadName = "Codex Voice Inbox"
+public actor AppServerInboxClient: InboxDeliveryClient, SpecImproving {
+    private static let logger = Logger(
+        subsystem: "ai.rsitech.codexwatch.bridge",
+        category: "inbox"
+    )
+    public static let exactThreadName = "Codex Watch"
 
     private typealias SessionFactory = @Sendable () throws -> any AppServerRequesting
 
@@ -82,6 +87,7 @@ public actor AppServerInboxClient: InboxDeliveryClient {
         do {
             session = try sessionFactory()
         } catch {
+            Self.logger.error("inbox session factory failed \(String(describing: error), privacy: .public)")
             throw InboxSubmissionFailure.definitelyNotAccepted
         }
         var turnStartIssued = false
@@ -107,9 +113,53 @@ public actor AppServerInboxClient: InboxDeliveryClient {
             await session.close()
         } catch {
             await session.close()
+            let ns = error as NSError
+            Self.logger.error(
+                "inbox submit failed turnStartIssued=\(turnStartIssued) domain=\(ns.domain, privacy: .public) code=\(ns.code) \(String(describing: error), privacy: .public)"
+            )
             throw turnStartIssued
                 ? InboxSubmissionFailure.acceptanceUnknown
                 : InboxSubmissionFailure.definitelyNotAccepted
+        }
+    }
+
+    public func improveSpec(memoID: MemoID, transcript: String) async throws -> String {
+        let trimmed = transcript.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { throw AppServerInboxError.invalidConfiguration }
+        let session: any AppServerRequesting
+        do {
+            session = try sessionFactory()
+        } catch {
+            throw AppServerInboxError.unavailable
+        }
+        do {
+            try await initialize(session)
+            let inboxID = try await resolveInbox(using: session)
+            let response = try await session.call(.captureOnlyTurnStart(
+                threadID: inboxID,
+                clientMessageID: "\(memoID.rawValue)-spec",
+                text: MemoSpecDocument.improvePrompt(transcript: trimmed)
+            ))
+            guard case let .object(turn)? = response["turn"],
+                  case let .string(turnID)? = turn["id"],
+                  !turnID.isEmpty
+            else { throw AppServerInboxError.invalidResponse }
+            try await waitForCompletion(
+                session: session,
+                threadID: inboxID,
+                turnID: turnID
+            )
+            let read = try await session.call(.threadRead(threadID: inboxID, includeTurns: true))
+            await session.close()
+            let assistants = Self.collectAssistantMessages(from: read)
+            guard let markdown = assistants.last,
+                  MemoSpecDocument.looksLikeSpec(markdown)
+            else { throw AppServerInboxError.invalidResponse }
+            return markdown
+        } catch {
+            await session.close()
+            if let error = error as? AppServerInboxError { throw error }
+            throw AppServerInboxError.unavailable
         }
     }
 
@@ -139,7 +189,7 @@ public actor AppServerInboxClient: InboxDeliveryClient {
     private func initialize(_ session: any AppServerRequesting) async throws {
         try await session.initialize(
             clientName: "codex-watch-bridge",
-            title: "RSI Voice Inbox",
+            title: "Codex Watch",
             version: "0.1.0"
         )
     }
@@ -152,7 +202,11 @@ public actor AppServerInboxClient: InboxDeliveryClient {
         for _ in 0 ..< 64 {
             let response = try await session.call(.threadListPage(cursor: cursor, sourceKinds: nil))
             let page = try Self.decodePage(response)
-            matches.append(contentsOf: page.matches)
+            // Isolated smokes leave a same-named thread on a /tmp cwd.
+            // That is not this Mac's inbox; skip it instead of failing closed.
+            matches.append(contentsOf: page.matches.filter {
+                URL(fileURLWithPath: $0.cwd).standardizedFileURL == neutralDirectory
+            })
             guard let next = page.nextCursor else {
                 catalogComplete = true
                 break
@@ -321,6 +375,44 @@ public actor AppServerInboxClient: InboxDeliveryClient {
             return (texts, !texts.isEmpty)
         case .null, .bool, .number, .string:
             return ([], false)
+        }
+    }
+
+    private static func collectAssistantMessages(from value: JSONValue) -> [String] {
+        switch value {
+        case let .array(values):
+            return values.flatMap(collectAssistantMessages(from:))
+        case let .object(fields):
+            if case let .array(turns)? = fields["turns"] {
+                return collectAssistantMessages(from: .array(turns))
+            }
+            if case let .array(items)? = fields["items"] {
+                return collectAssistantMessages(from: .array(items))
+            }
+            if case let .object(thread)? = fields["thread"] {
+                return collectAssistantMessages(from: .object(thread))
+            }
+            guard case let .string(type)? = fields["type"] else { return [] }
+            guard ["agentMessage", "assistantMessage", "agent_message", "assistant"].contains(type) else {
+                return []
+            }
+            if case let .string(text)? = fields["text"], !text.isEmpty {
+                return [text]
+            }
+            guard case let .array(content)? = fields["content"] else { return [] }
+            var texts: [String] = []
+            for part in content {
+                guard case let .object(partFields) = part,
+                      case let .string(partType)? = partFields["type"],
+                      ["text", "output_text", "input_text"].contains(partType),
+                      case let .string(text)? = partFields["text"],
+                      !text.isEmpty
+                else { continue }
+                texts.append(text)
+            }
+            return texts
+        case .null, .bool, .number, .string:
+            return []
         }
     }
 

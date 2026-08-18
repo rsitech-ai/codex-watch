@@ -12,6 +12,19 @@ enum WatchBridgeClientError: Error, Sendable {
     case unavailable
 }
 
+enum PairingFailurePresentation {
+    static func message(for error: WatchBridgeClientError) -> String {
+        switch error {
+        case .certificateMismatch:
+            "The Mac certificate didn’t match. Compare the phrase again."
+        case .invalidPairingCode, .invalidResponse:
+            "The Mac rejected that code. Request a new one if it expired."
+        case .unavailable:
+            "Couldn’t reach the Mac bridge."
+        }
+    }
+}
+
 private enum BoundedBridgeResponseError: Error {
     case responseTooLarge
 }
@@ -806,15 +819,7 @@ final class PinnedBridgeSessionDelegate: NSObject, URLSessionDataDelegate, @unch
     ) {
         guard challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust,
               let trust = challenge.protectionSpace.serverTrust,
-              let chain = SecTrustCopyCertificateChain(trust) as? [SecCertificate],
-              let leaf = chain.first,
-              let key = SecCertificateCopyKey(leaf),
-              let representation = SecKeyCopyExternalRepresentation(key, nil) as Data?,
-              let actualPin = try? CertificatePin(Self.digest(representation)),
-              actualPin == expectedPin,
-              SecTrustSetAnchorCertificates(trust, [leaf] as CFArray) == errSecSuccess,
-              SecTrustSetAnchorCertificatesOnly(trust, true) == errSecSuccess,
-              SecTrustEvaluateWithError(trust, nil)
+              PinnedBridgeCertificateTrust.accepts(trust, expectedPin: expectedPin)
         else {
             lock.withLock { didRejectCertificate = true }
             completionHandler(.cancelAuthenticationChallenge, nil)
@@ -861,7 +866,29 @@ final class PinnedBridgeSessionDelegate: NSObject, URLSessionDataDelegate, @unch
         responseCollector.complete(taskIdentifier: task.taskIdentifier, error: error)
     }
 
-    private static func digest(_ data: Data) -> String {
+}
+
+enum PinnedBridgeCertificateTrust {
+    static func accepts(_ trust: SecTrust, expectedPin: CertificatePin) -> Bool {
+        guard let chain = SecTrustCopyCertificateChain(trust) as? [SecCertificate],
+              let leaf = chain.first,
+              let key = SecCertificateCopyKey(leaf),
+              let representation = SecKeyCopyExternalRepresentation(key, nil) as Data?,
+              let actualPin = try? CertificatePin(digest(representation)),
+              actualPin == expectedPin
+        else { return false }
+        // ponytail: pin is the identity. The bridge cert CN is "Codex Watch"
+        // while the Watch connects to the advertised LAN address, so SSL hostname
+        // evaluation would reject a correct pin.
+        guard SecTrustSetPolicies(trust, SecPolicyCreateBasicX509()) == errSecSuccess,
+              SecTrustSetAnchorCertificates(trust, [leaf] as CFArray) == errSecSuccess,
+              SecTrustSetAnchorCertificatesOnly(trust, true) == errSecSuccess,
+              SecTrustEvaluateWithError(trust, nil)
+        else { return false }
+        return true
+    }
+
+    static func digest(_ data: Data) -> String {
         SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
     }
 }

@@ -25,7 +25,7 @@ final class BridgeDiscovery: ObservableObject {
     @Published private(set) var state: State = .idle
 
     private var browser: NWBrowser?
-    private let queue = DispatchQueue(label: "ai.rsitech.voiceinbox.discovery")
+    private let queue = DispatchQueue(label: "ai.rsitech.codexwatch.discovery")
 
     func start() {
         guard browser == nil else { return }
@@ -33,7 +33,7 @@ final class BridgeDiscovery: ObservableObject {
         let parameters = NWParameters.tcp
         parameters.includePeerToPeer = true
         let browser = NWBrowser(
-            for: .bonjourWithTXTRecord(type: "_voiceinbox._tcp", domain: nil),
+            for: .bonjourWithTXTRecord(type: "_codexwatch._tcp", domain: nil),
             using: parameters
         )
         browser.stateUpdateHandler = { [weak self] browserState in

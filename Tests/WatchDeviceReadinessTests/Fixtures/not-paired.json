@@ -1,0 +1,7 @@
+{
+  "info":{"outcome":"success"},
+  "result":{"devices":[
+    {"identifier":"WATCH-NOT-PAIRED","deviceProperties":{"bootState":"booted","ddiServicesAvailable":true,"developerModeStatus":"enabled","name":"Fixture Watch","osVersionNumber":"26.5"},"hardwareProperties":{"deviceType":"appleWatch","marketingName":"Apple Watch Ultra 2","platform":"watchOS","reality":"physical"},"connectionProperties":{"pairingState":"unpaired","transportType":"localNetwork","tunnelState":"connected"}},
+    {"identifier":"PHONE-READY","deviceProperties":{"bootState":"booted","ddiServicesAvailable":true,"developerModeStatus":"enabled","name":"Fixture Phone","osVersionNumber":"26.5"},"hardwareProperties":{"deviceType":"iPhone","marketingName":"iPhone 15","platform":"iOS","reality":"physical"},"connectionProperties":{"pairingState":"paired","transportType":"wired","tunnelState":"connected"}}
+  ]}
+}

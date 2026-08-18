@@ -1,0 +1,5 @@
+{
+  "activeSDK":"26.5",
+  "runtimeInventory":{"runtimes":[{"identifier":"com.apple.CoreSimulator.SimRuntime.watchOS-26-5","version":"26.5","platform":"watchOS","isAvailable":true}]},
+  "deviceInventory":{"devices":{"com.apple.CoreSimulator.SimRuntime.watchOS-26-5":[{"name":"Fixture Watch","udid":"00000000-0000-0000-0000-000000000099","isAvailable":true,"deviceTypeIdentifier":"com.apple.CoreSimulator.SimDeviceType.Apple-Watch-Fixture"}]}}
+}

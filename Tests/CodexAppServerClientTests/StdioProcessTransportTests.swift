@@ -18,6 +18,25 @@ import Darwin
     #expect(recorder.stoppedCreatedProcessCount == 1)
 }
 
+@Test func stdioCanReplaceRatherThanMergeTheInheritedEnvironment() async throws {
+    let transport = StdioProcessTransport(
+        executable: "/usr/bin/env",
+        arguments: [],
+        environment: ["COMPATIBILITY_SENTINEL": "isolated"],
+        inheritEnvironment: false
+    )
+    var iterator = transport.frames().makeAsyncIterator()
+
+    try await transport.connect()
+    var lines: [String] = []
+    while let frame = try await iterator.next() {
+        lines.append(String(decoding: frame, as: UTF8.self))
+    }
+    await transport.close()
+
+    #expect(lines == ["COMPATIBILITY_SENTINEL=isolated"])
+}
+
 @Test func concurrentStdioCloseBoundsHungChildAndFinishesFramesOnce() async throws {
     let recorder = ProcessRecorder()
     let signaling = StdioSignalingRecorder()

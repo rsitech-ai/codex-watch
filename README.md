@@ -1,35 +1,40 @@
-# Voice Inbox
+# Codex Watch
 
-[![CI](https://github.com/rsitech-ai/voice-inbox-watch/actions/workflows/ci.yml/badge.svg)](https://github.com/rsitech-ai/voice-inbox-watch/actions/workflows/ci.yml)
+[![CI](https://github.com/rsitech-ai/codex-watch/actions/workflows/ci.yml/badge.svg)](https://github.com/rsitech-ai/codex-watch/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
-Voice Inbox is an open-source project by [RSI Tech](https://rsitech.ai),
-maintained at [info@rsitech.ai](mailto:info@rsitech.ai).
+Codex Watch is an open-source project by [RSI Tech](https://rsitech.ai),
+maintained at [info@rsitech.ai](mailto:info@rsitech.ai). The canonical
+repository is [`rsitech-ai/codex-watch`](https://github.com/rsitech-ai/codex-watch).
 
-Voice Inbox is a standalone Apple Watch voice-capture app. It records an idea,
-keeps the audio durably on the Watch while the Mac is unavailable, and sends it
-over authenticated local HTTPS to an invisible macOS bridge. The bridge
-transcribes locally and prepares the transcript for a dedicated `Codex Voice
-Inbox` through a separately owned local Codex App Server.
+Codex Watch is a standalone Apple Watch voice-capture app plus a user-facing
+macOS companion. It records an idea, keeps the audio durably on the Watch while
+the Mac is unavailable, and sends it over authenticated local HTTPS to the
+installed Codex Watch Mac app. That app transcribes locally with Apple Speech
+and inserts the transcript into a local Codex App Server Inbox thread named
+Codex Watch. This is not ChatGPT.app delivery.
 
-There is no iPhone target, WatchConnectivity relay, visible Mac application,
-menu-bar item, settings window, or cloud-audio fallback. The macOS component is
-background infrastructure packaged with `LSBackgroundOnly=true`; raw audio is
-never submitted to Codex. This project is not affiliated with or endorsed by
-OpenAI.
+There is no iPhone target, WatchConnectivity relay, extra chat client, or
+cloud-audio fallback. The LaunchAgent still owns the listener; opening the Mac
+window does not start a second daemon. Raw audio is never submitted to Codex.
+This project is not affiliated with or endorsed by OpenAI.
 
 ## Release status
 
 - `repo-ready` means package tests, the Watch simulator build, bridge smokes,
   privacy metadata, and release packaging pass for the published source.
-- `package-ready` applies only to the downloadable macOS bridge artifact after
-  its exact signature, checksum, and notarization state are verified.
-- Physical Apple Watch capture, device-to-Mac transfer, Speech permission, and
-  login-restart behavior remain device/operator verification gates.
+- The exact `v0.1.0` macOS bridge download is `package-ready`: its published
+  checksum, Developer ID signature, Gatekeeper notarization assessment, and
+  stapled ticket were verified. This does not prove the Watch app on hardware.
+- Physical Apple Watch capture and the complete Watch-to-Mac workflow remain
+  `blocked:external` while the connected Watch's CoreDevice tunnel is
+  disconnected; simulator evidence is not physical-device evidence.
 - The Watch app is currently distributed as source. App Store signing,
   App Store Connect metadata, TestFlight, and review are separate release gates.
-- Codex App Server compatibility is version-sensitive and experimental. A local
-  integration result is not an OpenAI support guarantee or proof that every
+- Codex App Server compatibility is version-specific. The latest retained
+  isolated `thread/list` smoke and date are recorded in
+  [`docs/RELEASE-VERIFICATION.md`](docs/RELEASE-VERIFICATION.md); other versions
+  remain `unverified`. This is not an OpenAI support guarantee or proof that an
   official Codex client will render an inserted item.
 
 ## Requirements
@@ -42,21 +47,21 @@ OpenAI.
 
 ## Repository layout
 
-- `WatchApp/` and `CodexWatch.xcodeproj`: the only user-visible product and its
-  Watch-hosted tests. The Xcode project has no iOS application target.
+- `WatchApp/` and `CodexWatch.xcodeproj`: the Watch app and its hosted tests.
+  The Xcode project has no iOS application target.
 - `Sources/CodexWatchCore`: durable Watch queue and transfer state machine.
 - `Sources/CodexBridgeService` and `Sources/CodexBridgeDelivery`: authenticated
   intake, local Speech transcription, recovery journal, and Codex Inbox adapter.
-- `Sources/CodexWatchBridgeCLI`: the headless bridge commands and lifecycle.
-- `Bridge/` and `Scripts/`: background-only bundle metadata, lifecycle
-  delegates, and release packaging.
+- `Sources/CodexWatchBridgeCLI`: the Mac app, bridge commands, and lifecycle.
+- `Bridge/` and `Scripts/`: app bundle metadata, LaunchAgent template, and
+  release packaging.
 
 ## Local build and verification
 
 These commands do not create or mutate a real Codex task:
 
 ```bash
-swift test --no-parallel
+Scripts/run-swift-package-tests.sh
 
 xcodebuild \
   -project CodexWatch.xcodeproj \
@@ -68,11 +73,26 @@ xcodebuild \
 
 bridge_output="$(mktemp -d /private/tmp/codex-watch-bridge-build.XXXXXX)"
 Scripts/build-bridge-app.sh --output "$bridge_output"
-plutil -lint "$bridge_output/VoiceInboxBridge.app/Contents/Info.plist"
+plutil -lint "$bridge_output/CodexWatch.app/Contents/Info.plist"
 test "$(/usr/libexec/PlistBuddy -c 'Print :LSBackgroundOnly' \
-  "$bridge_output/VoiceInboxBridge.app/Contents/Info.plist")" = true
+  "$bridge_output/CodexWatch.app/Contents/Info.plist")" = false
 
 Scripts/run-watch-bridge-smoke.sh
+
+# Read-only physical readiness; never invokes Xcode or changes device state.
+swift run watch-device-preflight
+
+# Read-only exact-runtime selector used by hosted CI.
+swift run watch-simulator-selector --format shell
+
+# Non-mutating compatibility probe. Supply an explicit executable; there is no
+# PATH, Desktop App Server, normal Codex home, or existing-task fallback.
+mkdir -p docs/evidence
+swift run codex-compatibility-smoke \
+  --codex /opt/homebrew/bin/codex \
+  --evidence-directory "$PWD/docs/evidence" \
+  --source-commit "$(git rev-parse HEAD)" \
+  --timeout-seconds 20
 ```
 
 Installer tests inject temporary paths plus fake launchctl, signature, identity,
@@ -83,16 +103,16 @@ physical-Watch proof remain explicit external release/device gates.
 ## Download the Mac bridge
 
 Download the latest bridge package, `release-manifest.json`, and `SHA256SUMS` from
-[GitHub Releases](https://github.com/rsitech-ai/voice-inbox-watch/releases/latest).
+[GitHub Releases](https://github.com/rsitech-ai/codex-watch/releases/latest).
 Verify the package before unzipping:
 
 ```bash
 shasum -a 256 -c SHA256SUMS
-unzip VoiceInboxBridge-*.zip
+unzip CodexWatch-*.zip
 ```
 
 The architecture is encoded in the archive filename. The archive contains
-`VoiceInboxBridge.app`, the install/uninstall delegates, this README, the
+`CodexWatch.app`, the install/uninstall delegates, this README, the
 Apache-2.0 license, and the project NOTICE. The Watch app is not sideloaded
 from this archive; build it from source with Xcode until an App Store release
 exists.
@@ -109,14 +129,15 @@ per-user application, state, and LaunchAgent paths:
 # the installer resolves it to a regular executable for launchd.
 # Replace 192.168.1.42 with this Mac's current Wi-Fi or Ethernet address.
 # Loopback addresses are rejected because an Apple Watch cannot reach them.
-cd /absolute/path/VoiceInboxBridge-0.1.0-macos-arm64
+cd /absolute/path/CodexWatch-0.1.0-macos-arm64
 ./install-bridge.sh \
-  --bundle "$PWD/VoiceInboxBridge.app" \
+  --bundle "$PWD/CodexWatch.app" \
   --codex /opt/homebrew/bin/codex \
   --bind-host 192.168.1.42 \
   --advertised-host 192.168.1.42
 
-"$HOME/Library/Application Support/VoiceInboxBridge/Service/VoiceInboxBridge.app/Contents/MacOS/codex-watch-bridge" status
+"$HOME/Library/Application Support/CodexWatch/Service/CodexWatch.app/Contents/MacOS/codex-watch-bridge" status
+open "$HOME/Library/Application Support/CodexWatch/Service/CodexWatch.app"
 ./uninstall-bridge.sh
 ./uninstall-bridge.sh --purge-data # explicitly removes installer-owned state
 ```
@@ -127,10 +148,10 @@ preserves all state; only `--purge-data` removes the installer-owned State root.
 
 ## Watch flow
 
-1. Open Voice Inbox and tap the microphone to record; stopping first commits the
+1. Open Codex Watch and tap the microphone to record; stopping first commits the
    `.m4a` and metadata to the Watch queue. A recording is bounded to the shared
    15-minute protocol limit, with a visible countdown during the final minute.
-2. Open **Mac Bridge**, choose the discovered Mac, compare the certificate
+2. Tap **Pair with Mac**, choose the discovered Mac, compare the certificate
    phrase, and enter the bridge's one-time six-digit code.
 3. The Watch uploads saved memos when the paired bridge is available and polls
    authenticated delivery status. Foreground maintenance and best-effort
@@ -152,16 +173,21 @@ the model not to inspect files or execute the captured idea; that instruction
 is not a technical no-tools boundary. Use the bridge only with a trusted Codex
 installation and review the privacy boundary below.
 
-## Pairing from the headless bridge
+## Pairing from the Mac app
 
-The installed bridge reads its per-user identity directly from Keychain. No
-PKCS#12 path or password file is used for production pairing. The command prints
-the human-comparable phrase first and the one-time code second; the Watch must
-show that exact phrase before the code is entered.
+Open the installed app to show the certificate phrase and a one-time 6-digit
+code. Compare that exact phrase on the Watch before entering the code. The
+code expires after ten minutes and is accepted once.
 
 ```bash
-"$HOME/Library/Application Support/VoiceInboxBridge/Service/VoiceInboxBridge.app/Contents/MacOS/codex-watch-bridge" pair \
-  --state-root "$HOME/Library/Application Support/VoiceInboxBridge/State"
+open "$HOME/Library/Application Support/CodexWatch/Service/CodexWatch.app"
+```
+
+The CLI still prints the same phrase first and code second if you need it:
+
+```bash
+"$HOME/Library/Application Support/CodexWatch/Service/CodexWatch.app/Contents/MacOS/codex-watch-bridge" pair \
+  --state-root "$HOME/Library/Application Support/CodexWatch/State"
 ```
 
 If the installed executable is absent while repairing a source checkout, build
@@ -170,8 +196,7 @@ the executable and invoke that source-built path with the same `pair` and
 `--identity-password-file` options are fixture/compatibility inputs only; they
 are not the installed production flow.
 
-The raw 256-bit fingerprint and identity password are not printed. The code
-expires after ten minutes and is accepted once.
+The raw 256-bit fingerprint and identity password are not printed.
 
 ## Delivered-memo retention
 
@@ -186,7 +211,7 @@ To remove all verified delivered material immediately, first stop the resident
 bridge and run:
 
 ```bash
-VoiceInboxBridge.app/Contents/MacOS/codex-watch-bridge purge-delivered \
+CodexWatch.app/Contents/MacOS/codex-watch-bridge purge-delivered \
   --state-root /absolute/private/bridge-state
 ```
 
@@ -208,24 +233,21 @@ retention maintenance failures.
 
 ## Local Speech permission
 
-The bridge never falls back to cloud transcription. Check permission without
-showing a prompt:
+The bridge never falls back to cloud transcription. Open Codex Watch and
+choose **Allow Speech Recognition**. That prompt must come from the app window;
+the LaunchAgent `run` process cannot show it.
+
+The CLI still reports status without prompting:
 
 ```bash
-VoiceInboxBridge.app/Contents/MacOS/codex-watch-bridge speech-status \
+CodexWatch.app/Contents/MacOS/codex-watch-bridge speech-status \
   --state-root /absolute/private/bridge-state
 ```
 
-On first setup, explicitly request the macOS Speech Recognition permission:
-
-```bash
-VoiceInboxBridge.app/Contents/MacOS/codex-watch-bridge authorize-speech \
-  --state-root /absolute/private/bridge-state
-```
-
-`authorize-speech` is the only bridge command that requests this permission.
-If access is denied, the bridge reports the System Settings action and keeps
-the committed recording for recovery instead of using a network recognizer.
+`authorize-speech` remains available as a Terminal fallback. If access is
+denied, enable Speech Recognition for Codex Watch in System Settings.
+Committed recordings stay on this Mac for retry instead of using a network
+recognizer.
 
 ## Operational status
 
@@ -233,7 +255,7 @@ The read-only status command does not create a service lock or request system
 permission:
 
 ```bash
-VoiceInboxBridge.app/Contents/MacOS/codex-watch-bridge status \
+CodexWatch.app/Contents/MacOS/codex-watch-bridge status \
   --state-root /absolute/private/bridge-state
 ```
 
@@ -247,6 +269,7 @@ Codex thread identifiers.
 - Public maintainer: [RSI Tech](https://rsitech.ai)
 - Public and confidential contact: [info@rsitech.ai](mailto:info@rsitech.ai)
 - Contributions: [CONTRIBUTING.md](CONTRIBUTING.md)
+- Support: [SUPPORT.md](SUPPORT.md)
 - Security reports: [SECURITY.md](SECURITY.md)
 - Community standard: [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
 

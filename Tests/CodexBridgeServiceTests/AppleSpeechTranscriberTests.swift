@@ -47,6 +47,22 @@ import Testing
     }
 }
 
+@Test func speechTranscriberFallsBackFromRegionTaggedEnglishToASupportedEnglishLocale() async throws {
+    let audio = try privateAudioFixture()
+    let transcriber = AppleSpeechTranscriber(
+        authorizationStatus: { .authorized },
+        supportsLocale: { SpeechLocaleSelection.normalized($0.identifier) == "en-us" },
+        recognize: { _, locale in
+            #expect(SpeechLocaleSelection.normalized(locale.identifier) == "en-us")
+            return "captured on mac"
+        }
+    )
+    #expect(
+        try await transcriber.transcribe(committedAudio: audio, localeHint: "en_PL")
+            == "captured on mac"
+    )
+}
+
 @Test func speechTranscriberReturnsTrimmedLocalRecognitionAndPreservesTypedFailure() async throws {
     let audio = try privateAudioFixture()
     let success = AppleSpeechTranscriber(
@@ -105,4 +121,20 @@ private func privateAudioFixture() throws -> CommittedAudioAsset {
         ofItemAtPath: url.path
     )
     return try CommittedAudioAsset(url: url, expectedSHA256: AudioDigest.hex(data))
+}
+
+@Test func speechRecognitionFileCopiesCAFBytesNamedAsM4A() throws {
+    let url = FileManager.default.temporaryDirectory.appending(
+        path: "speech-caf-\(UUID().uuidString).m4a"
+    )
+    var bytes = Data("caff".utf8)
+    bytes.append(Data(repeating: 0, count: 32))
+    try bytes.write(to: url, options: .atomic)
+    defer { try? FileManager.default.removeItem(at: url) }
+
+    let prepared = try SpeechRecognitionFile.prepared(from: url)
+    defer { prepared.release() }
+    #expect(prepared.cleanup == true)
+    #expect(prepared.url.pathExtension == "caf")
+    #expect(try Data(contentsOf: prepared.url) == bytes)
 }

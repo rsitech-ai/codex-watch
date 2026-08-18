@@ -1,7 +1,7 @@
 # Contributing
 
-Thank you for helping improve Voice Inbox. The project is publicly maintained
-by [RSI Tech](https://rsitech.ai).
+Thank you for helping improve Codex Watch (`codex-watch`). The project is
+publicly maintained by [RSI Tech](https://rsitech.ai).
 
 ## Before opening a change
 
@@ -14,7 +14,7 @@ by [RSI Tech](https://rsitech.ai).
 ## Local verification
 
 ```bash
-swift test --no-parallel
+Scripts/run-swift-package-tests.sh
 Tests/ReleasePackagingTests/package_bridge_release_contract_test.sh
 xcodebuild \
   -project CodexWatch.xcodeproj \
@@ -34,5 +34,6 @@ impact, the affected trust boundary, and the exact verification performed.
 By contributing, you agree that your contribution is licensed under the
 [Apache License 2.0](LICENSE).
 
-Questions about public or confidential project matters can be sent to
+Support boundaries are in [SUPPORT.md](SUPPORT.md). Questions about public or
+confidential project matters can be sent to
 [info@rsitech.ai](mailto:info@rsitech.ai).

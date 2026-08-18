@@ -9,21 +9,28 @@
 /* Begin PBXBuildFile section */
 		06A997933D74F06140F8DA69 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 669D3661A6FF2FB0409A6FD0 /* PrivacyInfo.xcprivacy */; };
 		128F8E708E2FE272D4FA83CB /* VoiceCaptureModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8DA149FEE1E1E0EBF9E71525 /* VoiceCaptureModel.swift */; };
+		136BC4B0E74A12F3D0981C1A /* SignalSpineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 971902C76CADB954703B02A8 /* SignalSpineView.swift */; };
 		189F2B39B327166D10EDA608 /* CodexWatchCore in Frameworks */ = {isa = PBXBuildFile; productRef = CBBCF6D03A8E40F05E3ACB4A /* CodexWatchCore */; };
 		1E0E0CE6496093FBDB587E58 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0315AD28D8DC607C812CBA7 /* ContentView.swift */; };
 		280FC69A3CD5341595C856BE /* CodexWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3DA6D1E943146C2FD2656B1 /* CodexWatchApp.swift */; };
+		2F40308B828F54A190CEE4E9 /* WatchPrimaryActionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA2ADF6CA4DC2932992C3CE6 /* WatchPrimaryActionView.swift */; };
 		31E2C2C3D458210602630E01 /* VoiceCaptureModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6A1073E31AC6348CB0F169E /* VoiceCaptureModelTests.swift */; };
+		341638B77D88277DEFFC93E7 /* RelayLedgerRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C729F6BFA33638862EBC66F /* RelayLedgerRow.swift */; };
 		390AB3798EA1E0A20382D0DC /* WatchAudioPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADDEB5B27DF3A2183F971A43 /* WatchAudioPlayer.swift */; };
+		393339C91CD4A8A24D11D60F /* WatchExperienceTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61FF8956B5F9DFFD42F7E121 /* WatchExperienceTheme.swift */; };
 		3F4083F8F98CC4CD424BC2DF /* PairingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4AD5207B26F6BB9AD0D7675 /* PairingView.swift */; };
 		4CA00ED74A8B0EBC6C5A26A9 /* AVFAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FB81EBE79BBDA4F12AABC8AC /* AVFAudio.framework */; };
 		4D112A473AAA8C1BB989F2ED /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C8E092477D638DBA85F956BC /* Assets.xcassets */; };
 		5542654FD8E752E9EC5D3AB9 /* BridgeDiscovery.swift in Sources */ = {isa = PBXBuildFile; fileRef = D337B84A148EAD91CE8BD689 /* BridgeDiscovery.swift */; };
 		5A23DB0AEB36F98C773488C8 /* QueueView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6ACC57379F892ECA15AC36A /* QueueView.swift */; };
+		6FAC000449C3ABCA0A8BD98F /* WatchExperiencePresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB898B666BA553E60A733AD0 /* WatchExperiencePresentation.swift */; };
 		75DD2594440CCB4DA214F683 /* BridgeKeychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EFAEAC95FC4F91EDC2B6386 /* BridgeKeychain.swift */; };
 		88B816FD3E44FF391CD35BD5 /* AudioRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035AB61BAD77A10B94240861 /* AudioRecorder.swift */; };
+		9CF2E09D3A0816A882C78B02 /* WatchRenderScenario.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8619B8CAAABA3BCE2D65E5C /* WatchRenderScenario.swift */; };
 		D09144E724FB069323966030 /* HTTPSBridgeTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0480F6F709663077465123A /* HTTPSBridgeTransport.swift */; };
 		DCCE3F8B079CBEEBB252AECC /* WatchRetentionPreference.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38E89C6B058D31DCD8ED5918 /* WatchRetentionPreference.swift */; };
 		F8307F5F2BB5CBBBD8918C4A /* RetentionSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 504A23C7515831358886A734 /* RetentionSettingsView.swift */; };
+		FED742992193E3C5CC52B998 /* CaptureScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = E398C90C14F20AD3B6F13EF9 /* CaptureScene.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -40,10 +47,13 @@
 		035AB61BAD77A10B94240861 /* AudioRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioRecorder.swift; sourceTree = "<group>"; };
 		38E89C6B058D31DCD8ED5918 /* WatchRetentionPreference.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchRetentionPreference.swift; sourceTree = "<group>"; };
 		504A23C7515831358886A734 /* RetentionSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RetentionSettingsView.swift; sourceTree = "<group>"; };
+		61FF8956B5F9DFFD42F7E121 /* WatchExperienceTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchExperienceTheme.swift; sourceTree = "<group>"; };
 		669D3661A6FF2FB0409A6FD0 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		7C729F6BFA33638862EBC66F /* RelayLedgerRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RelayLedgerRow.swift; sourceTree = "<group>"; };
 		81B6C1733E9680377C15F1B5 /* CodexWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CodexWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		829D986282C3BF659B151704 /* CodexWatchTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CodexWatchTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		8DA149FEE1E1E0EBF9E71525 /* VoiceCaptureModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceCaptureModel.swift; sourceTree = "<group>"; };
+		971902C76CADB954703B02A8 /* SignalSpineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignalSpineView.swift; sourceTree = "<group>"; };
 		9EFAEAC95FC4F91EDC2B6386 /* BridgeKeychain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BridgeKeychain.swift; sourceTree = "<group>"; };
 		A0315AD28D8DC607C812CBA7 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		A3DA6D1E943146C2FD2656B1 /* CodexWatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexWatchApp.swift; sourceTree = "<group>"; };
@@ -52,9 +62,13 @@
 		C0480F6F709663077465123A /* HTTPSBridgeTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HTTPSBridgeTransport.swift; sourceTree = "<group>"; };
 		C8E092477D638DBA85F956BC /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		D337B84A148EAD91CE8BD689 /* BridgeDiscovery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BridgeDiscovery.swift; sourceTree = "<group>"; };
+		DB898B666BA553E60A733AD0 /* WatchExperiencePresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchExperiencePresentation.swift; sourceTree = "<group>"; };
+		E398C90C14F20AD3B6F13EF9 /* CaptureScene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureScene.swift; sourceTree = "<group>"; };
 		E4AD5207B26F6BB9AD0D7675 /* PairingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PairingView.swift; sourceTree = "<group>"; };
 		E6A1073E31AC6348CB0F169E /* VoiceCaptureModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceCaptureModelTests.swift; sourceTree = "<group>"; };
 		E6ACC57379F892ECA15AC36A /* QueueView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QueueView.swift; sourceTree = "<group>"; };
+		EA2ADF6CA4DC2932992C3CE6 /* WatchPrimaryActionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchPrimaryActionView.swift; sourceTree = "<group>"; };
+		F8619B8CAAABA3BCE2D65E5C /* WatchRenderScenario.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchRenderScenario.swift; sourceTree = "<group>"; };
 		FB81EBE79BBDA4F12AABC8AC /* AVFAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFAudio.framework; path = System/Library/Frameworks/AVFAudio.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
@@ -95,15 +109,22 @@
 				035AB61BAD77A10B94240861 /* AudioRecorder.swift */,
 				D337B84A148EAD91CE8BD689 /* BridgeDiscovery.swift */,
 				9EFAEAC95FC4F91EDC2B6386 /* BridgeKeychain.swift */,
+				E398C90C14F20AD3B6F13EF9 /* CaptureScene.swift */,
 				A3DA6D1E943146C2FD2656B1 /* CodexWatchApp.swift */,
 				A0315AD28D8DC607C812CBA7 /* ContentView.swift */,
 				C0480F6F709663077465123A /* HTTPSBridgeTransport.swift */,
 				E4AD5207B26F6BB9AD0D7675 /* PairingView.swift */,
 				669D3661A6FF2FB0409A6FD0 /* PrivacyInfo.xcprivacy */,
 				E6ACC57379F892ECA15AC36A /* QueueView.swift */,
+				7C729F6BFA33638862EBC66F /* RelayLedgerRow.swift */,
 				504A23C7515831358886A734 /* RetentionSettingsView.swift */,
+				971902C76CADB954703B02A8 /* SignalSpineView.swift */,
 				8DA149FEE1E1E0EBF9E71525 /* VoiceCaptureModel.swift */,
 				ADDEB5B27DF3A2183F971A43 /* WatchAudioPlayer.swift */,
+				DB898B666BA553E60A733AD0 /* WatchExperiencePresentation.swift */,
+				61FF8956B5F9DFFD42F7E121 /* WatchExperienceTheme.swift */,
+				EA2ADF6CA4DC2932992C3CE6 /* WatchPrimaryActionView.swift */,
+				F8619B8CAAABA3BCE2D65E5C /* WatchRenderScenario.swift */,
 				38E89C6B058D31DCD8ED5918 /* WatchRetentionPreference.swift */,
 			);
 			path = WatchApp;
@@ -242,14 +263,21 @@
 				88B816FD3E44FF391CD35BD5 /* AudioRecorder.swift in Sources */,
 				5542654FD8E752E9EC5D3AB9 /* BridgeDiscovery.swift in Sources */,
 				75DD2594440CCB4DA214F683 /* BridgeKeychain.swift in Sources */,
+				FED742992193E3C5CC52B998 /* CaptureScene.swift in Sources */,
 				280FC69A3CD5341595C856BE /* CodexWatchApp.swift in Sources */,
 				1E0E0CE6496093FBDB587E58 /* ContentView.swift in Sources */,
 				D09144E724FB069323966030 /* HTTPSBridgeTransport.swift in Sources */,
 				3F4083F8F98CC4CD424BC2DF /* PairingView.swift in Sources */,
 				5A23DB0AEB36F98C773488C8 /* QueueView.swift in Sources */,
+				341638B77D88277DEFFC93E7 /* RelayLedgerRow.swift in Sources */,
 				F8307F5F2BB5CBBBD8918C4A /* RetentionSettingsView.swift in Sources */,
+				136BC4B0E74A12F3D0981C1A /* SignalSpineView.swift in Sources */,
 				128F8E708E2FE272D4FA83CB /* VoiceCaptureModel.swift in Sources */,
 				390AB3798EA1E0A20382D0DC /* WatchAudioPlayer.swift in Sources */,
+				6FAC000449C3ABCA0A8BD98F /* WatchExperiencePresentation.swift in Sources */,
+				393339C91CD4A8A24D11D60F /* WatchExperienceTheme.swift in Sources */,
+				2F40308B828F54A190CEE4E9 /* WatchPrimaryActionView.swift in Sources */,
+				9CF2E09D3A0816A882C78B02 /* WatchRenderScenario.swift in Sources */,
 				DCCE3F8B079CBEEBB252AECC /* WatchRetentionPreference.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -333,7 +361,7 @@
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = ai.rsitech.voiceinbox.tests;
+				PRODUCT_BUNDLE_IDENTIFIER = ai.rsitech.codexwatch.tests;
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
 				TARGETED_DEVICE_FAMILY = 4;
@@ -349,7 +377,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = WatchApp/Info.plist;
-				PRODUCT_BUNDLE_IDENTIFIER = ai.rsitech.voiceinbox;
+				PRODUCT_BUNDLE_IDENTIFIER = ai.rsitech.codexwatch;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
 				SKIP_INSTALL = NO;
@@ -430,7 +458,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = WatchApp/Info.plist;
-				PRODUCT_BUNDLE_IDENTIFIER = ai.rsitech.voiceinbox;
+				PRODUCT_BUNDLE_IDENTIFIER = ai.rsitech.codexwatch;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
 				SKIP_INSTALL = NO;
@@ -448,7 +476,7 @@
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = ai.rsitech.voiceinbox.tests;
+				PRODUCT_BUNDLE_IDENTIFIER = ai.rsitech.codexwatch.tests;
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
 				TARGETED_DEVICE_FAMILY = 4;

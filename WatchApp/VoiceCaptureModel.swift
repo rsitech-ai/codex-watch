@@ -39,8 +39,10 @@ enum WatchBridgeConnectionState: Equatable {
         switch self {
         case .paired, .waiting, .sending, .received:
             return true
-        case .notPaired, .pairing, .needsAttention:
+        case .notPaired, .pairing:
             return false
+        case let .needsAttention(message):
+            return message != "Pair again"
         }
     }
 
@@ -346,7 +348,7 @@ final class VoiceCaptureModel: ObservableObject {
         case .interruptedRecordingFound, .failed(.recorderStop), .failed(.queueCommit):
             return "Audio is still preserved locally"
         case .preparing, .saving:
-            return "Keep Voice Inbox open"
+            return "Keep Codex Watch open"
         default:
             return "Ideas stay on your devices"
         }
@@ -541,8 +543,11 @@ final class VoiceCaptureModel: ObservableObject {
         } catch is CancellationError {
             bridgeState = .notPaired
             return false
+        } catch let error as WatchBridgeClientError {
+            bridgeState = .needsAttention(PairingFailurePresentation.message(for: error))
+            return false
         } catch {
-            bridgeState = .needsAttention("Pairing failed. The code may be invalid or the bridge may be unavailable.")
+            bridgeState = .needsAttention("Couldn’t pair. Check the bridge, phrase, and code.")
             return false
         }
     }
@@ -740,7 +745,9 @@ final class VoiceCaptureModel: ObservableObject {
                     }
                     await refreshQueue()
                     if state == .needsAttention {
-                        bridgeState = .needsAttention("The Mac bridge needs attention. Audio remains on this Watch.")
+                        bridgeState = .needsAttention(
+                            "Mac received the audio. Local transcription still needs attention."
+                        )
                         return
                     }
                     continue
@@ -755,7 +762,7 @@ final class VoiceCaptureModel: ObservableObject {
                     return
                 case .needsAttention:
                     bridgeState = .needsAttention(
-                        "The Mac bridge needs attention. Audio remains on this Watch."
+                        "Mac received the audio. Local transcription still needs attention."
                     )
                     return
                 case .received:
