@@ -1,6 +1,6 @@
 # Physical Apple Watch Acceptance
 
-This checklist is the hardware acceptance gate for Voice Inbox. It does not
+This checklist is the hardware acceptance gate for Codex Watch. It does not
 promote source inspection, previews, simulator tests, or bridge packaging into
 physical-Watch proof. Use synthetic, non-confidential speech and test data.
 

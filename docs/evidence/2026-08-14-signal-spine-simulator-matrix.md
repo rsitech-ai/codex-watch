@@ -20,8 +20,8 @@ The capture contains 35 content-free PNGs: `ready`, `recording`,
 of the five sizes. The manifest contains one row per matrix cell and a SHA-256
 for every PNG. All 35 hashes were independently recomputed and matched.
 
-- Evidence directory:
-  `/Users/s1kor/.codex/visualizations/2026/08/14/signal-spine-c8f0bc3/`
+- Evidence directory: local untracked visualization output from
+  `Scripts/capture-watch-ui-evidence.sh` (not in git).
 - Manifest: `manifest.tsv` in that directory.
 - Capture command: `Scripts/capture-watch-ui-evidence.sh` with the exact Debug
   app and a new empty output directory.

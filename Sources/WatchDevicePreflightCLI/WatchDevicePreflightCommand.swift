@@ -58,7 +58,7 @@ final class PrivateInventoryWorkspace: InventoryWorkspace, @unchecked Sendable {
         baseDirectory: URL = FileManager.default.temporaryDirectory
     ) throws -> PrivateInventoryWorkspace {
         let root = baseDirectory.appending(
-            path: "voice-inbox-watch-preflight-\(UUID().uuidString)",
+            path: "codex-watch-preflight-\(UUID().uuidString)",
             directoryHint: .isDirectory
         )
         try FileManager.default.createDirectory(

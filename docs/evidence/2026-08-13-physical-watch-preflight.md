@@ -21,7 +21,7 @@ or services. Earlier bounded physical `xcodebuild` attempts timed out before
 provisioning and reported that the Watch might need to be unlocked to recover
 from a previous preparation error. Restarting and unlocking the Watch and using
 the wired developer-ready supporting phone did not establish the Watch tunnel.
-No Voice Inbox application defect has been demonstrated at this boundary.
+No Codex Watch application defect has been demonstrated at this boundary.
 
 ## Exact next action
 

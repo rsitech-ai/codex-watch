@@ -4,6 +4,13 @@ All notable public releases are documented here.
 
 ## Unreleased
 
+### Changed
+
+- Public product and repository identity is Codex Watch / `codex-watch`. Bundle
+  IDs, Bonjour type `_voiceinbox._tcp`, LaunchAgent label, Application Support
+  root, TLS certificate CN, and `VoiceInboxBridge.app` filename are unchanged
+  so existing Watch pairing and Speech TCC are preserved.
+
 ### Added
 
 - User-facing macOS Codex Watch window and menu bar for pairing, Speech

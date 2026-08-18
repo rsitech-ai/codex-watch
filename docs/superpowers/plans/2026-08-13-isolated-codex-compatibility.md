@@ -220,7 +220,7 @@ Wrap that client and transport in a production `OwnedCodexCompatibilitySession`.
 
 - [ ] **Step 4: Implement the bounded protocol sequence**
 
-Call `initialize(clientName: "voice-inbox-compatibility-smoke", title: "Voice Inbox Compatibility Smoke", version: BridgeCommand.bridgeVersion)` through a local constant `"0.1.0"` to avoid introducing a dependency on the CLI target. Then call `.threadList`. Accept only an object containing `data` as an array and `nextCursor` as string or null/absent. Never inspect array entries. Wrap the whole operation in a throwing task group timeout and close in an unconditional `defer`-equivalent async path.
+Call `initialize(clientName: "codex-watch-compatibility-smoke", title: "Codex Watch Compatibility Smoke", version: BridgeCommand.bridgeVersion)` through a local constant `"0.1.0"` to avoid introducing a dependency on the CLI target. Then call `.threadList`. Accept only an object containing `data` as an array and `nextCursor` as string or null/absent. Never inspect array entries. Wrap the whole operation in a throwing task group timeout and close in an unconditional `defer`-equivalent async path.
 
 - [ ] **Step 5: Run focused tests and confirm GREEN**
 

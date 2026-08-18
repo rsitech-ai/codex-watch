@@ -27,7 +27,7 @@ Official docs checked this pass: Apple Speech `requestAuthorization` / `notDeter
 | Check | Command / Tool | Result | Evidence path or note |
 | --- | --- | --- | --- |
 | Build | `Scripts/build-bridge-app.sh --output /private/tmp/codex-watch-bridge-build.LqB7KU` | ok, adhoc sign | sidecar removed after install |
-| Install | `Scripts/install-bridge.sh` bind+advertised `192.168.1.38` | `install=ok`; TLS pin prefix unchanged (`8a5f1abc`) | LaunchAgent pid 14299 |
+| Install | `Scripts/install-bridge.sh` bind+advertised current LAN | `install=ok`; TLS pin prefix unchanged | LaunchAgent pid (content-free) |
 | Status | `codex-watch-bridge status` | `state=running; listener=online; speech=not-determined; committed=0; retained=1` | production State root |
 | Partitioned tests | `Scripts/run-swift-package-tests.sh` | `38` + `297` + `303` passed | PKCS#12 split still isolated |
 | Focused tests | presentation/console/processor/installer/pairing/token filters | 97 passed | warnings-as-errors |
@@ -45,7 +45,7 @@ Official docs checked this pass: Apple Speech `requestAuthorization` / `notDeter
 | --- | --- | --- | --- | --- | --- | --- |
 | Sync | new Watch memo on Mac | inspect retained/intake | new capture after on-wrist record | still only the 17 Aug retained memo | failed / blocked | intake empty; retained count 1 |
 | Console | launch installed app | `open` Application Support bundle | visible Codex Watch window | titled Codex Watch; Speech CTA in chrome | verified | AX |
-| Console | live bridge status | status CLI + inspector | listening on current LAN, Bonjour, pin short, pid | `192.168.1.38`; pid 14299; TLS pin unchanged | verified | status + launchctl |
+| Console | live bridge status | status CLI + inspector | listening on current LAN, Bonjour, pin short, pid | LAN bind; TLS pin unchanged | verified | status + launchctl |
 | Console | Watch pairing truth | inspector AX | paired; `needsAttention` is not unpaired | `Paired on this Mac` | verified | AX static text |
 | Console | Speech | in-app CTA | CTA; do not click system Allow | chrome `Allow Speech Recognition.`; status `not-determined` | blocked | status CLI + window title |
 | Toolbar | Refresh | click | reloads | AX click succeeded | verified | AppleScript |
@@ -108,6 +108,6 @@ Open residual risks are hardware/TCC, not merge-blocking source defects.
 ## Final Readiness Label
 
 - Label: **`blocked:external`** for Watch→Mac new-memo delivery and physical queue inspect. Mac console is **smoke-clean** for launch/status/toolbar; Speech remains **`unverified`** until Allow. Watch hosted tests are **`simulator-proven`**.
-- Evidence: installed app listening on `192.168.1.38`, pid 14299, TLS pin prefix unchanged; only the existing 17 Aug retained memo; preflight `SUPPORTING_PHONE_UNAVAILABLE`; Speech not determined; partitioned package tests `38 + 297 + 303` passed.
+- Evidence: installed app listening on the current LAN, TLS pin prefix unchanged; only the existing 17 Aug retained memo; preflight `SUPPORTING_PHONE_UNAVAILABLE`; Speech not determined; partitioned package tests `38 + 297 + 303` passed.
 - Remaining blockers: iPhone CoreDevice tunnel; operator Speech Allow; Watch must stay on the same LAN and in the foreground to upload.
 - Next audit pass: after Speech Allow + a new on-wrist capture while the listener stays on the current address; re-check retained for a second memo.

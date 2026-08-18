@@ -1,4 +1,4 @@
-# Voice Inbox Watch Evidence Hardening Design
+# Codex Watch Evidence Hardening Design
 
 ## Status
 
@@ -7,7 +7,7 @@
   compatibility tooling are implemented on the hardening branch. Full
   end-to-end regression and branch review remain in progress.
 - Physical Watch execution is currently `blocked:external` by Apple CoreDevice
-  preparation, not by a proven Voice Inbox defect.
+  preparation, not by a proven Codex Watch defect.
 
 ## Outcome
 
@@ -17,7 +17,7 @@ why a Watch cannot be built or installed, run deterministic non-mutating gates,
 and complete a documented physical acceptance pass when Apple device services
 are available.
 
-The primary user is the project maintainer validating Voice Inbox before a
+The primary user is the project maintainer validating Codex Watch before a
 public or Apple distribution decision. The primary wrist job remains unchanged:
 record an idea quickly, keep it durable on the Watch, and show truthful delivery
 and recovery state.

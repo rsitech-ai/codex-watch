@@ -13,7 +13,7 @@
 
 ## Outcome
 
-Turn Voice Inbox from a generic stack of status capsules and controls into a
+Turn Codex Watch from a generic stack of status capsules and controls into a
 distinctive wrist-native relay instrument. A user should be able to capture a
 thought immediately, understand exactly where it is in the Watch-to-Mac-to-
 Codex lifecycle, and recover safely when delivery cannot advance.
@@ -58,7 +58,7 @@ not ornamental effects or invented telemetry.
 
 ### Product truth
 
-Voice Inbox is a relay, not a recorder with a decorative status badge. A
+Codex Watch is a relay, not a recorder with a decorative status badge. A
 thought begins on the Watch, may cross to the Mac, and is complete only after
 Codex insertion is confirmed.
 

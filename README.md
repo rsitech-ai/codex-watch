@@ -1,21 +1,23 @@
-# Voice Inbox
+# Codex Watch
 
-[![CI](https://github.com/rsitech-ai/voice-inbox-watch/actions/workflows/ci.yml/badge.svg)](https://github.com/rsitech-ai/voice-inbox-watch/actions/workflows/ci.yml)
+[![CI](https://github.com/rsitech-ai/codex-watch/actions/workflows/ci.yml/badge.svg)](https://github.com/rsitech-ai/codex-watch/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
-Voice Inbox is an open-source project by [RSI Tech](https://rsitech.ai),
-maintained at [info@rsitech.ai](mailto:info@rsitech.ai).
+Codex Watch is an open-source project by [RSI Tech](https://rsitech.ai),
+maintained at [info@rsitech.ai](mailto:info@rsitech.ai). The canonical
+repository is [`rsitech-ai/codex-watch`](https://github.com/rsitech-ai/codex-watch).
 
-Voice Inbox is a standalone Apple Watch voice-capture app. It records an idea,
-keeps the audio durably on the Watch while the Mac is unavailable, and sends it
-over authenticated local HTTPS to the macOS Voice Inbox Bridge. The bridge
-transcribes locally and prepares the transcript for a dedicated `Codex Voice
-Inbox` through a separately owned local Codex App Server.
+Codex Watch is a standalone Apple Watch voice-capture app plus a user-facing
+macOS companion. It records an idea, keeps the audio durably on the Watch while
+the Mac is unavailable, and sends it over authenticated local HTTPS to the
+installed Codex Watch Mac app. That app transcribes locally with Apple Speech
+and inserts the transcript into a local Codex App Server Inbox thread named
+Codex Watch. This is not ChatGPT.app delivery.
 
 There is no iPhone target, WatchConnectivity relay, extra chat client, or
-cloud-audio fallback. The macOS bridge is a user-facing app that still runs the
-existing LaunchAgent listener; raw audio is never submitted to Codex. This
-project is not affiliated with or endorsed by OpenAI.
+cloud-audio fallback. The LaunchAgent still owns the listener; opening the Mac
+window does not start a second daemon. Raw audio is never submitted to Codex.
+This project is not affiliated with or endorsed by OpenAI.
 
 ## Release status
 
@@ -59,7 +61,7 @@ project is not affiliated with or endorsed by OpenAI.
 These commands do not create or mutate a real Codex task:
 
 ```bash
-swift test --no-parallel
+Scripts/run-swift-package-tests.sh
 
 xcodebuild \
   -project CodexWatch.xcodeproj \
@@ -101,7 +103,7 @@ physical-Watch proof remain explicit external release/device gates.
 ## Download the Mac bridge
 
 Download the latest bridge package, `release-manifest.json`, and `SHA256SUMS` from
-[GitHub Releases](https://github.com/rsitech-ai/voice-inbox-watch/releases/latest).
+[GitHub Releases](https://github.com/rsitech-ai/codex-watch/releases/latest).
 Verify the package before unzipping:
 
 ```bash
@@ -146,10 +148,10 @@ preserves all state; only `--purge-data` removes the installer-owned State root.
 
 ## Watch flow
 
-1. Open Voice Inbox and tap the microphone to record; stopping first commits the
+1. Open Codex Watch and tap the microphone to record; stopping first commits the
    `.m4a` and metadata to the Watch queue. A recording is bounded to the shared
    15-minute protocol limit, with a visible countdown during the final minute.
-2. Open **Mac Bridge**, choose the discovered Mac, compare the certificate
+2. Tap **Pair with Mac**, choose the discovered Mac, compare the certificate
    phrase, and enter the bridge's one-time six-digit code.
 3. The Watch uploads saved memos when the paired bridge is available and polls
    authenticated delivery status. Foreground maintenance and best-effort
@@ -267,6 +269,7 @@ Codex thread identifiers.
 - Public maintainer: [RSI Tech](https://rsitech.ai)
 - Public and confidential contact: [info@rsitech.ai](mailto:info@rsitech.ai)
 - Contributions: [CONTRIBUTING.md](CONTRIBUTING.md)
+- Support: [SUPPORT.md](SUPPORT.md)
 - Security reports: [SECURITY.md](SECURITY.md)
 - Community standard: [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
 

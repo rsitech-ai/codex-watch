@@ -5,7 +5,7 @@ usage() {
   cat <<'USAGE'
 usage: package-bridge-release.sh --output ABSOLUTE_DIRECTORY --sign-identity IDENTITY [--notary-profile PROFILE]
 
-Builds the macOS Voice Inbox Bridge app, applies the requested code-signing identity,
+Builds the macOS Codex Watch companion app, applies the requested code-signing identity,
 notarizes and staples public builds, and writes a versioned zip, manifest, and
 SHA256SUMS into a new output directory. The source checkout must be clean. Use
 `-` as IDENTITY only for local ad-hoc validation; a public release requires a
@@ -136,7 +136,7 @@ manifest="$output/release-manifest.json"
 /usr/bin/plutil -create xml1 "$manifest_plist"
 /usr/bin/plutil -insert schemaVersion -integer 1 "$manifest_plist"
 /usr/bin/plutil -insert product -dictionary "$manifest_plist"
-/usr/bin/plutil -insert product.name -string "Voice Inbox Bridge" "$manifest_plist"
+/usr/bin/plutil -insert product.name -string "Codex Watch" "$manifest_plist"
 /usr/bin/plutil -insert product.bundleIdentifier -string "ai.rsitech.voiceinbox.bridge" "$manifest_plist"
 /usr/bin/plutil -insert product.version -string "$version" "$manifest_plist"
 /usr/bin/plutil -insert product.architecture -string "$architecture" "$manifest_plist"

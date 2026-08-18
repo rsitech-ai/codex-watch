@@ -50,7 +50,7 @@ jobs:
       - name: Build and verify ad-hoc release package (latest macOS)
         if: matrix.runner == 'macos-26'
         run: |
-          release_output="$RUNNER_TEMP/voice-inbox-release"
+          release_output="$RUNNER_TEMP/codex-watch-release"
           Scripts/package-bridge-release.sh \
             --output "$release_output" \
             --sign-identity -

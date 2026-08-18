@@ -133,8 +133,8 @@ public struct CodexCompatibilityProbe: Sendable {
 
         do {
             try await session.initialize(
-                clientName: "voice-inbox-compatibility-smoke",
-                title: "Voice Inbox Compatibility Smoke",
+                clientName: "codex-watch-compatibility-smoke",
+                title: "Codex Watch Compatibility Smoke",
                 version: Self.clientVersion
             )
         } catch is CancellationError {

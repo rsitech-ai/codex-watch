@@ -2,7 +2,7 @@
 
 ## Goal
 
-- User-visible outcome: Voice Inbox becomes a distinctive Signal Spine relay instrument whose capture action is immediately reachable and whose Watch, Mac, and Codex states never overclaim progress.
+- User-visible outcome: Codex Watch becomes a distinctive Signal Spine relay instrument whose capture action is immediately reachable and whose Watch, Mac, and Codex states never overclaim progress.
 - How to see it working: launch deterministic Debug scenarios on the installed watchOS simulator matrix and inspect ready, recording, saved-on-Watch, delivered, needs-attention, queue, and pairing screens.
 
 ## Current State

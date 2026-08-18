@@ -5,7 +5,7 @@
 - Target user: the person who already captures thoughts on Apple Watch and needs the Mac to receive, transcribe, and hand them to local Codex Inbox.
 - Primary job: pair the Watch, allow Speech, and see whether a memo arrived on this Mac.
 - Core workflow: open the app → compare phrase/code on Watch → grant Speech → confirm the uploaded memo and retry if transcription is blocked.
-- Business model: local utility for the existing Voice Inbox project. Not App Store in this pass.
+- Business model: local utility for the existing Codex Watch project. Not App Store in this pass.
 - Supported macOS versions: 15.0 and later, Apple silicon as already required by the bridge.
 - Offline behavior: pairing, inbox listing, and Speech prompts are local. Codex insertion still needs the installed Codex executable used by the LaunchAgent.
 - Data handled: pairing secrets in Keychain, audio and transcripts under `~/Library/Application Support/VoiceInboxBridge/State`. The UI reads those files; it does not create a second network stack.
@@ -28,8 +28,8 @@
 
 - Project type: SwiftPM executable packaged by `Scripts/build-bridge-app.sh`.
 - Build command: `Scripts/build-bridge-app.sh --output /absolute/dir`
-- Run command: `open "$HOME/Library/Application Support/VoiceInboxBridge/Service/VoiceInboxBridge.app"` after install, or `script/build_and_run.sh`
-- `script/build_and_run.sh` status: present. Does not kill the LaunchAgent listener.
+- Run command: `open "$HOME/Library/Application Support/VoiceInboxBridge/Service/VoiceInboxBridge.app"` after install.
+- `script/build_and_run.sh --verify` builds a throwaway bundle and refuses to open it as a sidecar.
 - Codex Run action status: skipped (`.codex/` is gitignored in this repo).
 
 ## Design System

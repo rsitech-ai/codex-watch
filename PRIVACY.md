@@ -1,7 +1,8 @@
 # Privacy
 
-Voice Inbox is local-first software. RSI Tech does not operate an analytics,
-telemetry, transcription, or memo-storage service for this project.
+Codex Watch (`codex-watch`) is local-first software. RSI Tech does not
+operate an analytics, telemetry, transcription, or memo-storage service for
+this project.
 
 ## Data handled
 
