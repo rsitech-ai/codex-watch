@@ -24,7 +24,7 @@
     "appStore": null
   },
   "media": {
-    "cardImage": "WatchApp/Assets.xcassets/AppIcon.appiconset/AppIcon-watch-marketing-1024x1024-1x.png",
+    "cardImage": "docs/codex-watch-icon-1024.png",
     "screenshots": []
   },
   "openSource": {
@@ -79,8 +79,7 @@
     "Physical Apple Watch capture and the complete Watch-to-Mac workflow remain blocked:external.",
     "Codex delivery is a local App Server Inbox thread named Codex Watch, not ChatGPT.app.",
     "Speech recognition must be authorized for the installed Mac app signature; the LaunchAgent cannot show that prompt.",
-    "The Watch app is distributed as source; App Store, TestFlight, and review are unverified.",
-    "The user-facing Mac window and current Watch pairing copy live on unmerged branch work until merged to main."
+    "The Watch app is distributed as source; App Store, TestFlight, and review are unverified."
   ],
   "safetyBoundaries": [
     "Never submits raw audio to Codex.",

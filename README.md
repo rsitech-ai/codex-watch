@@ -1,5 +1,9 @@
 # Codex Watch
 
+<p align="center">
+  <img src="docs/codex-watch-icon-1024.png" width="128" height="128" alt="Codex Watch">
+</p>
+
 [![CI](https://github.com/rsitech-ai/codex-watch/actions/workflows/ci.yml/badge.svg)](https://github.com/rsitech-ai/codex-watch/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
