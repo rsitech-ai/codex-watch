@@ -126,6 +126,11 @@ done
 [[ "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$verified_app/Contents/Info.plist")" == "ai.rsitech.codexwatch.bridge" ]]
 [[ "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$verified_app/Contents/Info.plist")" == "$version" ]]
 [[ "$(/usr/libexec/PlistBuddy -c 'Print :LSMinimumSystemVersion' "$verified_app/Contents/Info.plist")" == "$minimum_macos" ]]
+[[ "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIconFile' "$verified_app/Contents/Info.plist")" == "AppIcon" ]]
+[[ -f "$verified_app/Contents/Resources/AppIcon.icns" ]] || {
+  print -u2 "archive verification failed: AppIcon.icns missing"
+  exit 66
+}
 if [[ "$notarization_state" == "accepted-and-stapled" ]]; then
   /usr/bin/xcrun stapler validate "$verified_app"
   /usr/sbin/spctl --assess --type execute --verbose=4 "$verified_app"

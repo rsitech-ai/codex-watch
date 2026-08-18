@@ -54,7 +54,10 @@ struct InstallManifestTests {
     #expect(info["LSMinimumSystemVersion"] as? String == "15.0")
     #expect(info["NSMainNibFile"] == nil)
     #expect(info["NSMainStoryboardFile"] == nil)
-    #expect(info["CFBundleIconFile"] == nil)
+    #expect(info["CFBundleIconFile"] as? String == "AppIcon")
+    #expect(FileManager.default.fileExists(
+        atPath: repositoryRoot.appending(path: "Bridge/AppIcon.icns").path
+    ))
     #expect(manifest["RunAtLoad"] as? Bool == true)
     #expect((manifest["KeepAlive"] as? [String: Bool])?["SuccessfulExit"] == false)
     #expect(manifest["ThrottleInterval"] as? Int == 10)
@@ -74,8 +77,9 @@ struct InstallManifestTests {
     #expect(!(info["NSSpeechRecognitionUsageDescription"] as? String ?? "").isEmpty)
     #expect(info["NSMainNibFile"] == nil)
     #expect(info["NSMainStoryboardFile"] == nil)
-    #expect(info["CFBundleIconFile"] == nil)
+    #expect(info["CFBundleIconFile"] as? String == "AppIcon")
     #expect(FileManager.default.fileExists(atPath: app.appending(path: "Contents/MacOS/codex-watch-bridge").path))
+    #expect(FileManager.default.fileExists(atPath: app.appending(path: "Contents/Resources/AppIcon.icns").path))
 }
 
 @Test func buildProducesStrictlyVerifiableAdHocSignedBundle() throws {

@@ -19,9 +19,12 @@ scratch="$(mktemp -d /private/tmp/codex-watch-bridge-build.XXXXXX)"
 trap 'rm -rf "$scratch"' EXIT
 swift build --package-path "$repo_root" --scratch-path "$scratch" -c release --product codex-watch-bridge
 
-mkdir -p "$app/Contents/MacOS"
+mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
+icon="$repo_root/Bridge/AppIcon.icns"
+[[ -f "$icon" ]] || { print -u2 "missing Mac app icon: $icon"; exit 66; }
 cp "$repo_root/Bridge/Info.plist" "$app/Contents/Info.plist"
 cp "$scratch/release/codex-watch-bridge" "$app/Contents/MacOS/codex-watch-bridge"
+cp "$icon" "$app/Contents/Resources/AppIcon.icns"
 chmod 755 "$app/Contents/MacOS/codex-watch-bridge"
 /usr/bin/plutil -lint "$app/Contents/Info.plist" >/dev/null
 /usr/bin/codesign --force --sign - --timestamp=none "$app"

@@ -11,7 +11,11 @@ All notable public releases are documented here.
   `_codexwatch._tcp`, LaunchAgent `ai.rsitech.codexwatch.bridge`, Application
   Support `CodexWatch/`, `CodexWatch.app`, and TLS CN **Codex Watch**. Existing
   Watch pairing and Speech TCC for the old signature are invalidated; re-pair
-  on-wrist. Do not wipe Watch Keychain from the Mac.
+  on-wrist. Do not wipe Watch Keychain from the Mac. The 0.1.0 GitHub archive
+  was published as `VoiceInboxBridge`; current install and packaging use
+  `CodexWatch.app`.
+- Watch and Mac app icons use one Codex Watch mark (watch bezel plus Signal
+  Spine). The Mac companion bundle ships `AppIcon.icns`.
 
 ### Added
 
