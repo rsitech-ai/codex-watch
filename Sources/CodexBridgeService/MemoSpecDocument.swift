@@ -2,8 +2,83 @@ import CodexBridgeShared
 import Foundation
 
 public enum MemoSpecProvenance: String, Equatable, Sendable {
+    case foundationModels = "foundation-models"
     case appServer = "app-server"
     case localFallback = "local-fallback"
+}
+
+public enum FoundationModelsAvailability: Equatable, Sendable {
+    case available
+    case unavailable(String)
+
+    public var isAvailable: Bool {
+        if case .available = self { return true }
+        return false
+    }
+
+    public var detail: String {
+        switch self {
+        case .available:
+            "On-device Foundation Models can improve transcripts into specs."
+        case let .unavailable(reason):
+            reason
+        }
+    }
+
+    public static func current() -> Self {
+        FoundationModelsSpecImprover.availability()
+    }
+}
+
+public struct MemoSpecImprover: Sendable {
+    private let foundationModels: (any SpecImproving)?
+    private let appServer: (any SpecImproving)?
+
+    public init(
+        foundationModels: (any SpecImproving)? = nil,
+        appServer: (any SpecImproving)? = nil
+    ) {
+        self.foundationModels = foundationModels
+        self.appServer = appServer
+    }
+
+    public func improve(
+        transcript: String,
+        capturedAt: Date,
+        memoID: MemoID
+    ) async -> MemoSpec {
+        if let foundationModels {
+            do {
+                let markdown = try await foundationModels.improveSpec(
+                    memoID: memoID,
+                    transcript: transcript
+                )
+                if let improved = MemoSpecDocument.acceptFoundationModelsMarkdown(markdown) {
+                    return improved
+                }
+            } catch {
+                // ponytail: FM is best-effort; App Server then local wrapper stay downloadable.
+            }
+        }
+        if let appServer {
+            do {
+                let markdown = try await appServer.improveSpec(
+                    memoID: memoID,
+                    transcript: transcript
+                )
+                if let improved = MemoSpecDocument.acceptAppServerMarkdown(markdown) {
+                    return improved
+                }
+            } catch {
+                // ponytail: App Server improvement is best-effort; local wrapper stays downloadable.
+            }
+        }
+        return MemoSpecDocument.localFallback(
+            transcript: transcript,
+            capturedAt: capturedAt,
+            memoID: memoID
+        )
+    }
 }
 
 public struct MemoSpec: Equatable, Sendable {
@@ -52,7 +127,7 @@ public enum MemoSpecDocument {
         let markdown = """
         # \(title)
 
-        > Improvement: unverified local wrapper. Codex App Server did not produce this spec.
+        > Improvement: unverified local wrapper. Foundation Models and Codex App Server did not produce this spec.
 
         ## Summary
         \(summary)
@@ -73,9 +148,17 @@ public enum MemoSpecDocument {
     }
 
     public static func acceptAppServerMarkdown(_ text: String) -> MemoSpec? {
+        accept(text, provenance: .appServer)
+    }
+
+    public static func acceptFoundationModelsMarkdown(_ text: String) -> MemoSpec? {
+        accept(text, provenance: .foundationModels)
+    }
+
+    private static func accept(_ text: String, provenance: MemoSpecProvenance) -> MemoSpec? {
         let markdown = unwrapFence(text)
         guard looksLikeSpec(markdown), validContent(markdown) else { return nil }
-        return MemoSpec(markdown: markdown, provenance: .appServer)
+        return MemoSpec(markdown: markdown, provenance: provenance)
     }
 
     public static func serialized(_ spec: MemoSpec) -> String {
@@ -122,10 +205,11 @@ public enum MemoSpecDocument {
         <meta charset="utf-8">
         <title>\(escape(title))</title>
         <style>
-        body { font: 16px/1.45 -apple-system, BlinkMacSystemFont, sans-serif; max-width: 40rem; margin: 2rem auto; padding: 0 1.25rem; color: #1d1d1f; background: #fff; }
+        :root { color-scheme: light dark; }
+        body { font: 16px/1.45 -apple-system, BlinkMacSystemFont, sans-serif; max-width: 40rem; margin: 2rem auto; padding: 0 1.25rem; color: CanvasText; background: Canvas; }
         h1 { font-size: 1.6rem; letter-spacing: -0.02em; }
         h2 { font-size: 1.15rem; margin-top: 1.4rem; }
-        blockquote { margin: 0; padding: 0.5rem 0.75rem; border-left: 3px solid #d2d2d7; color: #6e6e73; }
+        blockquote { margin: 0; padding: 0.5rem 0.75rem; border-left: 3px solid GrayText; color: GrayText; }
         ul { padding-left: 1.2rem; }
         p { margin: 0.6rem 0; }
         </style>

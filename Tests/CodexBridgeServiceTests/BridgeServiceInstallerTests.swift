@@ -57,6 +57,27 @@ struct BridgeServiceInstallerTests {
         ])
     }
 
+    @Test func rebindRewritesHostsWithoutRotatingIdentityOrReplacingBundle() async throws {
+        let fixture = try InstallerFixture()
+        try await fixture.install(bundle: try fixture.makeBundle(version: "one"))
+        await fixture.launchctl.clearEvents()
+        let fingerprint = try String(contentsOf: fixture.fingerprint, encoding: .utf8)
+
+        try await fixture.installer.rebind(bindHost: "192.168.1.38", advertisedHost: "192.168.1.38")
+
+        #expect(try String(contentsOf: fixture.fingerprint, encoding: .utf8) == fingerprint)
+        #expect(try fixture.installedExecutableContents() == "one")
+        let arguments = try fixture.launchAgentDictionary()["ProgramArguments"] as? [String]
+        #expect(arguments?.suffix(4) == ["--bind-host", "192.168.1.38", "--advertised-host", "192.168.1.38"])
+        #expect(await fixture.launchctl.events() == [
+            "print:gui/\(getuid())/ai.rsitech.voiceinbox.bridge",
+            "bootout:gui/\(getuid())/ai.rsitech.voiceinbox.bridge",
+            "bootstrap:gui/\(getuid()):\(fixture.paths.launchAgent.path)",
+        ])
+        #expect(await fixture.identityLifecycle.creationCount == 1)
+        #expect(await fixture.identityLifecycle.rotationCount == 0)
+    }
+
     @Test func installPreservesExistingSharedLaunchAgentsPermissions() async throws {
         let fixture = try InstallerFixture()
         let launchAgents = fixture.paths.launchAgent.deletingLastPathComponent()
@@ -1176,6 +1197,7 @@ private actor DeterministicInstallerIdentityLifecycle: BridgeInstallerIdentityLi
     }
 
     var creationCount: Int { created }
+    var rotationCount: Int { rotations }
 
     func ensureFingerprint() -> String {
         if let fingerprint { return fingerprint }

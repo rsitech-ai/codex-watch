@@ -28,8 +28,8 @@ struct SignalSpineView: View {
                 HStack(spacing: 8) {
                     SignalNode(state: node.state)
                     Text(node.label)
-                        .font(.system(size: 10, weight: .semibold, design: .rounded))
-                        .tracking(0.7)
+                        .font(WatchExperienceTheme.TypeRole.spineLabel)
+                        .tracking(WatchExperienceTheme.TypeRole.spineTracking)
                         .foregroundStyle(color(for: node.state))
                 }
                 .frame(height: WatchExperienceTheme.Metric.nodeSize)
@@ -48,16 +48,10 @@ struct SignalSpineView: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(SignalSpineAccessibility.label)
         .accessibilityValue(SignalSpineAccessibility.value(for: presentation))
-        .animation(transitionAnimation, value: presentation)
-    }
-
-    private var transitionAnimation: Animation? {
-        switch SignalMotionStyle.forTransition(reduceMotion: reduceMotion) {
-        case .immediate:
-            nil
-        case let .bounded(duration):
-            .easeOut(duration: duration)
-        }
+        .animation(
+            SignalMotionStyle.forTransition(reduceMotion: reduceMotion).animation,
+            value: presentation
+        )
     }
 
     private func color(for state: SignalNodeVisualState) -> Color {
@@ -66,10 +60,7 @@ struct SignalSpineView: View {
 
     private func segmentColor(after index: Int) -> Color {
         let states = [presentation.watch, presentation.mac, presentation.codex]
-        let destination = states[index + 1]
-        return destination == .pending
-            ? WatchExperienceTheme.ColorToken.neutral.opacity(0.45)
-            : color(for: destination).opacity(0.8)
+        return WatchExperienceTheme.Connector.color(destination: states[index + 1])
     }
 }
 

@@ -1,5 +1,6 @@
 import CodexBridgeShared
 import CryptoKit
+import Darwin
 import Foundation
 import Network
 import Security
@@ -491,6 +492,54 @@ public final class NetworkBridgeListener: @unchecked Sendable {
         !value.isEmpty
             && value.utf8.count <= 255
             && value.utf8.allSatisfy { byte in byte >= 0x21 && byte <= 0x7E }
+    }
+}
+
+public enum WatchReachableAddress: Sendable {
+    public static func currentIPv4Hosts() -> [String] {
+        var addresses: [String] = []
+        var ifaddr: UnsafeMutablePointer<ifaddrs>?
+        guard getifaddrs(&ifaddr) == 0 else { return [] }
+        defer { freeifaddrs(ifaddr) }
+        var cursor = ifaddr
+        while let pointer = cursor {
+            let iface = pointer.pointee
+            cursor = iface.ifa_next
+            let flags = Int32(iface.ifa_flags)
+            guard flags & IFF_UP != 0, flags & IFF_LOOPBACK == 0 else { continue }
+            guard let sa = iface.ifa_addr, sa.pointee.sa_family == sa_family_t(AF_INET) else {
+                continue
+            }
+            var host = [CChar](repeating: 0, count: Int(NI_MAXHOST))
+            let result = getnameinfo(
+                sa,
+                socklen_t(sa.pointee.sa_len),
+                &host,
+                socklen_t(host.count),
+                nil,
+                0,
+                NI_NUMERICHOST
+            )
+            guard result == 0 else { continue }
+            let value = String(decoding: host.prefix { $0 != 0 }.map { UInt8(bitPattern: $0) }, as: UTF8.self)
+            if value.hasPrefix("127.") || value.hasPrefix("169.254.") { continue }
+            if !addresses.contains(value) {
+                addresses.append(value)
+            }
+        }
+        return addresses
+    }
+
+    public static func preferredHost(from hosts: [String] = currentIPv4Hosts()) -> String? {
+        hosts.first { NetworkBridgeListener.isValidWatchReachableBindHost($0) }
+    }
+
+    public static func bindLooksUnreachable(bindHost: String, currentHosts: [String]) -> Bool {
+        guard !currentHosts.isEmpty,
+              !bindHost.isEmpty,
+              bindHost != "—"
+        else { return false }
+        return !currentHosts.contains(bindHost)
     }
 }
 

@@ -366,6 +366,85 @@ public actor BridgeServiceInstaller {
         }
     }
 
+    /// Rewrites LaunchAgent bind/advertised hosts without replacing the app or rotating TLS.
+    public func rebind(bindHost: String, advertisedHost: String) async throws {
+        try validatePathContract()
+        let lifecycleLease = try acquireLifecycleLease()
+        defer { lifecycleLease.release() }
+        await afterLifecycleLeaseAcquired()
+        try validateSharedLaunchAgentsDirectoryIfPresent()
+        try await validateInstalledArtifacts(allowPartial: false)
+        guard itemExists(paths.application), itemExists(paths.launchAgent) else {
+            throw BridgeServiceInstallerError.invalidConfiguration
+        }
+        try validateInstalledManifest()
+        let arguments = try installedProgramArguments()
+        let codex = URL(fileURLWithPath: arguments[5])
+        try validateConfiguration(
+            codexExecutable: codex,
+            bindHost: bindHost,
+            advertisedHost: advertisedHost
+        )
+
+        let token = UUID().uuidString
+        let stagedManifest = paths.launchAgent.deletingLastPathComponent()
+            .appending(path: ".ai.rsitech.voiceinbox.bridge.plist.rebind-\(token)")
+        let backupManifest = paths.launchAgent.deletingLastPathComponent()
+            .appending(path: ".ai.rsitech.voiceinbox.bridge.plist.rebind-backup-\(token)")
+        let priorLoaded = try await serviceIsLoaded()
+        var manifestBackedUp = false
+        var manifestInstalled = false
+        var bootstrapped = false
+        do {
+            try writeManifest(
+                at: stagedManifest,
+                codexExecutable: codex,
+                bindHost: bindHost,
+                advertisedHost: advertisedHost
+            )
+            if priorLoaded {
+                try await bootoutIfPresent()
+            }
+            try atomicRename(paths.launchAgent, backupManifest)
+            manifestBackedUp = true
+            try atomicRename(stagedManifest, paths.launchAgent)
+            manifestInstalled = true
+            try await bootstrapNewService()
+            bootstrapped = true
+            guard try await waitForHealth() else {
+                throw BridgeServiceInstallerError.healthCheckFailed
+            }
+            try? removeIfPresent(backupManifest)
+        } catch {
+            if let installerError = error as? BridgeServiceInstallerError,
+               case .childStillRunning = installerError
+            {
+                throw installerError
+            }
+            do {
+                if bootstrapped || manifestInstalled {
+                    try await bootoutIfPresent()
+                }
+                if manifestInstalled {
+                    try removeIfPresent(paths.launchAgent)
+                }
+                if manifestBackedUp {
+                    try atomicRename(backupManifest, paths.launchAgent)
+                }
+                try removeIfPresent(stagedManifest)
+                if priorLoaded {
+                    try await restorePriorServiceOrFail()
+                }
+            } catch {
+                throw BridgeServiceInstallerError.rollbackFailed
+            }
+            if let installerError = error as? BridgeServiceInstallerError {
+                throw installerError
+            }
+            throw BridgeServiceInstallerError.transactionFailed
+        }
+    }
+
     public func status() async throws -> BridgeInstallationStatus {
         try validatePathContract()
         let lifecycleLease = try acquireLifecycleLease()
@@ -722,6 +801,26 @@ public actor BridgeServiceInstaller {
                       || $0 == "--identity" || $0 == "--identity-file"
               })
         else { throw BridgeServiceInstallerError.invalidConfiguration }
+    }
+
+    private func installedProgramArguments() throws -> [String] {
+        let propertyList: [String: Any]
+        do {
+            guard let decoded = try PropertyListSerialization.propertyList(
+                from: Data(contentsOf: paths.launchAgent), options: [], format: nil
+            ) as? [String: Any] else {
+                throw BridgeServiceInstallerError.invalidConfiguration
+            }
+            propertyList = decoded
+        } catch let error as BridgeServiceInstallerError {
+            throw error
+        } catch {
+            throw BridgeServiceInstallerError.invalidConfiguration
+        }
+        guard let arguments = propertyList["ProgramArguments"] as? [String],
+              arguments.count == 10
+        else { throw BridgeServiceInstallerError.invalidConfiguration }
+        return arguments
     }
 
     private func stageBundle(from source: URL, at destination: URL) throws {

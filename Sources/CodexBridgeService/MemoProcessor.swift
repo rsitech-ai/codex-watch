@@ -59,19 +59,22 @@ public struct MemoProcessor: Sendable {
     private let inbox: any InboxDeliveryClient
     private let specImprover: (any SpecImproving)?
     private let specStore: MemoSpecStore?
+    private let foundationModelsImprover: (any SpecImproving)?
 
     public init(
         journal: DeliveryJournal,
         transcriber: any TranscriptionEngine,
         inbox: any InboxDeliveryClient,
         specImprover: (any SpecImproving)? = nil,
-        specStore: MemoSpecStore? = nil
+        specStore: MemoSpecStore? = nil,
+        foundationModelsImprover: (any SpecImproving)? = nil
     ) {
         self.journal = journal
         self.transcriber = transcriber
         self.inbox = inbox
         self.specImprover = specImprover
         self.specStore = specStore
+        self.foundationModelsImprover = foundationModelsImprover
     }
 
     public func process(_ request: MemoProcessingRequest) async throws -> MemoProcessingOutcome {
@@ -273,24 +276,14 @@ public struct MemoProcessor: Sendable {
         if specStore.load(memoID: memoID) != nil {
             return
         }
-        var spec = MemoSpecDocument.localFallback(
+        let spec = await MemoSpecImprover(
+            foundationModels: foundationModelsImprover,
+            appServer: specImprover
+        ).improve(
             transcript: transcript,
             capturedAt: capturedAt,
             memoID: memoID
         )
-        if let specImprover {
-            do {
-                let markdown = try await specImprover.improveSpec(
-                    memoID: memoID,
-                    transcript: transcript
-                )
-                if let improved = MemoSpecDocument.acceptAppServerMarkdown(markdown) {
-                    spec = improved
-                }
-            } catch {
-                // ponytail: App Server improvement is best-effort; local wrapper stays downloadable.
-            }
-        }
         try? specStore.save(spec, memoID: memoID)
     }
 
@@ -304,11 +297,24 @@ public struct MemoProcessor: Sendable {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime]
         let body: String
-        if let spec, spec.provenance == .appServer {
-            body = """
-            Spec (Codex App Server):
-            \(spec.markdown)
-            """
+        if let spec {
+            switch spec.provenance {
+            case .appServer:
+                body = """
+                Spec (Codex App Server):
+                \(spec.markdown)
+                """
+            case .foundationModels:
+                body = """
+                Spec (on-device Foundation Models):
+                \(spec.markdown)
+                """
+            case .localFallback:
+                body = """
+                Voice idea:
+                \(transcript)
+                """
+            }
         } else {
             body = """
             Voice idea:

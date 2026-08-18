@@ -58,10 +58,10 @@ struct PairingView: View {
                 .font(.title2)
                 .foregroundStyle(WatchExperienceTheme.ColorToken.confirmed)
             Text(model.bridgeState.title)
-                .font(.headline)
+                .font(WatchExperienceTheme.TypeRole.emptyHeadline)
                 .multilineTextAlignment(.center)
             Text(model.bridgeState.detail)
-                .font(.caption2)
+                .font(WatchExperienceTheme.TypeRole.detail)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
             Button("Forget This Mac", role: .destructive) {
@@ -78,15 +78,15 @@ struct PairingView: View {
                 bridgeState: model.bridgeState,
                 discoveryUnavailable: model.discovery.state == .unavailable
             ))
-                .font(.headline)
+                .font(WatchExperienceTheme.TypeRole.emptyHeadline)
                 .multilineTextAlignment(.center)
             Text("Start the bridge on your Mac. Recordings stay on this Watch while it is unavailable.")
-                .font(.caption2)
+                .font(WatchExperienceTheme.TypeRole.detail)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
         } else {
             Text("Choose your Mac")
-                .font(.headline)
+                .font(WatchExperienceTheme.TypeRole.emptyHeadline)
             ForEach(model.discovery.bridges) { bridge in
                 Button {
                     selectedBridge = bridge
@@ -105,10 +105,10 @@ struct PairingView: View {
     private func confirmationContent(_ bridge: DiscoveredBridge) -> some View {
         VStack(spacing: 8) {
             Text(bridge.name)
-                .font(.headline)
+                .font(WatchExperienceTheme.TypeRole.emptyHeadline)
                 .lineLimit(1)
             Text("Compare this phrase with the bridge on your Mac")
-                .font(.caption2)
+                .font(WatchExperienceTheme.TypeRole.detail)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
             Text(bridge.certificatePin.comparisonPhrase)
@@ -131,7 +131,7 @@ struct PairingView: View {
                     }
                 if let localError {
                     Text(localError)
-                        .font(.caption2)
+                        .font(WatchExperienceTheme.TypeRole.detail)
                         .foregroundStyle(WatchExperienceTheme.ColorToken.destructive)
                         .multilineTextAlignment(.center)
                         .accessibilityLabel("Pairing error: \(localError)")
@@ -161,7 +161,7 @@ struct PairingView: View {
                 localError = nil
             }
             .buttonStyle(.plain)
-            .font(.caption2)
+            .font(WatchExperienceTheme.TypeRole.detail)
         }
     }
 
@@ -187,28 +187,36 @@ enum PairingSubmitPolicy {
     }
 }
 
+enum PairingRailMetric {
+    static let nodeSlot: CGFloat = 13
+    static let pendingNode: CGFloat = 11
+    static let activeNode: CGFloat = 10
+    static let confirmedNode: CGFloat = 13
+    static let attentionNode: CGFloat = 12
+}
+
 struct PairingStepRail: View {
     let presentation: PairingStepsPresentation
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        VStack(spacing: 3) {
-            HStack(spacing: 3) {
+        VStack(spacing: 4) {
+            HStack(spacing: 4) {
                 ForEach(PairingVisualStep.allCases, id: \.rawValue) { step in
                     stepNode(step)
                     if step != .paired {
                         Rectangle()
                             .fill(connectorColor(after: step))
                             .frame(maxWidth: .infinity)
-                            .frame(height: 2)
+                            .frame(height: WatchExperienceTheme.Metric.spineWidth)
                     }
                 }
             }
 
             Text(presentation.current.title.uppercased())
-                .font(.system(size: 9, weight: .bold, design: .rounded))
-                .tracking(0.7)
+                .font(WatchExperienceTheme.TypeRole.pairingRailTitle)
+                .tracking(WatchExperienceTheme.TypeRole.pairingRailTracking)
                 .foregroundStyle(color(for: presentation.state(for: presentation.current)))
         }
         .padding(.horizontal, 2)
@@ -216,7 +224,7 @@ struct PairingStepRail: View {
         .accessibilityLabel("Pairing progress")
         .accessibilityValue(presentation.current.title)
         .animation(
-            reduceMotion ? nil : .easeOut(duration: 0.24),
+            SignalMotionStyle.forTransition(reduceMotion: reduceMotion).animation,
             value: presentation
         )
     }
@@ -224,37 +232,49 @@ struct PairingStepRail: View {
     @ViewBuilder
     private func stepNode(_ step: PairingVisualStep) -> some View {
         let state = presentation.state(for: step)
-        switch state {
-        case .pending:
-            Circle()
-                .stroke(color(for: state), lineWidth: 1.5)
-                .frame(width: 11, height: 11)
-        case .active:
-            RoundedRectangle(cornerRadius: 2)
-                .fill(color(for: state))
-                .frame(width: 10, height: 10)
-                .rotationEffect(.degrees(45))
-        case .confirmed:
-            ZStack {
+        ZStack {
+            switch state {
+            case .pending:
                 Circle()
+                    .stroke(color(for: state), lineWidth: 1.5)
+                    .frame(
+                        width: PairingRailMetric.pendingNode,
+                        height: PairingRailMetric.pendingNode
+                    )
+            case .active:
+                RoundedRectangle(cornerRadius: 2)
                     .fill(color(for: state))
-                Image(systemName: "checkmark")
-                    .font(.system(size: 7, weight: .black))
-                    .foregroundStyle(.black)
+                    .frame(
+                        width: PairingRailMetric.activeNode,
+                        height: PairingRailMetric.activeNode
+                    )
+                    .rotationEffect(.degrees(45))
+            case .confirmed:
+                ZStack {
+                    Circle()
+                        .fill(color(for: state))
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 7, weight: .black))
+                        .foregroundStyle(.black)
+                }
+                .frame(
+                    width: PairingRailMetric.confirmedNode,
+                    height: PairingRailMetric.confirmedNode
+                )
+            case .attention:
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .font(.system(size: PairingRailMetric.attentionNode, weight: .semibold))
+                    .foregroundStyle(color(for: state))
             }
-            .frame(width: 13, height: 13)
-        case .attention:
-            Image(systemName: "exclamationmark.triangle.fill")
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(color(for: state))
         }
+        .frame(width: PairingRailMetric.nodeSlot, height: PairingRailMetric.nodeSlot)
     }
 
     private func connectorColor(after step: PairingVisualStep) -> Color {
         guard let next = PairingVisualStep(rawValue: step.rawValue + 1) else {
             return WatchExperienceTheme.ColorToken.neutral
         }
-        return color(for: presentation.state(for: next)).opacity(0.55)
+        return WatchExperienceTheme.Connector.color(destination: presentation.state(for: next))
     }
 
     private func color(for state: SignalNodeVisualState) -> Color {

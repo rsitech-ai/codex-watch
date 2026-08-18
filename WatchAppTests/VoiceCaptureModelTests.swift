@@ -193,6 +193,23 @@ final class VoiceCaptureModelTests: XCTestCase {
     }
 
     func testCaptureAccessibilityReadsStateAndPrimaryActionBeforeSecondaryNavigation() {
+        XCTAssertEqual(
+            CaptureAccessibilityPriority.branch(for: .state),
+            .instrument
+        )
+        XCTAssertEqual(
+            CaptureAccessibilityPriority.branch(for: .relayPath),
+            .instrument
+        )
+        XCTAssertEqual(
+            CaptureAccessibilityPriority.branch(for: .secondaryNavigation),
+            .instrument
+        )
+        XCTAssertEqual(
+            CaptureAccessibilityPriority.branch(for: .primaryAction),
+            .bottomSafeAreaInset
+        )
+        XCTAssertTrue(CaptureLayoutPolicy.pinsPrimaryActionToBottomInset)
         XCTAssertGreaterThan(
             CaptureAccessibilityPriority.state,
             CaptureAccessibilityPriority.relayPath
@@ -213,13 +230,19 @@ final class VoiceCaptureModelTests: XCTestCase {
     }
 
     func testSignalMotionPolicyIsBoundedOrImmediate() {
+        XCTAssertEqual(SignalMotionStyle.defaultDamping, SignalExperienceToken.Motion.springDamping)
+        XCTAssertEqual(SignalMotionStyle.defaultResponse, SignalExperienceToken.Motion.springResponse)
+        XCTAssertEqual(SignalMotionStyle.crossFadeDuration, SignalExperienceToken.Motion.crossFadeDuration)
         XCTAssertEqual(
             SignalMotionStyle.forTransition(reduceMotion: false),
-            .bounded(duration: 0.24)
+            .spring(
+                response: SignalExperienceToken.Motion.springResponse,
+                damping: SignalExperienceToken.Motion.springDamping
+            )
         )
         XCTAssertEqual(
             SignalMotionStyle.forTransition(reduceMotion: true),
-            .immediate
+            .crossFade
         )
     }
 
@@ -317,6 +340,130 @@ final class VoiceCaptureModelTests: XCTestCase {
             )
         )
         XCTAssertEqual(WatchRenderScenario.allCases.count, 7)
+    }
+
+    func testSpineActiveTokenIsCyanNotCatalogAccent() {
+        XCTAssertEqual(WatchExperienceTheme.RGB.active.red, SignalExperienceToken.RGB.active.red)
+        XCTAssertEqual(WatchExperienceTheme.RGB.active.green, SignalExperienceToken.RGB.active.green)
+        XCTAssertEqual(WatchExperienceTheme.RGB.active.blue, SignalExperienceToken.RGB.active.blue)
+        XCTAssertNotEqual(
+            WatchExperienceTheme.RGB.active.red,
+            WatchExperienceTheme.RGB.catalogAccent.red
+        )
+    }
+
+    func testCaptureLayoutPinsPrimaryOutsideBothAxisFitProposal() throws {
+        XCTAssertTrue(CaptureLayoutPolicy.fitAxes.contains(.horizontal))
+        XCTAssertTrue(CaptureLayoutPolicy.fitAxes.contains(.vertical))
+        XCTAssertTrue(CaptureLayoutPolicy.pinsPrimaryActionToBottomInset)
+        XCTAssertEqual(
+            CaptureAccessibilityPriority.branch(for: .primaryAction),
+            .bottomSafeAreaInset
+        )
+        XCTAssertEqual(CaptureLayoutPolicy.primaryInsetSpacing, 6)
+        XCTAssertEqual(CaptureLayoutPolicy.sceneHorizontalPadding, 7)
+        XCTAssertEqual(CaptureLayoutPolicy.sceneBottomPadding, 5)
+
+        let source = try watchAppSource("CaptureScene.swift")
+        let insetRange = try XCTUnwrap(source.range(of: ".safeAreaInset(edge: .bottom"))
+        let primaryRange = try XCTUnwrap(source.range(of: "WatchPrimaryActionView("))
+        let instrumentRange = try XCTUnwrap(source.range(of: "private func instrument"))
+        XCTAssertTrue(primaryRange.lowerBound > insetRange.lowerBound)
+        XCTAssertTrue(primaryRange.lowerBound < instrumentRange.lowerBound)
+        XCTAssertTrue(source.contains("CaptureLayoutPolicy.pinsPrimaryActionToBottomInset"))
+        XCTAssertTrue(source.contains("CaptureAccessibilityPriority.branch(for: .primaryAction)"))
+    }
+
+    func testPrimaryPairingActionCopyIsPairWithMacAndLink() {
+        let content = WatchPrimaryActionCopy.content(for: .openPairing)
+        XCTAssertEqual(content?.label, "Pair with Mac")
+        XCTAssertEqual(content?.symbol, "link")
+    }
+
+    func testRelayLedgerEmptyCopyStaysGlanceable() {
+        XCTAssertEqual(RelayLedgerEmptyCopy.symbolName, "point.3.connected.trianglepath.dotted")
+        XCTAssertEqual(RelayLedgerEmptyCopy.title, "Relay ledger empty")
+        XCTAssertEqual(
+            RelayLedgerEmptyCopy.detail,
+            "New recordings appear here after they are saved on this Watch."
+        )
+    }
+
+    func testPairingRailSharesSpineConnectorRuleAndStableNodeSlot() {
+        XCTAssertEqual(PairingRailMetric.nodeSlot, 13)
+        XCTAssertEqual(PairingRailMetric.pendingNode, 11)
+        XCTAssertEqual(PairingRailMetric.activeNode, 10)
+        XCTAssertEqual(PairingRailMetric.confirmedNode, 13)
+        XCTAssertEqual(WatchExperienceTheme.Connector.opacity(destinationPending: true), 0.45)
+        XCTAssertEqual(WatchExperienceTheme.Connector.opacity(destinationPending: false), 0.8)
+    }
+
+    func testDeliveredRenderScenarioUsesInboxCopyNotRelayCompleteHome() throws {
+        XCTAssertFalse(WatchRenderScenario.delivered.showsCaptureHome)
+        XCTAssertEqual(WatchRenderScenario.delivered.destination, .ledger)
+        XCTAssertEqual(WatchRenderScenario.queue.destination, .ledger)
+        XCTAssertEqual(WatchRenderScenario.pairing.destination, .pairing)
+        XCTAssertEqual(WatchRenderScenario.ready.destination, .captureHome)
+        XCTAssertNil(WatchRenderScenario.delivered.capturePresentation())
+
+        let source = try watchAppSource("WatchRenderScenario.swift")
+        XCTAssertTrue(source.contains("switch scenario.destination"))
+        XCTAssertTrue(source.contains("if showsCaptureHome"))
+
+        let items = WatchRenderScenario.delivered.previewLedgerItems()
+        let item = try XCTUnwrap(items.first)
+        let presentation = RelayItemPresentation.make(item: item)
+
+        XCTAssertEqual(item.statusText, "Saved to local Inbox")
+        XCTAssertEqual(presentation.detail, "Saved to local Inbox")
+        XCTAssertNotEqual(presentation.status, "Delivered")
+        XCTAssertNotEqual(presentation.detail, "Relay complete.")
+        XCTAssertEqual(presentation.spine.watch, .confirmed)
+        XCTAssertEqual(presentation.spine.mac, .confirmed)
+        XCTAssertEqual(presentation.spine.codex, .confirmed)
+    }
+
+    func testUnpairedSavedRenderScenarioKeepsPairWithMacPrimary() {
+        let presentation = WatchRenderScenario.savedOnWatch.capturePresentation()
+        XCTAssertEqual(presentation?.primaryAction, .openPairing)
+        XCTAssertEqual(WatchPrimaryActionCopy.content(for: .openPairing)?.label, "Pair with Mac")
+        XCTAssertFalse(WatchRenderScenario.savedOnWatch.previewBridgeIsPaired)
+        XCTAssertEqual(CapturePairingChrome.unpairedHeaderTitle, "Mac Bridge")
+        XCTAssertEqual(presentation?.spine.mac, .pending)
+        XCTAssertEqual(presentation?.spine.codex, .pending)
+    }
+
+    func testNeedsAttentionRenderScenarioDoesNotTreatAttentionAsUnpaired() {
+        let presentation = WatchRenderScenario.needsAttention.capturePresentation()
+        XCTAssertEqual(presentation?.kicker, "Needs attention")
+        XCTAssertEqual(presentation?.primaryAction, .record)
+        XCTAssertNotEqual(presentation?.primaryAction, .openPairing)
+        XCTAssertTrue(WatchRenderScenario.needsAttention.previewBridgeIsPaired)
+        XCTAssertEqual(presentation?.spine.mac, .pending)
+        XCTAssertEqual(presentation?.spine.codex, .pending)
+    }
+
+    func testLiveCaptureCopyNeverUsesDebugDeliveredHomeStrings() throws {
+        let memoID = try MemoID("14141414-1414-1414-1414-141414141414")
+        let states: [WatchCaptureState] = [
+            .idle,
+            .preparing,
+            .recording(memoID),
+            .saving(memoID),
+            .savedOnWatch(memoID),
+            .permissionDenied,
+            .interruptedRecordingFound(1),
+            .failed(.recorderStart),
+        ]
+
+        for state in states {
+            let presentation = CaptureScenePresentation.make(
+                captureState: state,
+                bridgeState: .paired("Studio Mac")
+            )
+            XCTAssertNotEqual(presentation.kicker, "Delivered", "state: \(state)")
+            XCTAssertNotEqual(presentation.headline, "Relay complete.", "state: \(state)")
+        }
     }
 
     func testQueueStatusVocabularyMapsEveryInternalStateExactly() throws {
@@ -1549,9 +1696,12 @@ final class VoiceCaptureModelTests: XCTestCase {
     func testSavedCredentialKeepsForgetEscapeHatchVisibleDuringAttention() {
         let attention = WatchBridgeConnectionState.needsAttention("repair")
 
-        XCTAssertFalse(attention.isPaired)
+        XCTAssertTrue(attention.isPaired)
+        XCTAssertEqual(attention.title, "Bridge attention")
+        XCTAssertFalse(CapturePairingChrome.showsLabeledHeader(isPaired: attention.isPaired))
         XCTAssertTrue(BridgeCredentialPresentation.showsSavedBridge(hasSavedCredential: true))
         XCTAssertFalse(BridgeCredentialPresentation.showsSavedBridge(hasSavedCredential: false))
+        XCTAssertFalse(WatchBridgeConnectionState.needsAttention("Pair again").isPaired)
     }
 
     func testRetryScheduleWakesAtPersistedDeadline() {
@@ -1878,6 +2028,14 @@ final class VoiceCaptureModelTests: XCTestCase {
             XCTAssertEqual(model.bridgeState.title, "Waiting for Mac")
             XCTAssertEqual(storedState, .received)
         }
+    }
+
+    private func watchAppSource(_ fileName: String) throws -> String {
+        let url = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .appending(path: "WatchApp/\(fileName)")
+        return try String(contentsOf: url, encoding: .utf8)
     }
 }
 

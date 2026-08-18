@@ -287,7 +287,8 @@ enum BridgeCommand {
             transcriber: AppleSpeechTranscriber(),
             inbox: inbox,
             specImprover: inbox,
-            specStore: specStore
+            specStore: specStore,
+            foundationModelsImprover: FoundationModelsSpecImprover.liveIfAvailable()
         )
         let completionPublisher = DeliveryCompletionPublisher(
             intakeStore: intake,

@@ -1,3 +1,4 @@
+import CodexBridgeService
 import CodexBridgeShared
 import SwiftUI
 
@@ -7,6 +8,10 @@ struct BridgeConsoleView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.colorSchemeContrast) private var contrast
 
+    private var hierarchy: BridgeConsoleStatusHierarchy {
+        model.statusHierarchy
+    }
+
     var body: some View {
         NavigationSplitView {
             inboxList
@@ -14,10 +19,18 @@ struct BridgeConsoleView: View {
         } detail: {
             detail
         }
+        .inspector(isPresented: .constant(true)) {
+            operatorInspector
+                .inspectorColumnWidth(min: 240, ideal: 280, max: 340)
+        }
         .background(consoleBackground)
         .navigationTitle(CodexWatchBrand.productName)
-        .navigationSubtitle(model.header.headline)
+        .modifier(OptionalNavigationSubtitle(hierarchy.chromeHeadline))
         .toolbar { toolbar }
+        .sheet(isPresented: $model.pairingSheetPresented) {
+            pairingSheet
+        }
+        .bridgeResetConfirmation(model: model)
         .onAppear {
             model.start()
             Task { await model.improveSelectedSpecIfNeeded() }
@@ -30,16 +43,16 @@ struct BridgeConsoleView: View {
     private var inboxList: some View {
         List(model.items, selection: $model.selectedMemoID) { item in
             let presentation = MacInboxItemPresentation.make(item: item, speech: model.speech)
-            VStack(alignment: .leading, spacing: 3) {
-                HStack(spacing: 8) {
-                    inboxGlyph(for: presentation.tone)
+            HStack(spacing: 8) {
+                inboxGlyph(for: presentation.tone)
+                VStack(alignment: .leading, spacing: 2) {
                     Text(presentation.status)
-                        .font(.headline)
+                        .font(.body.weight(.medium))
                         .foregroundStyle(BridgeExperienceTheme.ColorToken.forTone(presentation.tone))
+                    Text(item.capturedAt, style: .relative)
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(.tertiary)
                 }
-                Text(item.capturedAt, style: .relative)
-                    .font(.caption2.monospacedDigit())
-                    .foregroundStyle(.tertiary)
             }
             .tag(item.id)
             .accessibilityLabel(presentation.accessibilityValue)
@@ -51,11 +64,12 @@ struct BridgeConsoleView: View {
                     }
                 }
                 if presentation.showsSpecDownload {
-                    Button("Save spec…") { model.saveSelectedSpec(asHTML: false) }
-                    Button("Save HTML…") { model.saveSelectedSpec(asHTML: true) }
+                    Button(BridgeFileMenuCopy.saveSpec) { model.saveSelectedSpec(asHTML: false) }
+                    Button(BridgeFileMenuCopy.saveHTML) { model.saveSelectedSpec(asHTML: true) }
                 }
             }
         }
+        .listStyle(.sidebar)
         .overlay {
             if model.items.isEmpty {
                 ContentUnavailableView {
@@ -71,12 +85,10 @@ struct BridgeConsoleView: View {
     }
 
     private var sidebarChrome: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 16) {
-                labeledValue("Watch", model.watchPaired ? "Paired" : "Not paired")
-                labeledValue("Listener", listenerLabel)
-                labeledValue("Speech", BridgeSpeechCopy.menuStatus(for: model.speech))
-            }
+        HStack(spacing: 16) {
+            labeledValue("Watch", model.watchPaired ? "Paired" : "Not paired")
+            labeledValue("Listener", listenerLabel)
+            labeledValue("Speech", BridgeSpeechCopy.menuStatus(for: model.speech))
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
@@ -112,21 +124,26 @@ struct BridgeConsoleView: View {
                 BridgeSpineView(presentation: presentation.spine)
                     .accessibilitySortPriority(3)
 
-                if presentation.status != model.header.headline {
-                    Text(presentation.status)
-                        .font(.title2.weight(.bold))
+                if let title = hierarchy.inspectorTitle {
+                    Text(title)
+                        .font(BridgeExperienceTheme.TypeRole.inspectorTitle)
+                        .foregroundStyle(BridgeExperienceTheme.ColorToken.forTone(presentation.tone))
+                        .accessibilityAddTraits(.isHeader)
+                        .accessibilitySortPriority(4)
                 }
+
                 Text(presentation.detail)
+                    .font(.callout)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
+
+                pipelineSection(for: item, speech: model.speech)
 
                 if let statusMessage = model.statusMessage {
                     Text(statusMessage)
                         .font(.callout)
                         .foregroundStyle(BridgeExperienceTheme.ColorToken.attention)
                 }
-
-                pairingStrip
 
                 LabeledContent("Captured", value: item.capturedAt.formatted(date: .abbreviated, time: .standard))
                 LabeledContent("Audio") {
@@ -143,13 +160,23 @@ struct BridgeConsoleView: View {
                     }
                 }
 
-                if let specMarkdown = item.specMarkdown {
-                    VStack(alignment: .leading, spacing: 6) {
+                if presentation.showsSpecDownload, let specMarkdown = item.specMarkdown {
+                    VStack(alignment: .leading, spacing: 8) {
                         Text("Spec")
                             .font(.headline)
                         Text(MemoSpecCopy.provenanceLabel(item.specProvenance))
                             .font(.caption)
                             .foregroundStyle(.secondary)
+                        HStack(spacing: 8) {
+                            Button(BridgeFileMenuCopy.saveSpec) {
+                                model.saveSelectedSpec(asHTML: false)
+                            }
+                            .disabled(model.specBusy)
+                            Button(BridgeFileMenuCopy.saveHTML) {
+                                model.saveSelectedSpec(asHTML: true)
+                            }
+                            .disabled(model.specBusy)
+                        }
                         Text(specMarkdown)
                             .textSelection(.enabled)
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -163,7 +190,7 @@ struct BridgeConsoleView: View {
                     Button(retryTitle) {
                         Task { await model.retrySelected() }
                     }
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(.bordered)
                     .tint(BridgeExperienceTheme.ColorToken.attention)
                     .disabled(item.transcript == nil && model.speech != .authorized)
                     .accessibilityLabel(retryTitle)
@@ -179,13 +206,18 @@ struct BridgeConsoleView: View {
         VStack(alignment: .leading, spacing: 16) {
             BridgeSpineView(presentation: model.header.spine)
             Text(model.header.detail)
+                .font(.callout)
                 .foregroundStyle(.secondary)
             if let statusMessage = model.statusMessage {
                 Text(statusMessage)
                     .font(.callout)
                     .foregroundStyle(BridgeExperienceTheme.ColorToken.attention)
             }
-            pairingStrip
+            if model.pairing != nil, !model.pairingSheetPresented {
+                Button("Show pairing code") {
+                    model.pairingSheetPresented = true
+                }
+            }
             if model.items.isEmpty {
                 ContentUnavailableView {
                     Label("Waiting for the Watch", systemImage: "applewatch")
@@ -204,124 +236,152 @@ struct BridgeConsoleView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 
-    @ViewBuilder
-    private var pairingStrip: some View {
-        if let pairing = model.pairing {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Certificate phrase")
-                    .font(.caption.weight(.semibold))
+    private var pairingSheet: some View {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: 16) {
+                Text(BridgePairingCopy.macShowsOnly)
+                    .font(.callout)
                     .foregroundStyle(.secondary)
-                Text(pairing.phrase)
-                    .font(.body.monospaced().weight(.semibold))
-                    .textSelection(.enabled)
-                    .accessibilityLabel("Certificate phrase: \(pairing.phrase)")
-                HStack(alignment: .firstTextBaseline, spacing: 16) {
-                    Text(pairing.code)
-                        .font(.system(size: 28, weight: .bold, design: .rounded))
-                        .monospacedDigit()
-                        .textSelection(.enabled)
-                        .accessibilityLabel("Pairing code: \(pairing.code)")
-                    TimelineView(.periodic(from: pairing.expiresAt.addingTimeInterval(-BridgeCommand.pairingChallengeLifetime), by: 1)) { context in
-                        Text(PairingExpiryCopy.text(expiresAt: pairing.expiresAt, now: context.date))
-                            .font(.callout.monospacedDigit())
+                    .fixedSize(horizontal: false, vertical: true)
+                if let pairing = model.pairing {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Certificate phrase")
+                            .font(.caption.weight(.semibold))
                             .foregroundStyle(.secondary)
-                            .contentTransition(reduceMotion ? .identity : .opacity)
+                        Text(pairing.phrase)
+                            .font(.body.monospaced().weight(.semibold))
+                            .textSelection(.enabled)
+                            .accessibilityLabel("Certificate phrase: \(pairing.phrase)")
+                        Text(pairing.code)
+                            .font(BridgeExperienceTheme.TypeRole.pairingCode)
+                            .monospacedDigit()
+                            .textSelection(.enabled)
+                            .accessibilityLabel("Pairing code: \(pairing.code)")
+                        TimelineView(.periodic(
+                            from: pairing.expiresAt.addingTimeInterval(-BridgeCommand.pairingChallengeLifetime),
+                            by: 1
+                        )) { context in
+                            Text(PairingExpiryCopy.text(expiresAt: pairing.expiresAt, now: context.date))
+                                .font(.callout.monospacedDigit())
+                                .foregroundStyle(.secondary)
+                                .contentTransition(.opacity)
+                                .animation(
+                                    BridgeMotionStyle.forTransition(reduceMotion: reduceMotion).animation,
+                                    value: context.date
+                                )
+                        }
                     }
-                    Button("Generate new code") {
-                        Task { await model.generatePairingCode() }
+                    .padding(12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(pairingBackground)
+                }
+                Button("Generate new code") {
+                    Task { await model.generatePairingCode() }
+                }
+                .disabled(model.pairingBusy)
+                Spacer()
+            }
+            .padding(24)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            .navigationTitle(BridgePairingCopy.sheetTitle)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Done") {
+                        model.pairingSheetPresented = false
                     }
-                    .disabled(model.pairingBusy)
                 }
             }
-            .padding(12)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(pairingBackground)
         }
+        .frame(minWidth: 420, minHeight: 280)
+    }
+
+    private var toolbarPresentation: BridgeConsoleToolbarPresentation {
+        .make(header: model.header, canSaveSelectedSpec: model.canSaveSelectedSpec)
     }
 
     @ToolbarContentBuilder
     private var toolbar: some ToolbarContent {
-        ToolbarItemGroup {
+        ToolbarItem(placement: .automatic) {
             Button("Refresh", systemImage: "arrow.clockwise") {
                 Task { await model.refresh() }
             }
             .labelStyle(.titleAndIcon)
             .help("Reload listener, pairing, Speech, and inbox state")
-            Button("Pairing code", systemImage: "link") {
-                Task { await model.generatePairingCode() }
-            }
-            .labelStyle(.titleAndIcon)
-            .help("Generate a certificate phrase and 6-digit Watch code")
-            .disabled(model.pairingBusy)
-            Button("Speech", systemImage: "waveform") {
-                Task { await model.authorizeSpeech() }
-            }
-            .labelStyle(.titleAndIcon)
-            .help("Ask macOS for Speech Recognition so memos can transcribe locally")
-            .disabled(model.speechBusy)
         }
 
-        if let item = model.selectedItem {
-            let presentation = MacInboxItemPresentation.make(item: item, speech: model.speech)
-            if presentation.showsSpecDownload {
-                ToolbarItem {
-                    Button("Save HTML…", systemImage: "doc.richtext") {
-                        model.saveSelectedSpec(asHTML: true)
-                    }
-                    .labelStyle(.titleAndIcon)
-                    .help("Save a simple HTML document of the spec")
-                    .disabled(model.specBusy)
+        ToolbarItem(placement: .automatic) {
+            Button("Reset", systemImage: "arrow.counterclockwise") {
+                model.presentResetConfirmation()
+            }
+            .labelStyle(.titleAndIcon)
+            .help("Regenerate pairing display and clear retries. Does not wipe Watch Keychain or rotate TLS.")
+            .disabled(model.resetBusy)
+        }
+
+        if toolbarPresentation.showsPairingCode {
+            ToolbarItem(placement: .automatic) {
+                Button("Pairing code", systemImage: "link") {
+                    Task { await model.generatePairingCode() }
                 }
+                .labelStyle(.titleAndIcon)
+                .help("Generate a certificate phrase and 6-digit Watch code")
+                .disabled(model.pairingBusy)
             }
         }
 
-        if let title = model.header.primaryTitle {
+        if let title = toolbarPresentation.headerPrimaryTitle {
             ToolbarItem(placement: .primaryAction) {
                 Button {
                     Task { await model.performHeaderAction() }
                 } label: {
-                    Label(title, systemImage: headerSymbol(for: title))
+                    Label(title, systemImage: toolbarPresentation.headerPrimarySymbol)
                 }
-                .help(model.header.primaryHint ?? title)
-                .disabled(model.speechBusy || model.pairingBusy)
+                .labelStyle(.titleAndIcon)
+                .help(toolbarPresentation.headerPrimaryHint ?? title)
+                .disabled(model.speechBusy || model.pairingBusy || model.rebindBusy)
             }
-        } else if let item = model.selectedItem,
-                  MacInboxItemPresentation.make(item: item, speech: model.speech).showsSpecDownload
-        {
-            ToolbarItem(placement: .primaryAction) {
-                Button("Save spec…", systemImage: "doc.badge.arrow.up") {
+        }
+
+        if toolbarPresentation.showsSaveSpec {
+            ToolbarItem(placement: toolbarPresentation.showsHeaderPrimary ? .automatic : .primaryAction) {
+                Button(BridgeFileMenuCopy.saveSpec, systemImage: "doc.badge.arrow.up") {
                     model.saveSelectedSpec(asHTML: false)
                 }
                 .labelStyle(.titleAndIcon)
+                .help("Save the markdown spec")
+                .disabled(model.specBusy)
+            }
+            ToolbarItem(placement: .automatic) {
+                Button(BridgeFileMenuCopy.saveHTML, systemImage: "doc.richtext") {
+                    model.saveSelectedSpec(asHTML: true)
+                }
+                .labelStyle(.titleAndIcon)
+                .help("Save a simple HTML document of the spec")
                 .disabled(model.specBusy)
             }
         }
     }
 
     private var consoleBackground: some View {
-        Group {
-            if reduceTransparency {
-                Color(nsColor: .windowBackgroundColor)
-            } else {
-                Color.clear
-            }
-        }
+        Color(nsColor: .windowBackgroundColor)
     }
 
     private var pairingBackground: some View {
         RoundedRectangle(cornerRadius: 10, style: .continuous)
             .fill(
                 reduceTransparency
-                    ? Color(nsColor: .controlBackgroundColor)
-                    : Color.primary.opacity(contrast == .increased ? 0.12 : 0.06)
+                    ? Color(nsColor: .windowBackgroundColor)
+                    : Color.primary.opacity(
+                        BridgePairingFill.opacity(increasedContrast: contrast == .increased)
+                    )
             )
     }
 
     private func labeledValue(_ title: String, _ value: String) -> some View {
         VStack(alignment: .leading, spacing: 1) {
-            Text(title.uppercased())
-                .font(.system(size: 9, weight: .bold, design: .rounded))
-                .tracking(0.6)
+            Text(title)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
             Text(value)
                 .foregroundStyle(.primary)
                 .lineLimit(1)
@@ -329,13 +389,105 @@ struct BridgeConsoleView: View {
         .accessibilityElement(children: .combine)
     }
 
-    private func headerSymbol(for title: String) -> String {
-        switch title {
-        case "Allow Speech Recognition": "waveform"
-        case "Open Speech Settings": "gearshape"
-        case "Generate pairing code": "link"
-        case "Retry transcription": "arrow.clockwise"
-        default: "exclamationmark.triangle.fill"
+    private func pipelineSection(for item: MacInboxItem, speech: BridgeSpeechAuthorizationStatus) -> some View {
+        let stages = MemoPipelinePresentation.stages(item: item, speech: speech)
+        return VStack(alignment: .leading, spacing: 8) {
+            Text("Pipeline")
+                .font(.headline)
+            ForEach(Array(stages.enumerated()), id: \.offset) { _, stage in
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    inboxGlyph(for: tone(for: stage.state))
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(stage.label)
+                            .font(.body.weight(.medium))
+                        Text(stage.detail)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("\(stage.label). \(stage.detail)")
+            }
+        }
+    }
+
+    private var operatorInspector: some View {
+        let status = model.operatorStatus ?? BridgeOperatorStatusPresentation.make(
+            loaded: model.loaded,
+            healthy: model.healthy,
+            bindHost: model.bindHost,
+            advertisedHost: model.advertisedHost,
+            currentHosts: model.currentHosts,
+            fingerprint: nil,
+            launchAgentPID: model.launchAgentPID,
+            lastEvent: model.lastDiagnostic,
+            watchPaired: model.watchPaired,
+            lastIntake: model.items.first?.capturedAt,
+            speech: model.speech,
+            foundationModels: FoundationModelsAvailability.current()
+        )
+        return Form {
+            Section("Bridge") {
+                LabeledContent("Loaded", value: status.loaded)
+                LabeledContent("Healthy", value: status.healthy)
+                LabeledContent("Listening", value: status.listening)
+                LabeledContent("Bonjour", value: status.bonjourInstance)
+                LabeledContent("TLS pin", value: status.tlsFingerprintShort)
+                LabeledContent("LaunchAgent pid", value: status.launchAgentPID)
+                LabeledContent("Last error", value: status.lastError)
+            }
+            Section("Watch") {
+                LabeledContent("Pairing", value: status.watchPaired)
+                LabeledContent("Last intake", value: status.lastIntake)
+                LabeledContent("Last upload", value: status.lastUploadAttempt)
+                LabeledContent("Queue", value: status.queueDepth)
+            }
+            Section("Speech") {
+                LabeledContent("Status", value: status.speech)
+                if status.speechNeedsCTA {
+                    Button(model.speech == .notDetermined ? "Allow Speech Recognition" : "Open Speech Settings") {
+                        if model.speech == .notDetermined {
+                            Task { await model.authorizeSpeech() }
+                        } else {
+                            model.openSpeechSettings()
+                        }
+                    }
+                }
+            }
+            Section("Spec") {
+                Text(status.specEngine)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            if status.bindUnreachable {
+                Section("Reachability") {
+                    Text(status.detail)
+                        .foregroundStyle(BridgeExperienceTheme.ColorToken.attention)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Button("Use current address") {
+                        Task { await model.rebindToCurrentAddress() }
+                    }
+                    .disabled(model.rebindBusy)
+                }
+            }
+            Section("Operator") {
+                Button("Reset…") {
+                    model.presentResetConfirmation()
+                }
+                .disabled(model.resetBusy)
+            }
+        }
+        .formStyle(.grouped)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    }
+
+    private func tone(for state: BridgeSpineNodeState) -> BridgeExperienceTone {
+        switch state {
+        case .pending: .neutral
+        case .active: .active
+        case .confirmed: .confirmed
+        case .attention: .attention
         }
     }
 
@@ -365,27 +517,88 @@ struct BridgeConsoleView: View {
     }
 }
 
+private struct OptionalNavigationSubtitle: ViewModifier {
+    let subtitle: String?
+
+    init(_ subtitle: String?) {
+        self.subtitle = subtitle
+    }
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if let subtitle, !subtitle.isEmpty {
+            content.navigationSubtitle(subtitle)
+        } else {
+            content
+        }
+    }
+}
+
 struct BridgeSettingsView: View {
     @ObservedObject var model: BridgeAppModel
 
     var body: some View {
         Form {
-            LabeledContent("App", value: CodexWatchBrand.productName)
-            LabeledContent("Advertised name", value: model.advertisedName)
-            LabeledContent("Advertised host", value: model.advertisedHost)
-            LabeledContent("Bind host", value: model.bindHost)
-            LabeledContent("State") {
-                Text(model.stateRootPath)
-                    .textSelection(.enabled)
-                    .font(.body.monospaced())
+            Section("App") {
+                LabeledContent("App", value: CodexWatchBrand.productName)
+                LabeledContent("State") {
+                    Text(model.stateRootPath)
+                        .textSelection(.enabled)
+                        .font(.body.monospaced())
+                }
             }
-            LabeledContent("Watch", value: model.watchPaired ? "Paired" : "Not paired")
-            LabeledContent("Listener", value: model.listenerOnline ? "Online" : "Offline")
-            LabeledContent("Speech", value: BridgeSpeechCopy.menuStatus(for: model.speech))
+            Section("Network") {
+                LabeledContent("Advertised name", value: model.advertisedName)
+                LabeledContent("Advertised host", value: model.advertisedHost)
+                LabeledContent("Bind host", value: model.bindHost)
+            }
+            Section("Status") {
+                LabeledContent("Watch", value: model.watchPaired ? "Paired" : "Not paired")
+                LabeledContent("Listener", value: model.listenerOnline ? "Online" : "Offline")
+                LabeledContent("Speech", value: BridgeSpeechCopy.menuStatus(for: model.speech))
+                LabeledContent("TLS pin", value: model.tlsFingerprintShort)
+                LabeledContent("LaunchAgent pid", value: model.launchAgentPID.map(String.init) ?? "unknown")
+            }
+            Section("Operator") {
+                Button("Use current address") {
+                    Task { await model.rebindToCurrentAddress() }
+                }
+                .disabled(model.rebindBusy)
+                Button("Reset…", role: .destructive) {
+                    model.presentResetConfirmation()
+                }
+                .disabled(model.resetBusy)
+            }
         }
         .formStyle(.grouped)
-        .frame(minWidth: 480, minHeight: 280)
+        .frame(minWidth: 520, minHeight: 560)
         .padding()
+        .bridgeResetConfirmation(model: model)
+    }
+}
+
+private extension View {
+    func bridgeResetConfirmation(model: BridgeAppModel) -> some View {
+        confirmationDialog(
+            BridgeResetCopy.confirmTitle,
+            isPresented: Binding(
+                get: { model.resetConfirmationPresented },
+                set: { model.resetConfirmationPresented = $0 }
+            ),
+            titleVisibility: .visible
+        ) {
+            Button(BridgeResetCopy.confirm) {
+                Task { await model.performReset(confirmed: true, forgetDisplayedPairing: false) }
+            }
+            Button(BridgeResetCopy.confirmAndForget) {
+                Task { await model.performReset(confirmed: true, forgetDisplayedPairing: true) }
+            }
+            Button(BridgeResetCopy.cancel, role: .cancel) {
+                model.cancelReset()
+            }
+        } message: {
+            Text(BridgeResetCopy.message)
+        }
     }
 }
 
@@ -403,20 +616,35 @@ enum BridgeMenuStatusCopy {
     previewConsole(.delivered)
 }
 
+#Preview("Delivered dark") {
+    previewConsole(.delivered)
+        .preferredColorScheme(.dark)
+}
+
 #Preview("Needs attention") {
     previewConsole(.needsAttention)
+}
+
+#Preview("Needs attention dark") {
+    previewConsole(.needsAttention)
+        .preferredColorScheme(.dark)
 }
 
 #Preview("Unpaired") {
     previewConsole(.unpaired)
 }
 
+#Preview("Unpaired dark") {
+    previewConsole(.unpaired)
+        .preferredColorScheme(.dark)
+}
+
 #Preview("Empty") {
     previewConsole(.empty)
 }
 
-#Preview("Delivered dark") {
-    previewConsole(.delivered)
+#Preview("Empty dark") {
+    previewConsole(.empty)
         .preferredColorScheme(.dark)
 }
 
@@ -425,5 +653,5 @@ private func previewConsole(_ kind: BridgeAppModel.PreviewKind) -> some View {
     let model = BridgeAppModel(pollsRuntime: false)
     model.seedPreview(kind)
     return BridgeConsoleView(model: model)
-        .frame(minWidth: 960, minHeight: 640)
+        .frame(minWidth: 1100, minHeight: 680)
 }

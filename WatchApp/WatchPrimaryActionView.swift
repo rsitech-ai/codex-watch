@@ -1,5 +1,24 @@
 import SwiftUI
 
+enum WatchPrimaryActionCopy {
+    static func content(for action: WatchPrimaryAction) -> (label: String, symbol: String, hint: String)? {
+        switch action {
+        case .record:
+            ("Tap to record", "waveform", "Starts a new voice recording on this Watch")
+        case .stopAndSave:
+            ("Stop & save", "stop.fill", "Stops recording and saves the audio on this Watch")
+        case .openPairing:
+            ("Pair with Mac", "link", "Opens secure Mac pairing")
+        case .retryRelay:
+            ("Retry relay", "arrow.clockwise", "Retries delivery of the saved recording")
+        case .recordAnother:
+            ("Record another", "plus", "Starts another voice recording on this Watch")
+        case .none:
+            nil
+        }
+    }
+}
+
 struct WatchPrimaryActionView: View {
     let action: WatchPrimaryAction
     var tone: WatchExperienceTone = .active
@@ -7,10 +26,10 @@ struct WatchPrimaryActionView: View {
     let perform: () -> Void
 
     var body: some View {
-        if let content = content {
+        if let content = WatchPrimaryActionCopy.content(for: action) {
             Button(action: perform) {
                 Label(content.label, systemImage: content.symbol)
-                    .font(.system(.body, design: .rounded, weight: .semibold))
+                    .font(WatchExperienceTheme.TypeRole.primaryAction)
                     .lineLimit(1)
                     .minimumScaleFactor(0.82)
                     .frame(maxWidth: .infinity)
@@ -22,7 +41,7 @@ struct WatchPrimaryActionView: View {
                     }
                     .contentShape(RoundedRectangle(cornerRadius: WatchExperienceTheme.Metric.buttonRadius))
             }
-            .buttonStyle(.plain)
+            .buttonStyle(WatchFilledActionStyle(isDisabled: isDisabled))
             .disabled(isDisabled)
             .accessibilityLabel(content.label)
             .accessibilityHint(content.hint)
@@ -32,47 +51,18 @@ struct WatchPrimaryActionView: View {
     private var buttonColor: Color {
         WatchExperienceTheme.ColorToken.forTone(tone)
     }
-
-    private var content: ActionContent? {
-        switch action {
-        case .record:
-            ActionContent(
-                label: "Tap to record",
-                symbol: "waveform",
-                hint: "Starts a new voice recording on this Watch"
-            )
-        case .stopAndSave:
-            ActionContent(
-                label: "Stop & save",
-                symbol: "stop.fill",
-                hint: "Stops recording and saves the audio on this Watch"
-            )
-        case .openPairing:
-            ActionContent(
-                label: "Pair with Mac",
-                symbol: "link",
-                hint: "Opens secure Mac pairing"
-            )
-        case .retryRelay:
-            ActionContent(
-                label: "Retry relay",
-                symbol: "arrow.clockwise",
-                hint: "Retries delivery of the saved recording"
-            )
-        case .recordAnother:
-            ActionContent(
-                label: "Record another",
-                symbol: "plus",
-                hint: "Starts another voice recording on this Watch"
-            )
-        case .none:
-            nil
-        }
-    }
 }
 
-private struct ActionContent {
-    let label: String
-    let symbol: String
-    let hint: String
+private struct WatchFilledActionStyle: ButtonStyle {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    var isDisabled = false
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed && !isDisabled && !reduceMotion ? 0.97 : 1)
+            .animation(
+                SignalMotionStyle.forTransition(reduceMotion: reduceMotion).animation,
+                value: configuration.isPressed
+            )
+    }
 }

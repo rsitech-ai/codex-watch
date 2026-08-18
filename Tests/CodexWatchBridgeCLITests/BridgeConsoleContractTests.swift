@@ -95,3 +95,74 @@ import Testing
     try mailbox.enqueue(memoID)
     #expect(try mailbox.takeAll() == [memoID])
 }
+
+@Test func operatorResetSourceNeverRevokesWatchOrRotatesTLS() throws {
+    let url = URL(fileURLWithPath: #filePath)
+        .deletingLastPathComponent()
+        .deletingLastPathComponent()
+        .deletingLastPathComponent()
+        .appending(path: "Sources/CodexWatchBridgeCLI/BridgeAppModel.swift")
+    let source = try String(contentsOf: url, encoding: .utf8)
+    #expect(source.contains("guard BridgeResetGate.allow(confirmed) else { return }"))
+    #expect(source.contains("clearDisplayedChallenge()"))
+    #expect(source.contains("forgetDisplayedPairing"))
+    #expect(!source.contains("revokeCredential()"))
+    #expect(!source.contains("rotateIdentity()"))
+}
+
+@Test func settingsResetUsesTheSameConfirmationGateAsTheConsole() throws {
+    let url = URL(fileURLWithPath: #filePath)
+        .deletingLastPathComponent()
+        .deletingLastPathComponent()
+        .deletingLastPathComponent()
+        .appending(path: "Sources/CodexWatchBridgeCLI/BridgeConsoleView.swift")
+    let source = try String(contentsOf: url, encoding: .utf8)
+    #expect(source.contains("func bridgeResetConfirmation(model: BridgeAppModel)"))
+    #expect(source.contains(".bridgeResetConfirmation(model: model)"))
+    #expect(source.contains("struct BridgeSettingsView"))
+    #expect(source.contains("minHeight: 560"))
+}
+
+@Test @MainActor func macConsolePreviewHierarchyKeepsPairingOnWristAndSpecSaveObvious() {
+    let model = BridgeAppModel(pollsRuntime: false)
+
+    model.seedPreview(.delivered)
+    #expect(model.canSaveSelectedSpec)
+    #expect(model.watchPaired)
+    #expect(model.statusHierarchy.chromeHeadline == "Saved to local Inbox")
+    #expect(model.statusHierarchy.inspectorTitle == "Saved to local Inbox")
+    #expect(model.statusHierarchy.repeatCount(of: "Saved to local Inbox") == 3)
+    #expect(MemoSpecCopy.provenanceLabel(model.selectedItem?.specProvenance) == "Unverified local wrapper")
+    #expect(model.header.primaryTitle == nil)
+    #expect(
+        BridgeConsoleToolbarPresentation.make(
+            header: model.header,
+            canSaveSelectedSpec: model.canSaveSelectedSpec
+        ).showsSaveSpec
+    )
+
+    model.seedPreview(.needsAttention)
+    #expect(model.watchPaired)
+    #expect(model.header.primaryTitle == "Allow Speech Recognition")
+    #expect(model.header.spine.codex == .pending)
+    #expect(!model.canSaveSelectedSpec)
+    #expect(
+        BridgeConsoleToolbarPresentation.make(
+            header: model.header,
+            canSaveSelectedSpec: model.canSaveSelectedSpec
+        ).showsHeaderPrimary
+    )
+
+    model.seedPreview(.unpaired)
+    #expect(!model.watchPaired)
+    #expect(model.pairingSheetPresented)
+    #expect(model.pairing?.phrase == "cedar-orbit-quartz")
+    #expect(model.pairing?.code == "482917")
+    #expect(model.header.detail == BridgePairingCopy.onWristInstruction)
+
+    model.seedPreview(.empty)
+    #expect(model.watchPaired)
+    #expect(model.items.isEmpty)
+    #expect(model.header.spine.codex == .pending)
+    #expect(!model.pairingSheetPresented)
+}

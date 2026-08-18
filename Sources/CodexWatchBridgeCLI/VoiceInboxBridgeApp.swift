@@ -7,11 +7,30 @@ struct VoiceInboxBridgeApp: App {
     var body: some Scene {
         WindowGroup(CodexWatchBrand.productName, id: "bridge") {
             BridgeConsoleView(model: model)
-                .frame(minWidth: 760, minHeight: 480)
+                .frame(minWidth: 960, minHeight: 520)
+                .onAppear {
+                    NSApp.setActivationPolicy(.regular)
+                    NSApp.activate()
+                }
         }
-        .defaultSize(width: 960, height: 640)
+        .defaultSize(width: 1100, height: 680)
+        .defaultLaunchBehavior(.presented)
+        .windowToolbarStyle(.unified)
+        .windowResizability(.contentMinSize)
         .commands {
             CommandGroup(replacing: .newItem) {}
+            CommandGroup(replacing: .saveItem) {
+                Button(BridgeFileMenuCopy.saveSpec) {
+                    model.saveSelectedSpec(asHTML: false)
+                }
+                .keyboardShortcut("s", modifiers: [.command])
+                .disabled(!model.canSaveSelectedSpec || model.specBusy)
+                Button(BridgeFileMenuCopy.saveHTML) {
+                    model.saveSelectedSpec(asHTML: true)
+                }
+                .keyboardShortcut("s", modifiers: [.command, .shift])
+                .disabled(!model.canSaveSelectedSpec || model.specBusy)
+            }
             CommandMenu("Bridge") {
                 Button("Refresh") {
                     Task { await model.refresh() }
@@ -29,15 +48,14 @@ struct VoiceInboxBridgeApp: App {
                     Task { await model.retrySelected() }
                 }
                 .keyboardShortcut(.return, modifiers: [.command])
-                Divider()
-                Button("Save Spec…") {
-                    model.saveSelectedSpec(asHTML: false)
+                Button("Use Current Address") {
+                    Task { await model.rebindToCurrentAddress() }
                 }
-                .keyboardShortcut("s", modifiers: [.command])
-                Button("Save HTML…") {
-                    model.saveSelectedSpec(asHTML: true)
+                .disabled(model.rebindBusy)
+                Button("Reset…") {
+                    model.presentResetConfirmation()
                 }
-                .keyboardShortcut("s", modifiers: [.command, .shift])
+                .disabled(model.resetBusy)
             }
         }
 
@@ -63,7 +81,7 @@ private struct BridgeMenuBarContent: View {
         Divider()
         Button("Open \(CodexWatchBrand.productName)") {
             openWindow(id: "bridge")
-            NSApplication.shared.activate(ignoringOtherApps: true)
+            NSApp.activate()
         }
         Button("Generate Pairing Code") {
             Task { await model.generatePairingCode() }

@@ -19,6 +19,16 @@ final class BridgeAppModel: ObservableObject {
     @Published private(set) var advertisedName = CodexWatchBrand.productName
     @Published private(set) var advertisedHost = "—"
     @Published private(set) var bindHost = "—"
+    @Published private(set) var currentHosts: [String] = []
+    @Published private(set) var launchAgentPID: pid_t?
+    @Published private(set) var tlsFingerprintShort = "unknown"
+    @Published private(set) var lastDiagnostic: BridgeDiagnosticEvent?
+    @Published private(set) var loaded = false
+    @Published private(set) var healthy = false
+    @Published private(set) var operatorStatus: BridgeOperatorStatusPresentation?
+    @Published var resetConfirmationPresented = false
+    @Published private(set) var rebindBusy = false
+    @Published private(set) var resetBusy = false
     @Published private(set) var stateRootPath = "—"
     @Published private(set) var items: [MacInboxItem] = []
     @Published private(set) var pairing: PairingChallengePresentation?
@@ -27,6 +37,7 @@ final class BridgeAppModel: ObservableObject {
     @Published private(set) var speechBusy = false
     @Published private(set) var pairingBusy = false
     @Published private(set) var specBusy = false
+    @Published var pairingSheetPresented = false
 
     private let logger = Logger(
         subsystem: "ai.rsitech.voiceinbox.bridge",
@@ -44,6 +55,18 @@ final class BridgeAppModel: ObservableObject {
         items.first { $0.id == selectedMemoID }
     }
 
+    var selectedPresentation: MacInboxItemPresentation? {
+        selectedItem.map { MacInboxItemPresentation.make(item: $0, speech: speech) }
+    }
+
+    var statusHierarchy: BridgeConsoleStatusHierarchy {
+        BridgeConsoleStatusHierarchy.make(header: header, selected: selectedPresentation)
+    }
+
+    var canSaveSelectedSpec: Bool {
+        selectedPresentation?.showsSpecDownload == true
+    }
+
     var header: BridgeConsoleHeaderPresentation {
         BridgeConsoleHeaderPresentation.make(
             installed: installed,
@@ -52,7 +75,9 @@ final class BridgeAppModel: ObservableObject {
             watchPaired: watchPaired,
             speech: speech,
             advertisedName: advertisedName,
-            latest: items.first
+            latest: items.first,
+            bindHost: bindHost,
+            currentHosts: currentHosts
         )
     }
 
@@ -84,12 +109,23 @@ final class BridgeAppModel: ObservableObject {
             advertisedName = CodexWatchBrand.productName
             advertisedHost = runtime?.advertisedHost ?? "—"
             bindHost = runtime?.bindHost ?? "—"
+            currentHosts = WatchReachableAddress.currentIPv4Hosts()
             installed = FileManager.default.fileExists(atPath: install.application.path)
                 && FileManager.default.fileExists(atPath: install.launchAgent.path)
             let paths = try BridgeRuntimePaths(root: install.state)
             let supervisor = try BridgeSupervisor.persistedStatus(stateDirectory: paths.service)
             listenerPaused = supervisor.state == .paused
             listenerOnline = supervisor.state == .running
+            loaded = BridgeServiceLease.isLive(stateDirectory: paths.service)
+            healthy = BridgeSupervisor.isReady(stateDirectory: paths.service)
+            launchAgentPID = Self.readinessPID(service: paths.service)
+            tlsFingerprintShort = Self.shortFingerprint(
+                try? String(
+                    contentsOf: install.state.appending(path: ".identity-public-key-sha256"),
+                    encoding: .utf8
+                )
+            )
+            lastDiagnostic = BridgeDiagnosticLog.lastEvent(in: paths.service)
             items = await loadInbox(paths: paths)
             if selectedMemoID == nil {
                 selectedMemoID = items.first?.id
@@ -98,10 +134,28 @@ final class BridgeAppModel: ObservableObject {
             }
             // Keychain pairing can prompt a newly signed UI; don't hide the inbox behind it.
             watchPaired = await isWatchPaired()
+            operatorStatus = BridgeOperatorStatusPresentation.make(
+                loaded: loaded,
+                healthy: healthy,
+                bindHost: bindHost,
+                advertisedHost: advertisedHost,
+                currentHosts: currentHosts,
+                fingerprint: try? String(
+                    contentsOf: install.state.appending(path: ".identity-public-key-sha256"),
+                    encoding: .utf8
+                ).trimmingCharacters(in: .whitespacesAndNewlines),
+                launchAgentPID: launchAgentPID,
+                lastEvent: lastDiagnostic,
+                watchPaired: watchPaired,
+                lastIntake: items.first?.capturedAt,
+                speech: speech,
+                foundationModels: FoundationModelsAvailability.current()
+            )
             logger.info("bridge console refreshed")
         } catch {
             listenerOnline = false
             items = []
+            operatorStatus = nil
             logger.error("bridge console refresh failed")
         }
     }
@@ -127,6 +181,7 @@ final class BridgeAppModel: ObservableObject {
                 code: challenge.code,
                 expiresAt: challenge.expiresAt
             )
+            pairingSheetPresented = true
             statusMessage = nil
             logger.info("pairing challenge generated")
         } catch {
@@ -193,6 +248,7 @@ final class BridgeAppModel: ObservableObject {
         guard let item = selectedItem,
               let transcript = item.transcript,
               item.specProvenance != .appServer,
+              item.specProvenance != .foundationModels,
               specImproveAttempted.insert(item.id).inserted
         else { return }
         specBusy = true
@@ -222,14 +278,19 @@ final class BridgeAppModel: ObservableObject {
                 neutralDirectory: paths.codexInbox
             )
             statusMessage = "Improving spec…"
-            let markdown = try await inbox.improveSpec(memoID: item.id, transcript: transcript)
-            if let improved = MemoSpecDocument.acceptAppServerMarkdown(markdown) {
-                try specStore.save(improved, memoID: item.id)
-                statusMessage = nil
-                await refresh()
-            } else {
-                statusMessage = "Spec stayed an unverified local wrapper. Codex App Server did not return markdown."
-            }
+            let spec = await MemoSpecImprover(
+                foundationModels: FoundationModelsSpecImprover.liveIfAvailable(),
+                appServer: inbox
+            ).improve(
+                transcript: transcript,
+                capturedAt: item.capturedAt,
+                memoID: item.id
+            )
+            try specStore.save(spec, memoID: item.id)
+            statusMessage = spec.provenance == .localFallback
+                ? "Spec stayed an unverified local wrapper."
+                : nil
+            await refresh()
         } catch {
             if statusMessage == "Improving spec…" {
                 statusMessage = nil
@@ -258,22 +319,43 @@ final class BridgeAppModel: ObservableObject {
             provenance: item.specProvenance ?? .localFallback
         )
         let title = spec.title
+        let contents = asHTML
+            ? MemoSpecDocument.html(markdown: spec.markdown, title: title)
+            : MemoSpecDocument.serialized(spec)
+        presentSavePanel(
+            asHTML: asHTML,
+            filename: sanitizedFilename(title),
+            contents: contents
+        )
+    }
+
+    private func presentSavePanel(asHTML: Bool, filename: String, contents: String) {
         let panel = NSSavePanel()
         panel.canCreateDirectories = true
         panel.isExtensionHidden = false
         if asHTML {
             panel.allowedContentTypes = [.html]
-            panel.nameFieldStringValue = "\(sanitizedFilename(title)).html"
-            panel.title = "Save HTML"
+            panel.nameFieldStringValue = "\(filename).html"
+            panel.title = BridgeFileMenuCopy.saveHTML
         } else {
             panel.allowedContentTypes = [UTType(filenameExtension: "md") ?? .plainText]
-            panel.nameFieldStringValue = "\(sanitizedFilename(title)).md"
-            panel.title = "Save spec"
+            panel.nameFieldStringValue = "\(filename).md"
+            panel.title = BridgeFileMenuCopy.saveSpec
         }
-        guard panel.runModal() == .OK, let url = panel.url else { return }
-        let contents = asHTML
-            ? MemoSpecDocument.html(markdown: spec.markdown, title: title)
-            : MemoSpecDocument.serialized(spec)
+        if let window = NSApp.keyWindow ?? NSApp.windows.first(where: \.isVisible) {
+            panel.beginSheetModal(for: window) { response in
+                guard response == .OK, let url = panel.url else { return }
+                Task { @MainActor in
+                    self.writeSpec(contents, to: url)
+                }
+            }
+        } else {
+            guard panel.runModal() == .OK, let url = panel.url else { return }
+            writeSpec(contents, to: url)
+        }
+    }
+
+    private func writeSpec(_ contents: String, to url: URL) {
         do {
             try Data(contents.utf8).write(to: url, options: .atomic)
             statusMessage = nil
@@ -292,8 +374,72 @@ final class BridgeAppModel: ObservableObject {
             await generatePairingCode()
         case "Retry transcription":
             await retrySelected()
+        case "Use current address":
+            await rebindToCurrentAddress()
         default:
             break
+        }
+    }
+
+    func presentResetConfirmation() {
+        resetConfirmationPresented = true
+    }
+
+    func cancelReset() {
+        resetConfirmationPresented = false
+    }
+
+    func performReset(confirmed: Bool, forgetDisplayedPairing: Bool) async {
+        resetConfirmationPresented = false
+        guard BridgeResetGate.allow(confirmed) else { return }
+        resetBusy = true
+        defer { resetBusy = false }
+        guard pollsRuntime else {
+            if forgetDisplayedPairing {
+                pairing = nil
+                pairingSheetPresented = false
+            }
+            return
+        }
+        do {
+            let install = try BridgeInstallPaths.production(
+                home: FileManager.default.homeDirectoryForCurrentUser
+            )
+            let paths = try BridgeRuntimePaths(root: install.state)
+            _ = try OperatorRetryMailbox(stateDirectory: paths.service).takeAll()
+            let store = try PairingStore(secretStore: KeychainSecretStore())
+            if forgetDisplayedPairing {
+                try await store.clearDisplayedChallenge()
+                pairing = nil
+                pairingSheetPresented = false
+            } else {
+                await generatePairingCode()
+            }
+            statusMessage = forgetDisplayedPairing
+                ? "Cleared the displayed pairing code and retry mailbox. Watch Keychain was not wiped."
+                : "Regenerated the pairing code and cleared the retry mailbox."
+            await refresh()
+        } catch {
+            statusMessage = "Couldn’t reset operator state on this Mac."
+        }
+    }
+
+    func rebindToCurrentAddress() async {
+        rebindBusy = true
+        defer { rebindBusy = false }
+        guard let host = WatchReachableAddress.preferredHost(),
+              NetworkBridgeListener.isValidWatchReachableBindHost(host),
+              NetworkBridgeListener.isValidWatchReachableAdvertisedHost(host)
+        else {
+            statusMessage = "Couldn’t find a Watch-reachable address on this Mac."
+            return
+        }
+        do {
+            try await Self.productionInstaller().rebind(bindHost: host, advertisedHost: host)
+            statusMessage = "Listener rebound to \(host) without rotating TLS."
+            await refresh()
+        } catch {
+            statusMessage = "Couldn’t rebind the listener to this Mac’s current address."
         }
     }
 
@@ -409,9 +555,16 @@ final class BridgeAppModel: ObservableObject {
         advertisedName = CodexWatchBrand.productName
         advertisedHost = "192.168.1.10"
         bindHost = "192.168.1.10"
+        currentHosts = ["192.168.1.10"]
+        loaded = true
+        healthy = true
+        launchAgentPID = 4242
+        tlsFingerprintShort = "01234567"
+        lastDiagnostic = .serviceRunning
         stateRootPath = "~/Library/Application Support/VoiceInboxBridge/State"
         statusMessage = nil
         pairing = nil
+        pairingSheetPresented = false
         switch kind {
         case .delivered:
             watchPaired = true
@@ -431,11 +584,57 @@ final class BridgeAppModel: ObservableObject {
                 code: "482917",
                 expiresAt: Date().addingTimeInterval(8 * 60)
             )
+            pairingSheetPresented = true
         case .empty:
             watchPaired = true
             items = []
             selectedMemoID = nil
         }
+        operatorStatus = BridgeOperatorStatusPresentation.make(
+            loaded: loaded,
+            healthy: healthy,
+            bindHost: bindHost,
+            advertisedHost: advertisedHost,
+            currentHosts: currentHosts,
+            fingerprint: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+            launchAgentPID: launchAgentPID,
+            lastEvent: lastDiagnostic,
+            watchPaired: watchPaired,
+            lastIntake: items.first?.capturedAt,
+            speech: speech,
+            foundationModels: .unavailable("Preview uses the local wrapper.")
+        )
+    }
+
+    private static func productionInstaller() throws -> BridgeServiceInstaller {
+        let paths = try BridgeInstallPaths.production(
+            home: FileManager.default.homeDirectoryForCurrentUser
+        )
+        let serviceState = paths.state.appending(path: "service", directoryHint: .isDirectory)
+        return BridgeServiceInstaller(
+            paths: paths,
+            launchctl: LaunchctlClient(),
+            signatureVerifier: CodeSignBridgeBundleSignatureVerifier(),
+            identityProvisioner: TLSIdentityProvisioner(keychain: SystemTLSIdentityKeychain()),
+            healthCheck: { BridgeSupervisor.isReady(stateDirectory: serviceState) }
+        )
+    }
+
+    private static func readinessPID(service: URL) -> pid_t? {
+        struct Ready: Decodable { var pid: pid_t }
+        let url = service.appending(path: "service.ready")
+        guard let data = try? Data(contentsOf: url),
+              let ready = try? JSONDecoder().decode(Ready.self, from: data),
+              ready.pid > 0
+        else { return nil }
+        return ready.pid
+    }
+
+    private static func shortFingerprint(_ raw: String?) -> String {
+        guard let raw else { return "unknown" }
+        let value = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard value.utf8.count >= 8 else { return "unknown" }
+        return String(value.prefix(8))
     }
 
     private static func previewItem(state: MemoState, spec: Bool) -> MacInboxItem {

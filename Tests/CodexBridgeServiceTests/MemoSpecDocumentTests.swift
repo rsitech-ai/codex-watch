@@ -25,6 +25,15 @@ import Testing
     #expect(html.contains("<h1>Far far away from the watch, capture this thought</h1>"))
 }
 
+@Test func specDocumentHtmlFollowsSystemAppearance() {
+    let html = MemoSpecDocument.html(markdown: "# Quiet capture\n", title: "Quiet capture")
+    #expect(html.contains("color-scheme: light dark"))
+    #expect(html.contains("color: CanvasText"))
+    #expect(html.contains("background: Canvas"))
+    #expect(!html.contains("background: #fff"))
+    #expect(!html.contains("color: #1d1d1f"))
+}
+
 @Test func specStoreWritesSerializedMarkdownNextToDeliveryJournal() throws {
     let root = FileManager.default.temporaryDirectory.appending(
         path: "codexwatch-spec-store-\(UUID().uuidString)",
@@ -58,5 +67,16 @@ import Testing
     ```
     """)
     #expect(accepted?.provenance == .appServer)
+    #expect(accepted?.title == "Quiet capture")
+}
+
+@Test func specDocumentAcceptsFoundationModelsMarkdown() {
+    let accepted = MemoSpecDocument.acceptFoundationModelsMarkdown("""
+    # Quiet capture
+
+    ## Summary
+    Keep the raw transcript visible.
+    """)
+    #expect(accepted?.provenance == .foundationModels)
     #expect(accepted?.title == "Quiet capture")
 }

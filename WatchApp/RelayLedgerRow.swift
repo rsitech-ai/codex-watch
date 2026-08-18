@@ -1,5 +1,33 @@
 import SwiftUI
 
+enum RelayLedgerEmptyCopy {
+    static let symbolName = "point.3.connected.trianglepath.dotted"
+    static let title = "Relay ledger empty"
+    static let detail = "New recordings appear here after they are saved on this Watch."
+}
+
+struct RelayLedgerEmptyView: View {
+    var body: some View {
+        VStack(spacing: 8) {
+            Image(systemName: RelayLedgerEmptyCopy.symbolName)
+                .font(.title2)
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(WatchExperienceTheme.ColorToken.neutral)
+            Text(RelayLedgerEmptyCopy.title)
+                .font(WatchExperienceTheme.TypeRole.emptyHeadline)
+                .multilineTextAlignment(.center)
+            Text(RelayLedgerEmptyCopy.detail)
+                .font(WatchExperienceTheme.TypeRole.detail)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(.horizontal, CaptureLayoutPolicy.sceneHorizontalPadding)
+        .accessibilityElement(children: .combine)
+        .accessibilityValue(RelayLedgerSummary(count: 0).accessibilityValue)
+    }
+}
+
 struct RelayLedgerSummary: Equatable {
     let count: Int
 
@@ -33,11 +61,11 @@ struct RelayLedgerRow: View {
             VStack(alignment: .leading, spacing: 4) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(presentation.status)
-                        .font(.caption.weight(.bold))
+                        .font(WatchExperienceTheme.TypeRole.ledgerStatus)
                         .foregroundStyle(toneColor)
                         .lineLimit(2)
                     Text(presentation.detail)
-                        .font(.caption2)
+                        .font(WatchExperienceTheme.TypeRole.detail)
                         .foregroundStyle(.secondary)
                         .lineLimit(2)
                     timestamp
@@ -91,11 +119,13 @@ struct RelayLedgerRow: View {
     private var timestamp: some View {
         if let timestampLabel {
             Text(timestampLabel)
-                .font(.caption2.monospacedDigit())
+                .font(WatchExperienceTheme.TypeRole.detail)
+                .monospacedDigit()
                 .foregroundStyle(.tertiary)
         } else {
             Text(item.capturedAt, style: .relative)
-                .font(.caption2.monospacedDigit())
+                .font(WatchExperienceTheme.TypeRole.detail)
+                .monospacedDigit()
                 .foregroundStyle(.tertiary)
         }
     }

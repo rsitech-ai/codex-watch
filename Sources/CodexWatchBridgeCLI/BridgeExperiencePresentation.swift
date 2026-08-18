@@ -31,13 +31,16 @@ struct BridgeSpinePresentation: Equatable {
 }
 
 enum BridgeExperienceTheme {
-    // ponytail: same tokens as WatchExperienceTheme; extract a shared module if a third surface appears.
     enum ColorToken {
-        static let active = Color(red: 0.18, green: 0.86, blue: 0.94)
-        static let confirmed = Color(red: 0.69, green: 0.93, blue: 0.22)
-        static let attention = Color(red: 1.00, green: 0.68, blue: 0.18)
-        static let destructive = Color(red: 1.00, green: 0.27, blue: 0.32)
+        static let active = rgb(SignalExperienceToken.RGB.active)
+        static let confirmed = rgb(SignalExperienceToken.RGB.confirmed)
+        static let attention = rgb(SignalExperienceToken.RGB.attention)
+        static let destructive = rgb(SignalExperienceToken.RGB.destructive)
         static let neutral = Color.primary.opacity(0.42)
+
+        private static func rgb(_ token: (red: Double, green: Double, blue: Double)) -> Color {
+            Color(red: token.red, green: token.green, blue: token.blue)
+        }
 
         static func forTone(_ tone: BridgeExperienceTone) -> Color {
             switch tone {
@@ -56,6 +59,130 @@ enum BridgeExperienceTheme {
             case .confirmed: confirmed
             case .attention: attention
             }
+        }
+    }
+
+    enum Metric {
+        static let nodeSize: CGFloat = 20
+        static let nodeSpacing: CGFloat = 28
+        static let spineWidth: CGFloat = 2
+    }
+
+    enum TypeRole {
+        static let spineLabel = Font.system(.caption, design: .rounded, weight: .semibold)
+        static let inspectorTitle = Font.title2.weight(.bold)
+        static let pairingCode = Font.system(.largeTitle, design: .rounded, weight: .bold)
+    }
+}
+
+enum BridgeMotionStyle: Equatable {
+    case crossFade
+    case spring(response: Double, damping: Double)
+
+    static let defaultResponse = SignalExperienceToken.Motion.springResponse
+    static let defaultDamping = SignalExperienceToken.Motion.springDamping
+    static let crossFadeDuration = SignalExperienceToken.Motion.crossFadeDuration
+
+    static func forTransition(reduceMotion: Bool) -> Self {
+        reduceMotion
+            ? .crossFade
+            : .spring(response: defaultResponse, damping: defaultDamping)
+    }
+
+    var animation: Animation {
+        switch self {
+        case .crossFade:
+            .easeInOut(duration: Self.crossFadeDuration)
+        case let .spring(response, damping):
+            .spring(response: response, dampingFraction: damping)
+        }
+    }
+}
+
+enum BridgePairingFill {
+    static let standardOpacity = 0.06
+    static let increasedContrastOpacity = 0.12
+
+    static func opacity(increasedContrast: Bool) -> Double {
+        increasedContrast ? increasedContrastOpacity : standardOpacity
+    }
+}
+
+enum BridgeFileMenuCopy {
+    static let saveSpec = "Save Spec…"
+    static let saveHTML = "Save HTML…"
+}
+
+enum BridgePairingCopy {
+    static let sheetTitle = "Pair with Watch"
+    static let onWristInstruction =
+        "Compare the certificate phrase on your Watch, then enter the 6-digit code there."
+    static let macShowsOnly = "This Mac only shows the phrase and code. Enter them on your Watch."
+}
+
+enum BridgeSpineCopy {
+    static let labels = ["WATCH", "MAC", "CODEX"]
+    static let accessibilityLabel = "Delivery path"
+}
+
+struct BridgeConsoleStatusHierarchy: Equatable {
+    let chromeHeadline: String?
+    let listStatus: String?
+    let inspectorTitle: String?
+
+    var renderedStatusTexts: [String] {
+        [chromeHeadline, listStatus, inspectorTitle].compactMap { $0 }
+    }
+
+    func repeatCount(of status: String) -> Int {
+        renderedStatusTexts.filter { $0.caseInsensitiveCompare(status) == .orderedSame }.count
+    }
+
+    static func make(
+        header: BridgeConsoleHeaderPresentation,
+        selected: MacInboxItemPresentation?
+    ) -> Self {
+        guard let selected else {
+            return Self(chromeHeadline: header.headline, listStatus: nil, inspectorTitle: nil)
+        }
+        return Self(
+            chromeHeadline: header.headline,
+            listStatus: selected.status,
+            inspectorTitle: selected.status
+        )
+    }
+}
+
+struct BridgeConsoleToolbarPresentation: Equatable {
+    let headerPrimaryTitle: String?
+    let headerPrimaryHint: String?
+    let headerPrimarySymbol: String
+    let showsPairingCode: Bool
+    let showsSaveSpec: Bool
+
+    var showsHeaderPrimary: Bool { headerPrimaryTitle != nil }
+
+    static func make(
+        header: BridgeConsoleHeaderPresentation,
+        canSaveSelectedSpec: Bool
+    ) -> Self {
+        Self(
+            headerPrimaryTitle: header.primaryTitle,
+            headerPrimaryHint: header.primaryHint,
+            headerPrimarySymbol: symbol(for: header.primaryTitle),
+            showsPairingCode: header.primaryTitle != "Generate pairing code",
+            showsSaveSpec: canSaveSelectedSpec
+        )
+    }
+
+    private static func symbol(for title: String?) -> String {
+        switch title {
+        case "Allow Speech Recognition": "waveform"
+        case "Open Speech Settings": "gearshape"
+        case "Generate pairing code": "link"
+        case "Retry transcription": "arrow.clockwise"
+        case "Use current address": "network"
+        default: "exclamationmark.triangle.fill"
         }
     }
 }
@@ -227,6 +354,8 @@ struct MacInboxItemPresentation: Equatable {
             switch item.specProvenance {
             case .appServer:
                 detail += " Spec is ready to save."
+            case .foundationModels:
+                detail += " Spec was improved on-device by Foundation Models."
             case .localFallback, nil:
                 detail += " Spec is an unverified local wrapper."
             }
@@ -298,7 +427,6 @@ struct MacInboxItemPresentation: Equatable {
 }
 
 struct BridgeConsoleHeaderPresentation: Equatable {
-    let kicker: String
     let headline: String
     let detail: String
     let tone: BridgeExperienceTone
@@ -313,11 +441,12 @@ struct BridgeConsoleHeaderPresentation: Equatable {
         watchPaired: Bool,
         speech: BridgeSpeechAuthorizationStatus,
         advertisedName: String,
-        latest: MacInboxItem?
+        latest: MacInboxItem?,
+        bindHost: String = "—",
+        currentHosts: [String] = []
     ) -> Self {
         if !installed {
             return Self(
-                kicker: "Mac needs attention",
                 headline: "Install the Mac bridge.",
                 detail: "\(CodexWatchBrand.productName) is not installed for this user yet.",
                 tone: .attention,
@@ -331,9 +460,24 @@ struct BridgeConsoleHeaderPresentation: Equatable {
                 primaryHint: nil
             )
         }
+        if WatchReachableAddress.bindLooksUnreachable(bindHost: bindHost, currentHosts: currentHosts) {
+            let current = currentHosts.joined(separator: ", ")
+            return Self(
+                headline: "Watch cannot reach this Mac.",
+                detail: "The listener is bound to \(bindHost). This Mac’s current address is \(current). Use the current address so Watch uploads can land.",
+                tone: .attention,
+                spine: BridgeSpinePresentation(
+                    watch: watchPaired ? .confirmed : .pending,
+                    mac: .attention,
+                    codex: .pending,
+                    accessibilityValue: "Mac listener is bound to an address this Mac is not using; Watch uploads cannot land"
+                ),
+                primaryTitle: "Use current address",
+                primaryHint: "Rebinds the LaunchAgent to this Mac’s current LAN address without rotating TLS"
+            )
+        }
         if speech != .authorized {
             return Self(
-                kicker: "Speech needs attention",
                 headline: "Allow Speech Recognition.",
                 detail: BridgeSpeechCopy.blockedDetail(for: speech),
                 tone: .attention,
@@ -352,9 +496,8 @@ struct BridgeConsoleHeaderPresentation: Equatable {
         }
         if !watchPaired {
             return Self(
-                kicker: "Watch ready to pair",
                 headline: "Show the phrase and code.",
-                detail: "Compare the certificate phrase on your Watch, then enter the 6-digit code there.",
+                detail: BridgePairingCopy.onWristInstruction,
                 tone: .active,
                 spine: BridgeSpinePresentation(
                     watch: .pending,
@@ -368,7 +511,6 @@ struct BridgeConsoleHeaderPresentation: Equatable {
         }
         if listenerPaused {
             return Self(
-                kicker: "Mac paused",
                 headline: "Listener is paused.",
                 detail: "\(advertisedName) is installed but not accepting Watch audio.",
                 tone: .attention,
@@ -384,7 +526,6 @@ struct BridgeConsoleHeaderPresentation: Equatable {
         }
         if !listenerOnline {
             return Self(
-                kicker: "Mac needs attention",
                 headline: "Listener is offline.",
                 detail: "\(advertisedName) is paired, but this Mac is not accepting Watch audio right now.",
                 tone: .attention,
@@ -402,7 +543,6 @@ struct BridgeConsoleHeaderPresentation: Equatable {
             let item = MacInboxItemPresentation.make(item: latest, speech: speech)
             let attentionWithoutTranscript = item.tone == .attention && latest.transcript == nil
             return Self(
-                kicker: attentionWithoutTranscript ? "Mac" : item.status,
                 headline: attentionWithoutTranscript ? "Transcription did not finish." : item.status,
                 detail: item.detail,
                 tone: item.tone,
@@ -412,7 +552,6 @@ struct BridgeConsoleHeaderPresentation: Equatable {
             )
         }
         return Self(
-            kicker: "Mac relay ready",
             headline: "Waiting for the Watch.",
             detail: "\(advertisedName) is paired and listening.",
             tone: .confirmed,
@@ -455,6 +594,8 @@ enum BridgeSpeechCopy {
 enum MemoSpecCopy {
     static func provenanceLabel(_ provenance: MemoSpecProvenance?) -> String {
         switch provenance {
+        case .foundationModels:
+            "Improved on-device by Foundation Models"
         case .appServer:
             "Improved by Codex App Server"
         case .localFallback, nil:
@@ -519,16 +660,16 @@ enum PairingExpiryCopy {
 
 struct BridgeSpineView: View {
     let presentation: BridgeSpinePresentation
-    var nodeSize: CGFloat = 20
-    var nodeSpacing: CGFloat = 28
+    var nodeSize: CGFloat = BridgeExperienceTheme.Metric.nodeSize
+    var nodeSpacing: CGFloat = BridgeExperienceTheme.Metric.nodeSpacing
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var nodes: [(label: String, state: BridgeSpineNodeState)] {
         [
-            ("WATCH", presentation.watch),
-            ("MAC", presentation.mac),
-            ("CODEX", presentation.codex),
+            (BridgeSpineCopy.labels[0], presentation.watch),
+            (BridgeSpineCopy.labels[1], presentation.mac),
+            (BridgeSpineCopy.labels[2], presentation.codex),
         ]
     }
 
@@ -538,22 +679,22 @@ struct BridgeSpineView: View {
                 VStack(spacing: 6) {
                     BridgeSpineNode(state: node.state, size: nodeSize)
                     Text(node.label)
-                        .font(.system(size: 10, weight: .semibold, design: .rounded))
+                        .font(BridgeExperienceTheme.TypeRole.spineLabel)
                         .tracking(0.7)
                         .foregroundStyle(BridgeExperienceTheme.ColorToken.forNode(node.state))
                 }
                 if index < nodes.count - 1 {
                     Rectangle()
                         .fill(segmentColor(after: index))
-                        .frame(width: nodeSpacing, height: 2)
+                        .frame(width: nodeSpacing, height: BridgeExperienceTheme.Metric.spineWidth)
                         .padding(.bottom, 18)
                 }
             }
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Delivery path")
+        .accessibilityLabel(BridgeSpineCopy.accessibilityLabel)
         .accessibilityValue(presentation.accessibilityValue)
-        .animation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 1.0), value: presentation)
+        .animation(BridgeMotionStyle.forTransition(reduceMotion: reduceMotion).animation, value: presentation)
     }
 
     private func segmentColor(after index: Int) -> Color {
@@ -577,7 +718,7 @@ private struct BridgeSpineNode: View {
                     .stroke(color, lineWidth: 1.5)
                     .padding(4)
             case .active:
-                RoundedRectangle(cornerRadius: 3)
+                RoundedRectangle(cornerRadius: 2.5)
                     .fill(color)
                     .padding(4)
                     .rotationEffect(.degrees(45))
@@ -585,11 +726,11 @@ private struct BridgeSpineNode: View {
                 Circle()
                     .fill(color)
                 Image(systemName: "checkmark")
-                    .font(.system(size: 9, weight: .black))
+                    .font(.system(size: 10, weight: .black))
                     .foregroundStyle(.black)
             case .attention:
                 Image(systemName: "exclamationmark.triangle.fill")
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.system(size: 18, weight: .semibold))
                     .foregroundStyle(color)
             }
         }

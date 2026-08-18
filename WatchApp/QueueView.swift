@@ -12,7 +12,7 @@ struct QueueView: View {
     var body: some View {
         Group {
             if model.queueItems.isEmpty {
-                emptyLedger
+                RelayLedgerEmptyView()
             } else {
                 List {
                     Section {
@@ -35,7 +35,7 @@ struct QueueView: View {
                         }
                     } header: {
                         Text(summary.accessibilityValue)
-                            .font(.caption2.weight(.semibold))
+                            .font(WatchExperienceTheme.TypeRole.headerUtility)
                     }
                 }
             }
@@ -66,23 +66,6 @@ struct QueueView: View {
         } message: {
             Text(itemPendingDeletion?.deletionWarning ?? "")
         }
-    }
-
-    private var emptyLedger: some View {
-        VStack(spacing: 7) {
-            Image(systemName: "point.3.connected.trianglepath.dotted")
-                .font(.title2)
-                .foregroundStyle(WatchExperienceTheme.ColorToken.neutral)
-            Text("Relay ledger empty")
-                .font(.headline)
-            Text("New recordings appear here after they are saved on this Watch.")
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-        }
-        .padding()
-        .accessibilityElement(children: .combine)
-        .accessibilityValue(summary.accessibilityValue)
     }
 
     private func playbackActionTitle(for item: WatchQueueItem) -> String {

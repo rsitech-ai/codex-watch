@@ -1,5 +1,6 @@
 import CodexBridgeShared
 import CodexWatchCore
+import SwiftUI
 
 enum WatchExperienceTone: Equatable {
     case neutral
@@ -450,11 +451,26 @@ struct RelayItemPresentation: Equatable {
 }
 
 enum SignalMotionStyle: Equatable {
-    case immediate
-    case bounded(duration: Double)
+    case crossFade
+    case spring(response: Double, damping: Double)
+
+    static let defaultResponse = SignalExperienceToken.Motion.springResponse
+    static let defaultDamping = SignalExperienceToken.Motion.springDamping
+    static let crossFadeDuration = SignalExperienceToken.Motion.crossFadeDuration
 
     static func forTransition(reduceMotion: Bool) -> Self {
-        reduceMotion ? .immediate : .bounded(duration: 0.24)
+        reduceMotion
+            ? .crossFade
+            : .spring(response: defaultResponse, damping: defaultDamping)
+    }
+
+    var animation: Animation {
+        switch self {
+        case .crossFade:
+            .easeInOut(duration: Self.crossFadeDuration)
+        case let .spring(response, damping):
+            .spring(response: response, dampingFraction: damping)
+        }
     }
 }
 
@@ -463,4 +479,25 @@ enum CaptureAccessibilityPriority {
     static let relayPath = 3.0
     static let primaryAction = 2.0
     static let secondaryNavigation = 1.0
+
+    enum Branch: Equatable {
+        case instrument
+        case bottomSafeAreaInset
+    }
+
+    static func branch(for role: Role) -> Branch {
+        switch role {
+        case .state, .relayPath, .secondaryNavigation:
+            .instrument
+        case .primaryAction:
+            .bottomSafeAreaInset
+        }
+    }
+
+    enum Role {
+        case state
+        case relayPath
+        case primaryAction
+        case secondaryNavigation
+    }
 }

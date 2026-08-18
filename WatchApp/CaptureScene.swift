@@ -23,6 +23,12 @@ enum CapturePrivacyMode {
 
 enum CaptureLayoutPolicy {
     static let fitAxes: Axis.Set = [.horizontal, .vertical]
+    static var pinsPrimaryActionToBottomInset: Bool {
+        CaptureAccessibilityPriority.branch(for: .primaryAction) == .bottomSafeAreaInset
+    }
+    static let primaryInsetSpacing: CGFloat = 6
+    static let sceneHorizontalPadding: CGFloat = 7
+    static let sceneBottomPadding: CGFloat = 5
 }
 
 struct CaptureScene: View {
@@ -46,18 +52,50 @@ struct CaptureScene: View {
     }
 
     var body: some View {
-        ViewThatFits(in: CaptureLayoutPolicy.fitAxes) {
-            composition(isCompact: false)
-            composition(isCompact: true)
-            ScrollView {
-                composition(isCompact: true)
-            }
-        }
-        .padding(.horizontal, 7)
-        .padding(.bottom, 5)
+        pinnedPrimaryAction(fittedInstrument)
+            .padding(.horizontal, CaptureLayoutPolicy.sceneHorizontalPadding)
+            .padding(.bottom, CaptureLayoutPolicy.sceneBottomPadding)
     }
 
-    private func composition(isCompact: Bool) -> some View {
+    private var fittedInstrument: some View {
+        ViewThatFits(in: CaptureLayoutPolicy.fitAxes) {
+            instrument(isCompact: false)
+            instrument(isCompact: true)
+            ScrollView {
+                instrument(isCompact: true)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+    }
+
+    @ViewBuilder
+    private func pinnedPrimaryAction<Content: View>(_ content: Content) -> some View {
+        if CaptureLayoutPolicy.pinsPrimaryActionToBottomInset,
+           CaptureAccessibilityPriority.branch(for: .primaryAction) == .bottomSafeAreaInset
+        {
+            content.safeAreaInset(edge: .bottom, spacing: CaptureLayoutPolicy.primaryInsetSpacing) {
+                primaryActionChrome
+                    .accessibilitySortPriority(CaptureAccessibilityPriority.primaryAction)
+            }
+        } else {
+            content
+        }
+    }
+
+    @ViewBuilder
+    private var primaryActionChrome: some View {
+        if privacyMode.showsEssentialAction {
+            WatchPrimaryActionView(
+                action: presentation.primaryAction,
+                tone: actionTone,
+                isDisabled: presentation.primaryActionDisabled
+            ) {
+                onPrimaryAction(presentation.primaryAction)
+            }
+        }
+    }
+
+    private func instrument(isCompact: Bool) -> some View {
         VStack(alignment: .leading, spacing: isCompact ? 6 : 9) {
             statusHeader(isCompact: isCompact)
 
@@ -74,17 +112,6 @@ struct CaptureScene: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .accessibilitySortPriority(CaptureAccessibilityPriority.state)
             }
-
-            if privacyMode.showsEssentialAction {
-                WatchPrimaryActionView(
-                    action: presentation.primaryAction,
-                    tone: actionTone,
-                    isDisabled: presentation.primaryActionDisabled
-                ) {
-                    onPrimaryAction(presentation.primaryAction)
-                }
-                .accessibilitySortPriority(CaptureAccessibilityPriority.primaryAction)
-            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -92,8 +119,8 @@ struct CaptureScene: View {
     private func statusHeader(isCompact: Bool) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 5) {
             Text(presentation.kicker.uppercased())
-                .font(.system(size: isCompact ? 9 : 10, weight: .bold, design: .rounded))
-                .tracking(isCompact ? 0.4 : 0.75)
+                .font(WatchExperienceTheme.TypeRole.kicker(compact: isCompact))
+                .tracking(WatchExperienceTheme.TypeRole.kickerTracking(compact: isCompact))
                 .foregroundStyle(WatchExperienceTheme.ColorToken.forTone(presentation.tone))
                 .lineLimit(1)
                 .minimumScaleFactor(isCompact ? 0.68 : 0.85)
@@ -104,7 +131,7 @@ struct CaptureScene: View {
 
             Button(action: onOpenRetention) {
                 Image(systemName: "gearshape")
-                    .font(.caption2.weight(.semibold))
+                    .font(WatchExperienceTheme.TypeRole.headerUtility)
                     .foregroundStyle(.secondary)
             }
             .buttonStyle(.plain)
@@ -117,13 +144,13 @@ struct CaptureScene: View {
             Button(action: onOpenPairing) {
                 if CapturePairingChrome.showsLabeledHeader(isPaired: bridgeIsPaired) {
                     Text(CapturePairingChrome.unpairedHeaderTitle)
-                        .font(.caption2.weight(.semibold))
+                        .font(WatchExperienceTheme.TypeRole.headerUtility)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                         .minimumScaleFactor(0.75)
                 } else {
                     Image(systemName: "desktopcomputer")
-                        .font(.caption2.weight(.semibold))
+                        .font(WatchExperienceTheme.TypeRole.headerUtility)
                         .foregroundStyle(.secondary)
                 }
             }
@@ -140,7 +167,7 @@ struct CaptureScene: View {
 
             Button(action: onOpenQueue) {
                 Image(systemName: "tray.full")
-                    .font(.caption2.weight(.semibold))
+                    .font(WatchExperienceTheme.TypeRole.headerUtility)
                     .foregroundStyle(.secondary)
             }
             .buttonStyle(.plain)
@@ -163,15 +190,23 @@ struct CaptureScene: View {
                         now: context.date,
                         maximumDuration: maximumDuration
                     ))
-                    .font(.system(isCompact ? .title2 : .title, design: .rounded, weight: .bold))
+                    .font(WatchExperienceTheme.TypeRole.recordingTime(compact: isCompact))
                     .monospacedDigit()
-                    .contentTransition(reduceMotion ? .identity : .numericText())
+                    .contentTransition(
+                        SignalMotionStyle.forTransition(reduceMotion: reduceMotion) == .crossFade
+                            ? .opacity
+                            : .numericText()
+                    )
+                    .animation(
+                        SignalMotionStyle.forTransition(reduceMotion: reduceMotion).animation,
+                        value: context.date
+                    )
                     .accessibilityLabel("Recording time")
 
                     if privacyMode.showsSecondaryDetail {
                         let limitDetail = recordingLimitDetail(context.date)
                         Text(limitDetail)
-                            .font(.caption2)
+                            .font(WatchExperienceTheme.TypeRole.detail)
                             .foregroundStyle(
                                 limitDetail == "Tap to stop"
                                     ? Color.secondary
@@ -187,14 +222,14 @@ struct CaptureScene: View {
             VStack(alignment: .leading, spacing: 3) {
                 if privacyMode.showsState {
                     Text(presentation.headline)
-                        .font(.system(isCompact ? .headline : .title3, design: .rounded, weight: .bold))
+                        .font(WatchExperienceTheme.TypeRole.heroHeadline(compact: isCompact))
                         .minimumScaleFactor(0.75)
                         .lineLimit(isCompact ? 2 : 3)
                 }
 
                 if privacyMode.showsSecondaryDetail {
                     Text(presentation.detail)
-                        .font(.caption2)
+                        .font(WatchExperienceTheme.TypeRole.detail)
                         .foregroundStyle(.secondary)
                         .lineLimit(2)
                         .minimumScaleFactor(isCompact ? 0.68 : 0.82)
