@@ -28,7 +28,7 @@ extension AppServerClient: AppServerRequesting {}
 
 public actor AppServerInboxClient: InboxDeliveryClient, SpecImproving {
     private static let logger = Logger(
-        subsystem: "ai.rsitech.voiceinbox.bridge",
+        subsystem: "ai.rsitech.codexwatch.bridge",
         category: "inbox"
     )
     public static let exactThreadName = "Codex Watch"

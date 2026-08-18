@@ -19,17 +19,17 @@ public struct BridgeInstallPaths: Equatable, Sendable {
         }
         let canonicalHome = home.standardizedFileURL
         let support = canonicalHome.appending(
-            path: "Library/Application Support/VoiceInboxBridge",
+            path: "Library/Application Support/CodexWatch",
             directoryHint: .isDirectory
         )
         return Self(
             application: support
                 .appending(path: "Service", directoryHint: .isDirectory)
-                .appending(path: "VoiceInboxBridge.app", directoryHint: .isDirectory),
+                .appending(path: "CodexWatch.app", directoryHint: .isDirectory),
             state: support.appending(path: "State", directoryHint: .isDirectory),
             launchAgent: canonicalHome
                 .appending(path: "Library/LaunchAgents", directoryHint: .isDirectory)
-                .appending(path: "ai.rsitech.voiceinbox.bridge.plist")
+                .appending(path: "ai.rsitech.codexwatch.bridge.plist")
         )
     }
 }
@@ -168,7 +168,8 @@ final class BridgeInstallerLifecycleLease: @unchecked Sendable {
 }
 
 public actor BridgeServiceInstaller {
-    public static let label = "ai.rsitech.voiceinbox.bridge"
+    // ponytail: unload leftover ai.rsitech.voiceinbox.bridge after this label is bootstrapped
+    public static let label = "ai.rsitech.codexwatch.bridge"
     private static let executableName = "codex-watch-bridge"
     private static let maximumHealthTimeout: Duration = .seconds(15)
 
@@ -263,13 +264,13 @@ public actor BridgeServiceInstaller {
 
         let token = UUID().uuidString
         let stagedApplication = paths.application.deletingLastPathComponent()
-            .appending(path: ".VoiceInboxBridge.app.staged-\(token)", directoryHint: .isDirectory)
+            .appending(path: ".CodexWatch.app.staged-\(token)", directoryHint: .isDirectory)
         let stagedManifest = paths.launchAgent.deletingLastPathComponent()
-            .appending(path: ".ai.rsitech.voiceinbox.bridge.plist.staged-\(token)")
+            .appending(path: ".ai.rsitech.codexwatch.bridge.plist.staged-\(token)")
         let backupApplication = paths.application.deletingLastPathComponent()
-            .appending(path: ".VoiceInboxBridge.app.backup-\(token)", directoryHint: .isDirectory)
+            .appending(path: ".CodexWatch.app.backup-\(token)", directoryHint: .isDirectory)
         let backupManifest = paths.launchAgent.deletingLastPathComponent()
-            .appending(path: ".ai.rsitech.voiceinbox.bridge.plist.backup-\(token)")
+            .appending(path: ".ai.rsitech.codexwatch.bridge.plist.backup-\(token)")
         let backupFingerprint = paths.state
             .appending(path: ".identity-public-key-sha256.backup-\(token)")
 
@@ -388,9 +389,9 @@ public actor BridgeServiceInstaller {
 
         let token = UUID().uuidString
         let stagedManifest = paths.launchAgent.deletingLastPathComponent()
-            .appending(path: ".ai.rsitech.voiceinbox.bridge.plist.rebind-\(token)")
+            .appending(path: ".ai.rsitech.codexwatch.bridge.plist.rebind-\(token)")
         let backupManifest = paths.launchAgent.deletingLastPathComponent()
-            .appending(path: ".ai.rsitech.voiceinbox.bridge.plist.rebind-backup-\(token)")
+            .appending(path: ".ai.rsitech.codexwatch.bridge.plist.rebind-backup-\(token)")
         let priorLoaded = try await serviceIsLoaded()
         var manifestBackedUp = false
         var manifestInstalled = false
@@ -482,9 +483,9 @@ public actor BridgeServiceInstaller {
         }
         let token = UUID().uuidString
         let stagedApplication = paths.application.deletingLastPathComponent()
-            .appending(path: ".VoiceInboxBridge.app.uninstall-\(token)", directoryHint: .isDirectory)
+            .appending(path: ".CodexWatch.app.uninstall-\(token)", directoryHint: .isDirectory)
         let stagedManifest = paths.launchAgent.deletingLastPathComponent()
-            .appending(path: ".ai.rsitech.voiceinbox.bridge.plist.uninstall-\(token)")
+            .appending(path: ".ai.rsitech.codexwatch.bridge.plist.uninstall-\(token)")
         var applicationStaged = false
         do {
             if itemExists(paths.application) {
@@ -625,14 +626,14 @@ public actor BridgeServiceInstaller {
         let home = library.deletingLastPathComponent()
         guard paths.application == bridgeRoot
             .appending(path: "Service", directoryHint: .isDirectory)
-            .appending(path: "VoiceInboxBridge.app", directoryHint: .isDirectory),
+            .appending(path: "CodexWatch.app", directoryHint: .isDirectory),
             paths.state == bridgeRoot.appending(path: "State", directoryHint: .isDirectory),
             paths.launchAgent == home
                 .appending(path: "Library/LaunchAgents", directoryHint: .isDirectory)
-                .appending(path: "ai.rsitech.voiceinbox.bridge.plist"),
+                .appending(path: "ai.rsitech.codexwatch.bridge.plist"),
             library.lastPathComponent == "Library",
             support.lastPathComponent == "Application Support",
-            bridgeRoot.lastPathComponent == "VoiceInboxBridge"
+            bridgeRoot.lastPathComponent == "CodexWatch"
         else { throw BridgeServiceInstallerError.invalidPath }
 
         try requireDirectory(home)

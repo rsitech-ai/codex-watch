@@ -1268,7 +1268,7 @@ public enum KeychainSecretStoreError: Error, Equatable, Sendable {
 public actor KeychainSecretStore: SecretStore {
     private let service: String
 
-    public init(service: String = "ai.rsitech.voiceinbox.bridge") {
+    public init(service: String = "ai.rsitech.codexwatch.bridge") {
         self.service = service
     }
 

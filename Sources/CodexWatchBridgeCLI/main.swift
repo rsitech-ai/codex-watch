@@ -13,5 +13,5 @@ if BridgeLaunchMode.isCommandLine(arguments: Array(CommandLine.arguments.dropFir
     }
     dispatchMain()
 } else {
-    VoiceInboxBridgeApp.main()
+    CodexWatchApp.main()
 }

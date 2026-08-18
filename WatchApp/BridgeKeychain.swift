@@ -18,7 +18,7 @@ actor BridgeKeychainStore: WatchBridgeCredentialStore {
     private let account: String
 
     init(
-        service: String = "ai.rsitech.voiceinbox.bridge",
+        service: String = "ai.rsitech.codexwatch.bridge",
         account: String = "primary-watch-bridge"
     ) {
         self.service = service

@@ -44,7 +44,7 @@ public final class SystemTLSIdentityMutationLock: TLSIdentityMutationLock, @unch
     public init(timeout: TimeInterval = 5) {
         lockURL = FileManager.default.homeDirectoryForCurrentUser
             .appending(path: "Library/Application Support", directoryHint: .isDirectory)
-            .appending(path: "ai.rsitech.voiceinbox.bridge", directoryHint: .isDirectory)
+            .appending(path: "ai.rsitech.codexwatch.bridge", directoryHint: .isDirectory)
             .appending(path: "tls-identity.lock")
         self.timeout = timeout
         beforeFinalPathValidation = {}
@@ -564,7 +564,7 @@ private struct X509DERReader {
 }
 
 public actor TLSIdentityProvisioner {
-    public static let defaultLabel = "ai.rsitech.voiceinbox.bridge.tls"
+    public static let defaultLabel = "ai.rsitech.codexwatch.bridge.tls"
 
     private let keychain: any TLSIdentityKeychain
     private let label: String

@@ -2,7 +2,7 @@
 import PackageDescription
 
 let package = Package(
-    name: "VoiceInboxWatch",
+    name: "CodexWatch",
     platforms: [.macOS(.v15), .watchOS(.v10)],
     products: [
         .executable(name: "codex-watch-bridge", targets: ["CodexWatchBridgeCLI"]),

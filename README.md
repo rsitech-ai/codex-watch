@@ -73,9 +73,9 @@ xcodebuild \
 
 bridge_output="$(mktemp -d /private/tmp/codex-watch-bridge-build.XXXXXX)"
 Scripts/build-bridge-app.sh --output "$bridge_output"
-plutil -lint "$bridge_output/VoiceInboxBridge.app/Contents/Info.plist"
+plutil -lint "$bridge_output/CodexWatch.app/Contents/Info.plist"
 test "$(/usr/libexec/PlistBuddy -c 'Print :LSBackgroundOnly' \
-  "$bridge_output/VoiceInboxBridge.app/Contents/Info.plist")" = false
+  "$bridge_output/CodexWatch.app/Contents/Info.plist")" = false
 
 Scripts/run-watch-bridge-smoke.sh
 
@@ -108,11 +108,11 @@ Verify the package before unzipping:
 
 ```bash
 shasum -a 256 -c SHA256SUMS
-unzip VoiceInboxBridge-*.zip
+unzip CodexWatch-*.zip
 ```
 
 The architecture is encoded in the archive filename. The archive contains
-`VoiceInboxBridge.app`, the install/uninstall delegates, this README, the
+`CodexWatch.app`, the install/uninstall delegates, this README, the
 Apache-2.0 license, and the project NOTICE. The Watch app is not sideloaded
 from this archive; build it from source with Xcode until an App Store release
 exists.
@@ -129,15 +129,15 @@ per-user application, state, and LaunchAgent paths:
 # the installer resolves it to a regular executable for launchd.
 # Replace 192.168.1.42 with this Mac's current Wi-Fi or Ethernet address.
 # Loopback addresses are rejected because an Apple Watch cannot reach them.
-cd /absolute/path/VoiceInboxBridge-0.1.0-macos-arm64
+cd /absolute/path/CodexWatch-0.1.0-macos-arm64
 ./install-bridge.sh \
-  --bundle "$PWD/VoiceInboxBridge.app" \
+  --bundle "$PWD/CodexWatch.app" \
   --codex /opt/homebrew/bin/codex \
   --bind-host 192.168.1.42 \
   --advertised-host 192.168.1.42
 
-"$HOME/Library/Application Support/VoiceInboxBridge/Service/VoiceInboxBridge.app/Contents/MacOS/codex-watch-bridge" status
-open "$HOME/Library/Application Support/VoiceInboxBridge/Service/VoiceInboxBridge.app"
+"$HOME/Library/Application Support/CodexWatch/Service/CodexWatch.app/Contents/MacOS/codex-watch-bridge" status
+open "$HOME/Library/Application Support/CodexWatch/Service/CodexWatch.app"
 ./uninstall-bridge.sh
 ./uninstall-bridge.sh --purge-data # explicitly removes installer-owned state
 ```
@@ -180,14 +180,14 @@ code. Compare that exact phrase on the Watch before entering the code. The
 code expires after ten minutes and is accepted once.
 
 ```bash
-open "$HOME/Library/Application Support/VoiceInboxBridge/Service/VoiceInboxBridge.app"
+open "$HOME/Library/Application Support/CodexWatch/Service/CodexWatch.app"
 ```
 
 The CLI still prints the same phrase first and code second if you need it:
 
 ```bash
-"$HOME/Library/Application Support/VoiceInboxBridge/Service/VoiceInboxBridge.app/Contents/MacOS/codex-watch-bridge" pair \
-  --state-root "$HOME/Library/Application Support/VoiceInboxBridge/State"
+"$HOME/Library/Application Support/CodexWatch/Service/CodexWatch.app/Contents/MacOS/codex-watch-bridge" pair \
+  --state-root "$HOME/Library/Application Support/CodexWatch/State"
 ```
 
 If the installed executable is absent while repairing a source checkout, build
@@ -211,7 +211,7 @@ To remove all verified delivered material immediately, first stop the resident
 bridge and run:
 
 ```bash
-VoiceInboxBridge.app/Contents/MacOS/codex-watch-bridge purge-delivered \
+CodexWatch.app/Contents/MacOS/codex-watch-bridge purge-delivered \
   --state-root /absolute/private/bridge-state
 ```
 
@@ -240,7 +240,7 @@ the LaunchAgent `run` process cannot show it.
 The CLI still reports status without prompting:
 
 ```bash
-VoiceInboxBridge.app/Contents/MacOS/codex-watch-bridge speech-status \
+CodexWatch.app/Contents/MacOS/codex-watch-bridge speech-status \
   --state-root /absolute/private/bridge-state
 ```
 
@@ -255,7 +255,7 @@ The read-only status command does not create a service lock or request system
 permission:
 
 ```bash
-VoiceInboxBridge.app/Contents/MacOS/codex-watch-bridge status \
+CodexWatch.app/Contents/MacOS/codex-watch-bridge status \
   --state-root /absolute/private/bridge-state
 ```
 

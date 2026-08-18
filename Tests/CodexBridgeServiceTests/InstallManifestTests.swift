@@ -9,7 +9,7 @@ struct InstallManifestTests {
         .deletingLastPathComponent()
         .deletingLastPathComponent()
     let manifest = try String(
-        contentsOf: repositoryRoot.appending(path: "Bridge/ai.rsitech.voiceinbox.bridge.plist"),
+        contentsOf: repositoryRoot.appending(path: "Bridge/ai.rsitech.codexwatch.bridge.plist"),
         encoding: .utf8
     )
     let installer = try String(
@@ -45,11 +45,11 @@ struct InstallManifestTests {
         contentsOf: repositoryRoot.appending(path: "Bridge/Info.plist")
     ) as? [String: Any])
     let manifest = try #require(NSDictionary(
-        contentsOf: repositoryRoot.appending(path: "Bridge/ai.rsitech.voiceinbox.bridge.plist")
+        contentsOf: repositoryRoot.appending(path: "Bridge/ai.rsitech.codexwatch.bridge.plist")
     ) as? [String: Any])
 
     #expect(info["NSLocalNetworkUsageDescription"] as? String == "Codex Watch receives voice ideas from your paired Apple Watch on your local network.")
-    #expect(info["NSBonjourServices"] as? [String] == ["_voiceinbox._tcp"])
+    #expect(info["NSBonjourServices"] as? [String] == ["_codexwatch._tcp"])
     #expect(info["LSBackgroundOnly"] as? Bool == false)
     #expect(info["LSMinimumSystemVersion"] as? String == "15.0")
     #expect(info["NSMainNibFile"] == nil)
@@ -59,14 +59,14 @@ struct InstallManifestTests {
     #expect((manifest["KeepAlive"] as? [String: Bool])?["SuccessfulExit"] == false)
     #expect(manifest["ThrottleInterval"] as? Int == 10)
     #expect(manifest["ProcessType"] as? String == "Background")
-    #expect(manifest["AssociatedBundleIdentifiers"] as? [String] == ["ai.rsitech.voiceinbox.bridge"])
+    #expect(manifest["AssociatedBundleIdentifiers"] as? [String] == ["ai.rsitech.codexwatch.bridge"])
 }
 
 @Test func buildProducesInteractiveBundleWithoutNibOrStoryboardSurfaces() throws {
     let fixture = try InstallFixture()
     try fixture.run("Scripts/build-bridge-app.sh", "--output", fixture.buildRoot.path)
 
-    let app = fixture.buildRoot.appending(path: "VoiceInboxBridge.app", directoryHint: .isDirectory)
+    let app = fixture.buildRoot.appending(path: "CodexWatch.app", directoryHint: .isDirectory)
     let infoURL = app.appending(path: "Contents/Info.plist")
     let info = try #require(NSDictionary(contentsOf: infoURL) as? [String: Any])
 
@@ -82,7 +82,7 @@ struct InstallManifestTests {
     let fixture = try InstallFixture()
     try fixture.run("Scripts/build-bridge-app.sh", "--output", fixture.buildRoot.path)
 
-    let app = fixture.buildRoot.appending(path: "VoiceInboxBridge.app", directoryHint: .isDirectory)
+    let app = fixture.buildRoot.appending(path: "CodexWatch.app", directoryHint: .isDirectory)
     try fixture.runExecutable("/usr/bin/codesign", "--verify", "--deep", "--strict", app.path)
 }
 

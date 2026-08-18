@@ -15,9 +15,9 @@ import Testing
 
 @Test func launchAgentRuntimeConfigurationParsesInstalledProgramArguments() {
     let parsed = LaunchAgentRuntimeConfiguration.parse(programArguments: [
-        "/tmp/VoiceInboxBridge.app/Contents/MacOS/codex-watch-bridge",
+        "/tmp/CodexWatch.app/Contents/MacOS/codex-watch-bridge",
         "run",
-        "--state-root", "/tmp/VoiceInboxBridge/State",
+        "--state-root", "/tmp/CodexWatch/State",
         "--codex", "/opt/homebrew/bin/codex",
         "--bind-host", "192.168.1.42",
         "--advertised-host", "192.168.1.42",
@@ -25,7 +25,7 @@ import Testing
 
     #expect(parsed?.bindHost == "192.168.1.42")
     #expect(parsed?.advertisedHost == "192.168.1.42")
-    #expect(parsed?.stateRoot.path == "/tmp/VoiceInboxBridge/State")
+    #expect(parsed?.stateRoot.path == "/tmp/CodexWatch/State")
     #expect(parsed?.codexExecutable.path == "/opt/homebrew/bin/codex")
 }
 

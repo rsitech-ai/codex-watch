@@ -61,7 +61,7 @@ scratch="$(mktemp -d /private/tmp/codex-watch-release.XXXXXX)"
 trap 'rm -rf "$scratch"' EXIT
 build_root="$scratch/build"
 "$repo_root/Scripts/build-bridge-app.sh" --output "$build_root"
-app="$build_root/VoiceInboxBridge.app"
+app="$build_root/CodexWatch.app"
 
 if [[ "$sign_identity" == "-" ]]; then
   signing_mode="ad-hoc"
@@ -78,7 +78,7 @@ fi
 
 notarization_state="not-requested"
 if [[ -n "$notary_profile" ]]; then
-  notary_archive="$scratch/VoiceInboxBridge-notary.zip"
+  notary_archive="$scratch/CodexWatch-notary.zip"
   /usr/bin/ditto -c -k --sequesterRsrc --keepParent "$app" "$notary_archive"
   /usr/bin/xcrun notarytool submit \
     "$notary_archive" \
@@ -90,10 +90,10 @@ if [[ -n "$notary_profile" ]]; then
 fi
 
 architecture="$(/usr/bin/lipo -archs "$app/Contents/MacOS/codex-watch-bridge" | tr ' ' '-')"
-release_name="VoiceInboxBridge-$version-macos-$architecture"
+release_name="CodexWatch-$version-macos-$architecture"
 release_root="$scratch/$release_name"
 mkdir -p "$release_root"
-cp -R "$app" "$release_root/VoiceInboxBridge.app"
+cp -R "$app" "$release_root/CodexWatch.app"
 cp "$repo_root/Scripts/install-bridge.sh" "$release_root/install-bridge.sh"
 cp "$repo_root/Scripts/uninstall-bridge.sh" "$release_root/uninstall-bridge.sh"
 cp "$repo_root/LICENSE" "$release_root/LICENSE"
@@ -114,7 +114,7 @@ verification_root="$scratch/verification"
 mkdir -p "$verification_root"
 /usr/bin/ditto -x -k "$archive" "$verification_root"
 verified_release_root="$verification_root/$release_name"
-verified_app="$verified_release_root/VoiceInboxBridge.app"
+verified_app="$verified_release_root/CodexWatch.app"
 [[ -d "$verified_app" ]] || { print -u2 "archive verification failed: app missing"; exit 66; }
 for required in install-bridge.sh uninstall-bridge.sh LICENSE NOTICE README.md; do
   [[ -f "$verified_release_root/$required" ]] || {
@@ -123,7 +123,7 @@ for required in install-bridge.sh uninstall-bridge.sh LICENSE NOTICE README.md; 
   }
 done
 /usr/bin/codesign --verify --strict --verbose=2 "$verified_app"
-[[ "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$verified_app/Contents/Info.plist")" == "ai.rsitech.voiceinbox.bridge" ]]
+[[ "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$verified_app/Contents/Info.plist")" == "ai.rsitech.codexwatch.bridge" ]]
 [[ "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$verified_app/Contents/Info.plist")" == "$version" ]]
 [[ "$(/usr/libexec/PlistBuddy -c 'Print :LSMinimumSystemVersion' "$verified_app/Contents/Info.plist")" == "$minimum_macos" ]]
 if [[ "$notarization_state" == "accepted-and-stapled" ]]; then
@@ -137,7 +137,7 @@ manifest="$output/release-manifest.json"
 /usr/bin/plutil -insert schemaVersion -integer 1 "$manifest_plist"
 /usr/bin/plutil -insert product -dictionary "$manifest_plist"
 /usr/bin/plutil -insert product.name -string "Codex Watch" "$manifest_plist"
-/usr/bin/plutil -insert product.bundleIdentifier -string "ai.rsitech.voiceinbox.bridge" "$manifest_plist"
+/usr/bin/plutil -insert product.bundleIdentifier -string "ai.rsitech.codexwatch.bridge" "$manifest_plist"
 /usr/bin/plutil -insert product.version -string "$version" "$manifest_plist"
 /usr/bin/plutil -insert product.architecture -string "$architecture" "$manifest_plist"
 /usr/bin/plutil -insert product.minimumMacOS -string "$minimum_macos" "$manifest_plist"

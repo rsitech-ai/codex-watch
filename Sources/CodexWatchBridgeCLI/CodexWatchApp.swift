@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-struct VoiceInboxBridgeApp: App {
+struct CodexWatchApp: App {
     @StateObject private var model = BridgeAppModel()
 
     var body: some Scene {

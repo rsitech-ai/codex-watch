@@ -8,7 +8,7 @@ physical Watch, and Apple distribution evidence. No row promotes another row.
 | Published source | `v0.1.0`, commit `636c630047893daa2c7ce691f7fffdf1267cfce9` | Exact-main hosted CI passed the Swift package, Watch simulator, production-composed bridge smoke, and packaging gates | `repo-ready` |
 | Candidate source | `feat/andrzej_signal_spine_watch_ui`, commit `c8f0bc3d75b4af0d0fe5022a8bf28c8b76fee716` | 585 package tests, 75 Watch tests, fresh Release build, analyzer, 35-cell render matrix, bridge restart smoke, and clean capture-window logs passed locally; physical tunnels remain disconnected | `repo-ready`; `simulator-proven`; hardware `blocked:external` |
 | Artifact tag | `v0.1.0` | Public GitHub release inspected on 2026-08-13 | `package-ready` |
-| Artifact SHA-256 | `VoiceInboxBridge-0.1.0-macos-arm64.zip`: `a344c4877c7e07c3fa2a4e5130ecaaf0871d5bf4628bd75e58378dba000ce0d6` | GitHub release digest and the published checksum were verified for the exact archive | `package-ready` |
+| Artifact SHA-256 | Historical v0.1.0 archive filename `VoiceInboxBridge-0.1.0-macos-arm64.zip`: `a344c4877c7e07c3fa2a4e5130ecaaf0871d5bf4628bd75e58378dba000ce0d6` | GitHub release digest and the published checksum were verified for the exact archive | `package-ready` |
 | Signing identity class | Exact `v0.1.0` bridge app; Developer ID Application | Strict code-signature verification passed on the freshly downloaded archive on 2026-08-03 | `package-ready` |
 | Gatekeeper | Exact `v0.1.0` bridge app | Assessment accepted on 2026-08-03 | `package-ready` |
 | Notarization | Exact `v0.1.0` bridge app | Accepted ticket observed on 2026-08-03 | `package-ready` |

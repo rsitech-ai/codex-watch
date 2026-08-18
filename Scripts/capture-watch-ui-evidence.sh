@@ -24,8 +24,8 @@ app_physical="$(cd "$app" && pwd -P)"
 
 bundle_identifier="$(/usr/bin/plutil -extract CFBundleIdentifier raw -o - "$app/Info.plist" 2>/dev/null)" \
     || fail "app bundle identifier is unavailable" 64
-[[ "$bundle_identifier" == ai.rsitech.voiceinbox ]] \
-    || fail "app bundle identifier must be ai.rsitech.voiceinbox" 64
+[[ "$bundle_identifier" == ai.rsitech.codexwatch ]] \
+    || fail "app bundle identifier must be ai.rsitech.codexwatch" 64
 
 [[ "$output" == /* && "$output" != / && ! -L "$output" ]] || usage
 if [[ -e "$output" ]]; then

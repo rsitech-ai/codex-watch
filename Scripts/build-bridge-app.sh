@@ -12,7 +12,7 @@ output="$2"
 
 repo_root="$(cd "$(dirname "$0")/.." && pwd -P)"
 mkdir -p "$output"
-app="$output/VoiceInboxBridge.app"
+app="$output/CodexWatch.app"
 [[ ! -e "$app" ]] || { print -u2 "refusing to overwrite existing bundle: $app"; exit 73; }
 
 scratch="$(mktemp -d /private/tmp/codex-watch-bridge-build.XXXXXX)"

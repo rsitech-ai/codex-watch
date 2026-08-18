@@ -40,7 +40,7 @@ final class BridgeAppModel: ObservableObject {
     @Published var pairingSheetPresented = false
 
     private let logger = Logger(
-        subsystem: "ai.rsitech.voiceinbox.bridge",
+        subsystem: "ai.rsitech.codexwatch.bridge",
         category: "app"
     )
     private var refreshTask: Task<Void, Never>?
@@ -561,7 +561,7 @@ final class BridgeAppModel: ObservableObject {
         launchAgentPID = 4242
         tlsFingerprintShort = "01234567"
         lastDiagnostic = .serviceRunning
-        stateRootPath = "~/Library/Application Support/VoiceInboxBridge/State"
+        stateRootPath = "~/Library/Application Support/CodexWatch/State"
         statusMessage = nil
         pairing = nil
         pairingSheetPresented = false

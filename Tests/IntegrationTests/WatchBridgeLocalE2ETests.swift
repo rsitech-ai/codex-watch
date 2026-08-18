@@ -60,7 +60,7 @@ private let e2ePKCS12ImportLock = NSLock()
         configuration: configuration,
         router: firstRouter,
         identityProvider: identityProvider,
-        serviceName: "Voice Inbox Local E2E",
+        serviceName: "Codex Watch Local E2E",
         bindHost: "127.0.0.1",
         advertisedHost: "127.0.0.1"
     )
@@ -138,7 +138,7 @@ private let e2ePKCS12ImportLock = NSLock()
         configuration: configuration,
         router: restartedRouter,
         identityProvider: identityProvider,
-        serviceName: "Voice Inbox Local E2E",
+        serviceName: "Codex Watch Local E2E",
         bindHost: "127.0.0.1",
         advertisedHost: "127.0.0.1"
     )
@@ -653,7 +653,7 @@ private final class ProductionBridgeE2EFixture: @unchecked Sendable {
             configuration: configuration,
             router: router,
             identityProvider: PreloadedTLSIdentityProvider(identity: identity),
-            serviceName: "Voice Inbox Production E2E",
+            serviceName: "Codex Watch Production E2E",
             bindHost: "127.0.0.1",
             advertisedHost: "127.0.0.1"
         )
@@ -789,7 +789,7 @@ private final class ProductionBridgeE2EFixture: @unchecked Sendable {
             configuration: configuration,
             router: router,
             identityProvider: PreloadedTLSIdentityProvider(identity: identity),
-            serviceName: "Voice Inbox Production E2E",
+            serviceName: "Codex Watch Production E2E",
             bindHost: "127.0.0.1",
             advertisedHost: "127.0.0.1"
         )
@@ -1347,7 +1347,7 @@ private struct LocalE2EListenerFixture: @unchecked Sendable {
                 configuration: configuration,
                 router: router,
                 identityProvider: PreloadedTLSIdentityProvider(identity: identity),
-                serviceName: "Voice Inbox Scope Test",
+                serviceName: "Codex Watch Scope Test",
                 bindHost: "127.0.0.1",
                 advertisedHost: "127.0.0.1"
             )
@@ -1590,7 +1590,7 @@ private func pinnedTLSExchange(
 ) async throws -> ParsedHTTPResponse {
     guard endpoint.isTLS else { throw LocalE2EError.insecureEndpoint }
     let tlsOptions = NWProtocolTLS.Options()
-    let verificationQueue = DispatchQueue(label: "ai.rsitech.voiceinbox.e2e-pin")
+    let verificationQueue = DispatchQueue(label: "ai.rsitech.codexwatch.e2e-pin")
     sec_protocol_options_set_verify_block(
         tlsOptions.securityProtocolOptions,
         { _, trust, complete in
@@ -1620,7 +1620,7 @@ private final class TLSExchangeOperation: @unchecked Sendable {
     private let connection: NWConnection
     private let request: Data
     private let timeout: Duration
-    private let queue = DispatchQueue(label: "ai.rsitech.voiceinbox.e2e-client")
+    private let queue = DispatchQueue(label: "ai.rsitech.codexwatch.e2e-client")
     private let lock = NSLock()
     private var continuation: CheckedContinuation<Data, any Error>?
     private var terminalResult: Result<Data, any Error>?

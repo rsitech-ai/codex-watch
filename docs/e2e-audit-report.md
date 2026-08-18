@@ -4,9 +4,9 @@
 
 - Date: 2026-08-18 (second pass, same day)
 - Auditor: agent (`rsi-app-e2e-audit-orchestrator`, `rsi-watch-experience-director`, `rsi-swiftui-polish-auditor`, `rsi-refine-product-quality`)
-- App path: `$HOME/Library/Application Support/VoiceInboxBridge/Service/VoiceInboxBridge.app` (embedded LaunchAgent binary; not a `/tmp` sidecar)
-- Project/workspace/package: `feat/andrzej_signal_spine_watch_ui` / SwiftPM `VoiceInboxWatch`
-- Scheme/target: product `codex-watch-bridge` / bundle `ai.rsitech.voiceinbox.bridge`; Watch `CodexWatch` / `ai.rsitech.voiceinbox`
+- App path: `$HOME/Library/Application Support/CodexWatch/Service/CodexWatch.app` (embedded LaunchAgent binary; not a `/tmp` sidecar)
+- Project/workspace/package: `feat/andrzej_signal_spine_watch_ui` / SwiftPM `CodexWatch`
+- Scheme/target: product `codex-watch-bridge` / bundle `ai.rsitech.codexwatch.bridge`; Watch `CodexWatch` / `ai.rsitech.codexwatch`
 - Platform/surfaces: native macOS operator console + LaunchAgent listener; Watch source + simulator tests; physical Watch blocked
 - Readiness target: Mac console smoke-clean; Watch `simulator-proven` for hosted tests; hardware not `physical-watch-proven`
 - Forbidden actions without confirmation: uninstall, rotate TLS, revoke Watch Keychain, purge delivered, merge/mark-ready PR #4, execute Reset, click system Speech Allow / Keychain Always Allow
@@ -33,7 +33,7 @@ Official docs checked this pass: Apple Speech `requestAuthorization` / `notDeter
 | Focused tests | presentation/console/processor/installer/pairing/token filters | 97 passed | warnings-as-errors |
 | Watch tests | `xcodebuild test` scheme `CodexWatch`, SE 3 40mm, clean derived data | 89 passed | simulator-proven hosted suite |
 | Smoke | `Scripts/run-watch-bridge-smoke.sh` | 11 production-path tests passed | local fake Inbox only |
-| Launch | `open` installed VoiceInboxBridge.app | window `Codex Watch – Allow Speech Recognition.` | UI pid 14471 + agent `run` |
+| Launch | `open` installed CodexWatch.app | window `Codex Watch – Allow Speech Recognition.` | UI pid 14471 + agent `run` |
 | Logs | content-free `bridge.log` | last events `service-stopped` then `service-starting`/`service-running`; no new faults after this install | no memo IDs or secrets |
 | Intake | retained vs intake dirs | still one retained memo from 17 Aug; intake empty | no new Watch upload this session |
 | Preflight | `swift run watch-device-preflight --json` | `SUPPORTING_PHONE_UNAVAILABLE` / `blocked:external` | Apple Watch Ultra 2, watchOS 26.4 |

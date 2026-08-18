@@ -11,7 +11,7 @@ trap 'rm -rf "$fixture_root"' EXIT
 app="$fixture_root/CodexWatch.app"
 mkdir -p "$app"
 /usr/bin/plutil -create xml1 "$app/Info.plist"
-/usr/bin/plutil -insert CFBundleIdentifier -string ai.rsitech.voiceinbox "$app/Info.plist"
+/usr/bin/plutil -insert CFBundleIdentifier -string ai.rsitech.codexwatch "$app/Info.plist"
 
 selector="$fixture_root/selector"
 cat > "$selector" <<'SELECTOR'

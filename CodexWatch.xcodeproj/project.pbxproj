@@ -361,7 +361,7 @@
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = ai.rsitech.voiceinbox.tests;
+				PRODUCT_BUNDLE_IDENTIFIER = ai.rsitech.codexwatch.tests;
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
 				TARGETED_DEVICE_FAMILY = 4;
@@ -377,7 +377,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = WatchApp/Info.plist;
-				PRODUCT_BUNDLE_IDENTIFIER = ai.rsitech.voiceinbox;
+				PRODUCT_BUNDLE_IDENTIFIER = ai.rsitech.codexwatch;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
 				SKIP_INSTALL = NO;
@@ -458,7 +458,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = WatchApp/Info.plist;
-				PRODUCT_BUNDLE_IDENTIFIER = ai.rsitech.voiceinbox;
+				PRODUCT_BUNDLE_IDENTIFIER = ai.rsitech.codexwatch;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
 				SKIP_INSTALL = NO;
@@ -476,7 +476,7 @@
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = ai.rsitech.voiceinbox.tests;
+				PRODUCT_BUNDLE_IDENTIFIER = ai.rsitech.codexwatch.tests;
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
 				TARGETED_DEVICE_FAMILY = 4;

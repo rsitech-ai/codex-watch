@@ -17,9 +17,9 @@ elif [[ $# -ne 0 ]]; then
 fi
 
 repo_root="$(cd "$(dirname "$0")/.." && pwd -P)"
-output="$(mktemp -d /private/tmp/voice-inbox-bridge-app.XXXXXX)"
+output="$(mktemp -d /private/tmp/codex-watch-bridge-app.XXXXXX)"
 "$repo_root/Scripts/build-bridge-app.sh" --output "$output"
-app="$output/VoiceInboxBridge.app"
+app="$output/CodexWatch.app"
 background_only="$(/usr/libexec/PlistBuddy -c 'Print :LSBackgroundOnly' "$app/Contents/Info.plist")"
 [[ "$background_only" == "false" ]] || {
   print -u2 "expected LSBackgroundOnly=false, got $background_only"

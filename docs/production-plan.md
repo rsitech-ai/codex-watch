@@ -8,7 +8,7 @@
 - Business model: local utility for the existing Codex Watch project. Not App Store in this pass.
 - Supported macOS versions: 15.0 and later, Apple silicon as already required by the bridge.
 - Offline behavior: pairing, inbox listing, and Speech prompts are local. Codex insertion still needs the installed Codex executable used by the LaunchAgent.
-- Data handled: pairing secrets in Keychain, audio and transcripts under `~/Library/Application Support/VoiceInboxBridge/State`. The UI reads those files; it does not create a second network stack.
+- Data handled: pairing secrets in Keychain, audio and transcripts under `~/Library/Application Support/CodexWatch/State`. The UI reads those files; it does not create a second network stack.
 - Privacy posture: on-device Speech only. No analytics. Logs are content-free.
 - V1 scope: window, menu bar, pairing phrase/code, Speech authorization, inbox + retry, listener/advertised-name/paired-Watch status, Signal Spine visual language.
 - Explicitly out of scope: App Store, iCloud, extra chat client, TLS/queue rewrite, second daemon, installer bind-host UI, memo playback.
@@ -28,7 +28,7 @@
 
 - Project type: SwiftPM executable packaged by `Scripts/build-bridge-app.sh`.
 - Build command: `Scripts/build-bridge-app.sh --output /absolute/dir`
-- Run command: `open "$HOME/Library/Application Support/VoiceInboxBridge/Service/VoiceInboxBridge.app"` after install.
+- Run command: `open "$HOME/Library/Application Support/CodexWatch/Service/CodexWatch.app"` after install.
 - `script/build_and_run.sh --verify` builds a throwaway bundle and refuses to open it as a sidecar.
 - Codex Run action status: skipped (`.codex/` is gitignored in this repo).
 
@@ -58,14 +58,14 @@
 
 ## Observability
 
-- Logger subsystem: `ai.rsitech.voiceinbox.bridge`
+- Logger subsystem: `ai.rsitech.codexwatch.bridge`
 - Categories: `app`
 - Key lifecycle/action events: refresh, pairing generated/failed, speech finished, retry queued/failed.
 - Sensitive logging exclusions: no pairing code, phrase, transcript, audio, or memo IDs.
 
 ## App Store Readiness
 
-- Out of scope for this pass. Bundle ID remains `ai.rsitech.voiceinbox.bridge`.
+- Out of scope for this pass. Bundle ID remains `ai.rsitech.codexwatch.bridge`.
 
 ## Iteration Log
 

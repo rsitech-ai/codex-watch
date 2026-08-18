@@ -6,10 +6,12 @@ All notable public releases are documented here.
 
 ### Changed
 
-- Public product and repository identity is Codex Watch / `codex-watch`. Bundle
-  IDs, Bonjour type `_voiceinbox._tcp`, LaunchAgent label, Application Support
-  root, TLS certificate CN, and `VoiceInboxBridge.app` filename are unchanged
-  so existing Watch pairing and Speech TCC are preserved.
+- Protocol and on-disk identity is now Codex Watch: bundle IDs
+  `ai.rsitech.codexwatch` / `ai.rsitech.codexwatch.bridge`, Bonjour
+  `_codexwatch._tcp`, LaunchAgent `ai.rsitech.codexwatch.bridge`, Application
+  Support `CodexWatch/`, `CodexWatch.app`, and TLS CN **Codex Watch**. Existing
+  Watch pairing and Speech TCC for the old signature are invalidated; re-pair
+  on-wrist. Do not wipe Watch Keychain from the Mac.
 
 ### Added
 

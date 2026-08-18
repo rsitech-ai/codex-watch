@@ -56,7 +56,7 @@ jobs:
             --sign-identity -
           cd "$release_output"
           shasum -a 256 -c SHA256SUMS
-          ! unzip -Z1 VoiceInboxBridge-*.zip | grep -q '^__MACOSX/'
+          ! unzip -Z1 CodexWatch-*.zip | grep -q '^__MACOSX/'
 
   watch-build:
     runs-on: macos-26

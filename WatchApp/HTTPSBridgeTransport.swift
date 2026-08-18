@@ -877,7 +877,7 @@ enum PinnedBridgeCertificateTrust {
               let actualPin = try? CertificatePin(digest(representation)),
               actualPin == expectedPin
         else { return false }
-        // ponytail: pin is the identity. The bridge cert CN is "Voice Inbox Bridge"
+        // ponytail: pin is the identity. The bridge cert CN is "Codex Watch"
         // while the Watch connects to the advertised LAN address, so SSL hostname
         // evaluation would reject a correct pin.
         guard SecTrustSetPolicies(trust, SecPolicyCreateBasicX509()) == errSecSuccess,

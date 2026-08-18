@@ -82,7 +82,7 @@ public struct AppleSpeechTranscriber: TranscriptionEngine, Sendable {
     }
 
     private static let logger = Logger(
-        subsystem: "ai.rsitech.voiceinbox.bridge",
+        subsystem: "ai.rsitech.codexwatch.bridge",
         category: "speech"
     )
 

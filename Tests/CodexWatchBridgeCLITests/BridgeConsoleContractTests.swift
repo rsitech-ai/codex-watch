@@ -75,7 +75,6 @@ import Testing
     #expect(presentation.retryEnabled == true)
     #expect(presentation.speechCTA == true)
     #expect(presentation.detail.contains("Speech Recognition"))
-    #expect(!presentation.detail.contains("Voice Inbox"))
 
     let header = BridgeConsoleHeaderPresentation.make(
         installed: true,

@@ -16,7 +16,7 @@
 	<string>Copyright © 2026 Rafal Sikora. Licensed under Apache-2.0.</string>
 	<key>NSBonjourServices</key>
 	<array>
-		<string>_voiceinbox._tcp</string>
+		<string>_codexwatch._tcp</string>
 	</array>
 	<key>NSAppTransportSecurity</key>
 	<dict>

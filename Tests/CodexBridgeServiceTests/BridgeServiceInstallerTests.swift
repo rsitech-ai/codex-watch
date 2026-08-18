@@ -12,10 +12,10 @@ struct BridgeServiceInstallerTests {
         )
         let paths = try BridgeInstallPaths.production(home: home)
 
-        #expect(paths.application.path == home.path + "/Library/Application Support/VoiceInboxBridge/Service/VoiceInboxBridge.app")
-        #expect(paths.state.path == home.path + "/Library/Application Support/VoiceInboxBridge/State")
-        #expect(paths.launchAgent.path == home.path + "/Library/LaunchAgents/ai.rsitech.voiceinbox.bridge.plist")
-        #expect(paths.launchAgent.path != FileManager.default.homeDirectoryForCurrentUser.path + "/Library/LaunchAgents/ai.rsitech.voiceinbox.bridge.plist")
+        #expect(paths.application.path == home.path + "/Library/Application Support/CodexWatch/Service/CodexWatch.app")
+        #expect(paths.state.path == home.path + "/Library/Application Support/CodexWatch/State")
+        #expect(paths.launchAgent.path == home.path + "/Library/LaunchAgents/ai.rsitech.codexwatch.bridge.plist")
+        #expect(paths.launchAgent.path != FileManager.default.homeDirectoryForCurrentUser.path + "/Library/LaunchAgents/ai.rsitech.codexwatch.bridge.plist")
     }
 
     @Test func firstInstallCreatesPrivateDirectoriesAndExactLaunchAgentMetadata() async throws {
@@ -34,12 +34,12 @@ struct BridgeServiceInstallerTests {
         #expect(try mode(of: fixture.paths.launchAgent.deletingLastPathComponent()) == 0o700)
         #expect(try mode(of: fixture.paths.launchAgent) == 0o600)
         let manifest = try fixture.launchAgentDictionary()
-        #expect(manifest["Label"] as? String == "ai.rsitech.voiceinbox.bridge")
+        #expect(manifest["Label"] as? String == "ai.rsitech.codexwatch.bridge")
         #expect(manifest["RunAtLoad"] as? Bool == true)
         #expect((manifest["KeepAlive"] as? [String: Bool])?["SuccessfulExit"] == false)
         #expect(manifest["ThrottleInterval"] as? Int == 10)
         #expect(manifest["ProcessType"] as? String == "Background")
-        #expect(manifest["AssociatedBundleIdentifiers"] as? [String] == ["ai.rsitech.voiceinbox.bridge"])
+        #expect(manifest["AssociatedBundleIdentifiers"] as? [String] == ["ai.rsitech.codexwatch.bridge"])
         #expect(manifest["ProgramArguments"] as? [String] == [
             fixture.paths.application.appending(path: "Contents/MacOS/codex-watch-bridge").path,
             "run", "--state-root", fixture.paths.state.path,
@@ -50,9 +50,9 @@ struct BridgeServiceInstallerTests {
         let verified = await fixture.signatureVerifier.verifiedBundles()
         #expect(verified.count == 1)
         #expect(verified.first?.deletingLastPathComponent() == fixture.paths.application.deletingLastPathComponent())
-        #expect(verified.first?.lastPathComponent.hasPrefix(".VoiceInboxBridge.app.staged-") == true)
+        #expect(verified.first?.lastPathComponent.hasPrefix(".CodexWatch.app.staged-") == true)
         #expect(await fixture.launchctl.events() == [
-            "print:gui/\(getuid())/ai.rsitech.voiceinbox.bridge",
+            "print:gui/\(getuid())/ai.rsitech.codexwatch.bridge",
             "bootstrap:gui/\(getuid()):\(fixture.paths.launchAgent.path)",
         ])
     }
@@ -70,8 +70,8 @@ struct BridgeServiceInstallerTests {
         let arguments = try fixture.launchAgentDictionary()["ProgramArguments"] as? [String]
         #expect(arguments?.suffix(4) == ["--bind-host", "192.168.1.38", "--advertised-host", "192.168.1.38"])
         #expect(await fixture.launchctl.events() == [
-            "print:gui/\(getuid())/ai.rsitech.voiceinbox.bridge",
-            "bootout:gui/\(getuid())/ai.rsitech.voiceinbox.bridge",
+            "print:gui/\(getuid())/ai.rsitech.codexwatch.bridge",
+            "bootout:gui/\(getuid())/ai.rsitech.codexwatch.bridge",
             "bootstrap:gui/\(getuid()):\(fixture.paths.launchAgent.path)",
         ])
         #expect(await fixture.identityLifecycle.creationCount == 1)
@@ -370,9 +370,9 @@ struct BridgeServiceInstallerTests {
         #expect(await fixture.launchctl.isLoaded())
         let events = await fixture.launchctl.events()
         #expect(events.suffix(4) == [
-            "bootout:gui/\(getuid())/ai.rsitech.voiceinbox.bridge",
+            "bootout:gui/\(getuid())/ai.rsitech.codexwatch.bridge",
             "bootstrap:gui/\(getuid()):\(fixture.paths.launchAgent.path)",
-            "bootout:gui/\(getuid())/ai.rsitech.voiceinbox.bridge",
+            "bootout:gui/\(getuid())/ai.rsitech.codexwatch.bridge",
             "bootstrap:gui/\(getuid()):\(fixture.paths.launchAgent.path)",
         ])
     }
@@ -408,7 +408,7 @@ struct BridgeServiceInstallerTests {
         try await fixture.installer.uninstall(purgeData: false)
 
         #expect(await fixture.launchctl.events() == [
-            "print:gui/\(getuid())/ai.rsitech.voiceinbox.bridge",
+            "print:gui/\(getuid())/ai.rsitech.codexwatch.bridge",
         ])
         #expect(!FileManager.default.fileExists(atPath: fixture.paths.application.path))
     }
@@ -597,8 +597,8 @@ struct BridgeServiceInstallerTests {
         #expect(try fixture.installerBackupFingerprintCount() == 1)
         #expect(!(await fixture.launchctl.isLoaded()))
         #expect(await fixture.launchctl.events() == [
-            "print:gui/\(getuid())/ai.rsitech.voiceinbox.bridge",
-            "bootout:gui/\(getuid())/ai.rsitech.voiceinbox.bridge",
+            "print:gui/\(getuid())/ai.rsitech.codexwatch.bridge",
+            "bootout:gui/\(getuid())/ai.rsitech.codexwatch.bridge",
             "bootstrap:gui/\(getuid()):\(fixture.paths.launchAgent.path)",
         ])
     }
@@ -837,8 +837,8 @@ struct BridgeServiceInstallerTests {
         #expect(try Data(contentsOf: fixture.paths.launchAgent) == priorManifest)
         #expect(!(await fixture.launchctl.isLoaded()))
         #expect(await fixture.launchctl.events() == [
-            "print:gui/\(getuid())/ai.rsitech.voiceinbox.bridge",
-            "bootout:gui/\(getuid())/ai.rsitech.voiceinbox.bridge",
+            "print:gui/\(getuid())/ai.rsitech.codexwatch.bridge",
+            "bootout:gui/\(getuid())/ai.rsitech.codexwatch.bridge",
             "bootstrap:gui/\(getuid()):\(fixture.paths.launchAgent.path)",
         ])
     }
@@ -922,13 +922,13 @@ private final class InstallerFixture: @unchecked Sendable {
 
     func makeBundle(
         version: String,
-        identifier: String = "ai.rsitech.voiceinbox.bridge",
+        identifier: String = "ai.rsitech.codexwatch.bridge",
         executable: String = "codex-watch-bridge",
         backgroundOnly: Bool = true
     ) throws -> URL {
         bundleCounter += 1
         let bundle = root.appending(
-            path: "bundles/\(bundleCounter)-VoiceInboxBridge.app",
+            path: "bundles/\(bundleCounter)-CodexWatch.app",
             directoryHint: .isDirectory
         )
         let macOS = bundle.appending(path: "Contents/MacOS", directoryHint: .isDirectory)
@@ -982,7 +982,7 @@ private final class InstallerFixture: @unchecked Sendable {
     func backupExecutableContents() throws -> [String] {
         let service = paths.application.deletingLastPathComponent()
         return try FileManager.default.contentsOfDirectory(at: service, includingPropertiesForKeys: nil)
-            .filter { $0.lastPathComponent.hasPrefix(".VoiceInboxBridge.app.backup-") }
+            .filter { $0.lastPathComponent.hasPrefix(".CodexWatch.app.backup-") }
             .map { backup in
                 String(decoding: try Data(contentsOf: backup
                     .appending(path: "Contents/MacOS/codex-watch-bridge")), as: UTF8.self)
@@ -995,7 +995,7 @@ private final class InstallerFixture: @unchecked Sendable {
             at: paths.launchAgent.deletingLastPathComponent(),
             includingPropertiesForKeys: nil
         ).count { $0.lastPathComponent.hasPrefix(
-            ".ai.rsitech.voiceinbox.bridge.plist.backup-"
+            ".ai.rsitech.codexwatch.bridge.plist.backup-"
         ) }
     }
 

@@ -58,7 +58,7 @@ public protocol BridgeTLSIdentityProvider: Sendable {
 }
 
 public struct BridgeBonjourAdvertisement: Equatable, Sendable {
-    public static let requiredServiceType = "_voiceinbox._tcp"
+    public static let requiredServiceType = "_codexwatch._tcp"
 
     public let serviceName: String
     public let serviceType: String
@@ -193,7 +193,7 @@ public final class NetworkBridgeListener: @unchecked Sendable {
         self.configuration = configuration
         self.router = router
         listener = try NWListener(using: parameters)
-        let listenerQueue = DispatchQueue(label: "ai.rsitech.voiceinbox.bridge-listener")
+        let listenerQueue = DispatchQueue(label: "ai.rsitech.codexwatch.bridge-listener")
         queue = listenerQueue
         deadlineScheduler = .dispatch(on: listenerQueue)
         admissionGate = try ConnectionAdmissionGate(
@@ -225,7 +225,7 @@ public final class NetworkBridgeListener: @unchecked Sendable {
         self.configuration = configuration
         self.router = router
         listener = try NWListener(using: parameters)
-        let listenerQueue = DispatchQueue(label: "ai.rsitech.voiceinbox.bridge-listener.test")
+        let listenerQueue = DispatchQueue(label: "ai.rsitech.codexwatch.bridge-listener.test")
         queue = listenerQueue
         self.deadlineScheduler = deadlineScheduler ?? .dispatch(on: listenerQueue)
         admissionGate = try ConnectionAdmissionGate(
